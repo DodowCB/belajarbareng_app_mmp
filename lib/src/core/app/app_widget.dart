@@ -1,13 +1,17 @@
+import 'package:belajarbareng_app_mmp/src/features/dashboard/presentation/api_example_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../providers/theme_provider.dart';
 import '../../features/dashboard/presentation/dashboard_screen.dart';
 
 // Sesuai dokumentasi folder, file ini berisi
 // konfigurasi MaterialApp/CupertinoApp
-class AppWidget extends StatelessWidget {
+class AppWidget extends ConsumerWidget {
   const AppWidget({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final themeMode = ref.watch(themeModeProvider);
     // Di proyek nyata, 'home' akan dikelola oleh Go_Router
     // Tapi untuk preview ini, kita langsung arahkan ke DashboardScreen.
 
@@ -29,8 +33,8 @@ class AppWidget extends StatelessWidget {
         ),
         fontFamily: 'Inter',
       ),
-      themeMode: ThemeMode.system,
-      home: const DashboardScreen(),
+      themeMode: themeMode,
+      home: const ApiExampleScreen(),
       debugShowCheckedModeBanner: false,
     );
   }
