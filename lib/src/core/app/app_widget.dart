@@ -1,7 +1,7 @@
-import 'package:belajarbareng_app_mmp/src/features/dashboard/presentation/api_example_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/theme_provider.dart';
+import '../config/theme.dart';
 import '../../features/dashboard/presentation/dashboard_screen.dart';
 
 // Sesuai dokumentasi folder, file ini berisi
@@ -17,24 +17,10 @@ class AppWidget extends ConsumerWidget {
 
     return MaterialApp(
       title: 'BelajarBareng',
-      theme: ThemeData(
-        useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.deepPurple,
-          brightness: Brightness.light,
-        ),
-        fontFamily: 'Inter',
-      ),
-      darkTheme: ThemeData(
-        useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.deepPurple,
-          brightness: Brightness.dark,
-        ),
-        fontFamily: 'Inter',
-      ),
+      theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
       themeMode: themeMode,
-      home: const ApiExampleScreen(),
+      home: const DashboardScreen(),
       debugShowCheckedModeBanner: false,
     );
   }
