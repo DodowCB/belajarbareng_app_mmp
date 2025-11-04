@@ -1,7 +1,7 @@
 /// Konfigurasi API untuk aplikasi BelajarBareng
 class ApiConfig {
   // YouTube API Configuration
-  static const String youtubeApiKey = 'AIzaSyA3DMOyDiG7F9dL7YIWc54QjPouNn01820E';
+  static const String youtubeApiKey = 'AIzaSyA3DMOyDiG7F9dL7YIWc54QjPouNn01820';
   static const String youtubeBaseUrl = 'https://www.googleapis.com/youtube/v3';
 
   // Firebase Configuration (biasanya sudah dikonfigurasi di firebase_options.dart)
