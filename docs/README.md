@@ -9,6 +9,14 @@
 - [Project Structure](./architecture/FOLDER_STRUCTURE.md) - Detailed folder structure and architecture explanation
 - [Getting Started](./GETTING_STARTED.md) - Quick start guide for developers
 
+**📊 Database Documentation** (Complete Package):
+
+- [Database Docs Summary](./DATABASE_DOCS_SUMMARY.md) - **⭐ START HERE** - Overview & reading guide
+- [Database Design](./DATABASE_DESIGN.md) - Complete schema (14 Firestore + 5 SQLite tables)
+- [Database ER Diagram](./DATABASE_ER_DIAGRAM.md) - Visual relationships with cardinality
+- [Database Connection](./DATABASE_CONNECTION.md) - Firebase setup & code examples
+- [Database Implementation](./DATABASE_IMPLEMENTATION_GUIDE.md) - Step-by-step (5 phases, ~7 hours)
+
 ### ✨ Features Documentation
 
 - [Dashboard Implementation](./features/DASHBOARD_IMPLEMENTATION.md) - Complete dashboard with stats, materials, groups

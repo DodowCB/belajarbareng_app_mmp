@@ -88,29 +88,56 @@ flutter run -d windows
 
 ## 📚 Documentation
 
-Semua dokumentasi telah diorganisir dalam folder **`docs/`**:
+### 📖 Complete Documentation Hub
 
-### 📖 **[Complete Documentation](./docs/README.md)**
+All project documentation is organized in the [`docs/`](./docs/) folder:
 
-Main documentation hub dengan index lengkap
+**🏠 Main Index**: [docs/README.md](./docs/README.md)
 
-### 🏗️ **Architecture**
+### � Database Documentation (New!)
 
-- [Project Structure](./docs/architecture/FOLDER_STRUCTURE.md) - Detailed folder structure explanation
+Complete database design & implementation guide:
 
-### ✨ **Features**
+1. **[Database Docs Summary](./docs/DATABASE_DOCS_SUMMARY.md)** ⭐ **START HERE**
 
-- [Dashboard Implementation](./docs/features/DASHBOARD_IMPLEMENTATION.md) - Dashboard features & dummy data
-- [Theme & Profile Menu](./docs/features/THEME_PROFILE_MENU.md) - Dark/Light mode toggle
-- [YouTube Integration](./docs/features/THEME_YOUTUBE_FEATURES.md) - YouTube search & player
+   - Overview of all 4 database documents
+   - Reading guide & learning paths
+   - Use case scenarios
 
-### 🔧 **Troubleshooting**
+2. **[Database Design](./docs/DATABASE_DESIGN.md)**
 
-- [handleThenable Fix](./docs/troubleshooting/HANDLETHENABLE_FIX.md) - Firebase authentication errors
+   - 14 Firestore collections
+   - 5 SQLite tables
+   - Security rules
 
-### 🚀 **Getting Started**
+3. **[Database ER Diagram](./docs/DATABASE_ER_DIAGRAM.md)**
 
-- [Developer Guide](./docs/GETTING_STARTED.md) - Setup & development workflow
+   - Visual diagram
+   - 18 relationships
+
+4. **[Database Connection](./docs/DATABASE_CONNECTION.md)**
+
+   - Setup guide
+   - Code examples
+
+5. **[Database Implementation](./docs/DATABASE_IMPLEMENTATION_GUIDE.md)**
+   - 5-phase roadmap
+   - ~7 hours total
+
+### 🏗️ Architecture
+
+- [Project Structure](./docs/architecture/FOLDER_STRUCTURE.md)
+- [Getting Started](./docs/GETTING_STARTED.md)
+
+### ✨ Features
+
+- [Dashboard Implementation](./docs/features/DASHBOARD_IMPLEMENTATION.md)
+- [Theme & Profile Menu](./docs/features/THEME_PROFILE_MENU.md)
+- [YouTube Integration](./docs/features/THEME_YOUTUBE_FEATURES.md)
+
+### 🔧 Troubleshooting
+
+- [handleThenable Fix](./docs/troubleshooting/HANDLETHENABLE_FIX.md)
 
 ---
 
