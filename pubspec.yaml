@@ -73,10 +73,13 @@ dependencies:
   google_fonts: ^6.1.0 # UI/UX
   url_launcher: ^6.2.2 # Untuk membuka URL YouTube
 
-  # The following adds the Cupertino Icons font to your application.
-  # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
   provider: ^6.0.5
+
+  flutter_bloc: ^9.1.1
+  equatable: ^2.0.7
+  bloc: ^9.1.0
+
 
 dev_dependencies:
   flutter_test:

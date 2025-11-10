@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/config/theme.dart';
 import '../../../core/widgets/profile_menu.dart';
 import '../domain/dashboard_provider.dart';
 import 'widgets/dashboard_widgets.dart';
 import 'create_material_screen.dart';
+import '../../auth/presentation/bloc/auth_bloc.dart';
+import '../../auth/presentation/bloc/auth_state.dart';
+
+import '../../auth/presentation/screens/login_screen.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
@@ -20,7 +25,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
   late AnimationController _animationController;
 
   final List<Map<String, dynamic>> _categories = [
-    {'name': 'All', 'icon': Icons.apps_rounded},
+      {'name': 'All', 'icon': Icons.apps_rounded},
     {'name': 'Programming', 'icon': Icons.code_rounded},
     {'name': 'Mathematics', 'icon': Icons.calculate_rounded},
     {'name': 'Science', 'icon': Icons.science_rounded},
@@ -179,12 +184,45 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
             );
           },
         ),
-        const Padding(
-          padding: EdgeInsets.only(right: 12, left: 8),
-          child: ProfileDropdownMenu(
-            userName: 'Demo User',
-            userEmail: 'demo@belajarbareng.com',
-          ),
+        BlocBuilder<AuthBloc, AuthState>(
+          builder: (context, state) {
+            if (state is AuthAuthenticated) {
+              return Padding(
+                padding: const EdgeInsets.only(right: 12, left: 8),
+                child: ProfileDropdownMenu(
+                  userName: state.guruProfile?.namaLengkap ?? 'User',
+                  userEmail: state.user.email ?? 'user@example.com',
+                ),
+              );
+            } else {
+              return Padding(
+                padding: const EdgeInsets.only(right: 12, left: 8),
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const LoginScreen(),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.login_rounded, size: 18),
+                  label: const Text('Masuk'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: AppTheme.primaryPurple,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                  ),
+                ),
+              );
+            }
+          },
         ),
       ],
     );

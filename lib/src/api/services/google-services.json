@@ -1,13 +1,13 @@
 {
   "project_info": {
-    "project_number": "24149360977",
-    "project_id": "testingflutter-13505",
-    "storage_bucket": "testingflutter-13505.firebasestorage.app"
+    "project_number": "1018894742415",
+    "project_id": "belajarbarengflutterproject",
+    "storage_bucket": "belajarbarengflutterproject.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:24149360977:android:e08f13fdcccb6225c95370",
+        "mobilesdk_app_id": "1:1018894742415:android:1744d0aa449b84219c51fa",
         "android_client_info": {
           "package_name": "com.example.firebasetutorial"
         }
@@ -15,7 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyCflUdQ7dapDY6wnsDCXkbXsCw07BVMpqA"
+          "current_key": "AIzaSyC10KRHKDAXSQaKfMk54R_ZFNNggC8CzyM"
         }
       ],
       "services": {
