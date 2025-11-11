@@ -137,28 +137,42 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       flexibleSpace: FlexibleSpaceBar(
         titlePadding: const EdgeInsets.only(left: 20, bottom: 16),
-        title: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                gradient: AppTheme.oceanGradient,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Icon(
-                Icons.school_rounded,
-                color: Colors.white,
-                size: 24,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Text(
-              'BelajarBareng',
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
+        title: LayoutBuilder(
+          builder: (context, constraints) {
+            // Hide title on very small screens when collapsed
+            final isCollapsed = constraints.maxHeight <= 80;
+            final screenWidth = MediaQuery.of(context).size.width;
+            
+            return Row(
+              children: [
+                Container(
+                  padding: EdgeInsets.all(isCollapsed ? 6 : 8),
+                  decoration: BoxDecoration(
+                    gradient: AppTheme.oceanGradient,
+                    borderRadius: BorderRadius.circular(12),
                   ),
-            ),
-          ],
+                  child: Icon(
+                    Icons.school_rounded,
+                    color: Colors.white,
+                    size: isCollapsed ? 20 : 24,
+                  ),
+                ),
+                if (screenWidth >= 400) ...[
+                  const SizedBox(width: 12),
+                  Flexible(
+                    child: Text(
+                      'BelajarBareng',
+                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            fontSize: isCollapsed ? 18 : 24,
+                          ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ],
+            );
+          },
         ),
       ),
       actions: [
@@ -171,7 +185,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                   children: [
                     Icon(Icons.notifications_active, color: Colors.white),
                     SizedBox(width: 12),
-                    Text('No new notifications'),
+                    Expanded(child: Text('No new notifications')),
                   ],
                 ),
                 backgroundColor: AppTheme.primaryPurple,
@@ -197,28 +211,53 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
             } else {
               return Padding(
                 padding: const EdgeInsets.only(right: 12, left: 8),
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const LoginScreen(),
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final screenWidth = MediaQuery.of(context).size.width;
+                    
+                    // Show icon only on very small screens
+                    if (screenWidth < 380) {
+                      return IconButton(
+                        icon: const Icon(Icons.login_rounded),
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const LoginScreen(),
+                            ),
+                          );
+                        },
+                        style: IconButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: AppTheme.primaryPurple,
+                        ),
+                      );
+                    }
+                    
+                    return ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const LoginScreen(),
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.login_rounded, size: 18),
+                      label: const Text('Masuk'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: AppTheme.primaryPurple,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
                       ),
                     );
                   },
-                  icon: const Icon(Icons.login_rounded, size: 18),
-                  label: const Text('Masuk'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: AppTheme.primaryPurple,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                  ),
                 ),
               );
             }
@@ -257,42 +296,68 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
       return const SizedBox.shrink();
     }
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: GridView.count(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        crossAxisCount: 2,
-        mainAxisSpacing: 16,
-        crossAxisSpacing: 16,
-        childAspectRatio: 1.4,
-        children: [
-          StatCard(
-            title: 'Completed',
-            value: '${stats['completed'] ?? 0}',
-            icon: Icons.check_circle_outline,
-            color: AppTheme.accentGreen,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Responsive crossAxisCount based on screen width
+        int crossAxisCount;
+        double childAspectRatio;
+        
+        if (constraints.maxWidth >= 1200) {
+          // Desktop/Large screens
+          crossAxisCount = 4;
+          childAspectRatio = 1.3;
+        } else if (constraints.maxWidth >= 768) {
+          // Tablet
+          crossAxisCount = 4;
+          childAspectRatio = 1.1;
+        } else if (constraints.maxWidth >= 600) {
+          // Small Tablet
+          crossAxisCount = 2;
+          childAspectRatio = 1.4;
+        } else {
+          // Mobile
+          crossAxisCount = 2;
+          childAspectRatio = 1.2;
+        }
+
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: GridView.count(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            crossAxisCount: crossAxisCount,
+            mainAxisSpacing: 16,
+            crossAxisSpacing: 16,
+            childAspectRatio: childAspectRatio,
+            children: [
+              StatCard(
+                title: 'Completed',
+                value: '${stats['completed'] ?? 0}',
+                icon: Icons.check_circle_outline,
+                color: AppTheme.accentGreen,
+              ),
+              StatCard(
+                title: 'In Progress',
+                value: '${stats['inProgress'] ?? 0}',
+                icon: Icons.timelapse_rounded,
+                color: AppTheme.accentYellow,
+              ),
+              StatCard(
+                title: 'Study Groups',
+                value: '${stats['studyGroups'] ?? 0}',
+                icon: Icons.groups_outlined,
+                color: AppTheme.primaryPurple,
+              ),
+              StatCard(
+                title: 'Total Materials',
+                value: '${stats['totalMaterials'] ?? 0}',
+                icon: Icons.library_books_outlined,
+                color: AppTheme.secondaryTeal,
+              ),
+            ],
           ),
-          StatCard(
-            title: 'In Progress',
-            value: '${stats['inProgress'] ?? 0}',
-            icon: Icons.timelapse_rounded,
-            color: AppTheme.accentYellow,
-          ),
-          StatCard(
-            title: 'Study Groups',
-            value: '${stats['studyGroups'] ?? 0}',
-            icon: Icons.groups_outlined,
-            color: AppTheme.primaryPurple,
-          ),
-          StatCard(
-            title: 'Total Materials',
-            value: '${stats['totalMaterials'] ?? 0}',
-            icon: Icons.library_books_outlined,
-            color: AppTheme.secondaryTeal,
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -334,82 +399,106 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
   Widget _buildFeaturedContent() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: GradientCard(
-        gradient: AppTheme.oceanGradient,
-        height: 180,
-        child: Stack(
-          children: [
-            // Background pattern
-            Positioned(
-              right: -30,
-              top: -30,
-              child: AnimatedBuilder(
-                animation: _animationController,
-                builder: (context, child) {
-                  return Transform.rotate(
-                    angle: _animationController.value * 2 * 3.14159,
-                    child: Icon(
-                      Icons.auto_awesome,
-                      size: 120,
-                      color: Colors.white.withOpacity(0.1),
-                    ),
-                  );
-                },
-              ),
-            ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          // Responsive sizing
+          final screenWidth = constraints.maxWidth;
+          final fontSize = screenWidth < 400 ? 20.0 : 24.0;
+          final iconSize = screenWidth < 400 ? 100.0 : 120.0;
+          final buttonPadding = screenWidth < 400 
+              ? const EdgeInsets.symmetric(horizontal: 20, vertical: 10)
+              : const EdgeInsets.symmetric(horizontal: 24, vertical: 12);
+
+          return GradientCard(
+            gradient: AppTheme.oceanGradient,
+            height: 180,
+            child: Stack(
               children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: const Text(
-                    '✨ Featured',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                const Text(
-                  'Start Your Learning\nJourney Today!',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    height: 1.2,
+                // Background pattern
+                Positioned(
+                  right: -30,
+                  top: -30,
+                  child: AnimatedBuilder(
+                    animation: _animationController,
+                    builder: (context, child) {
+                      return Transform.rotate(
+                        angle: _animationController.value * 2 * 3.14159,
+                        child: Icon(
+                          Icons.auto_awesome,
+                          size: iconSize,
+                          color: Colors.white.withOpacity(0.1),
+                        ),
+                      );
+                    },
                   ),
                 ),
-                const SizedBox(height: 12),
-                ElevatedButton(
-                  onPressed: () {},
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: AppTheme.primaryPurple,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 12,
+                Positioned.fill(
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: const Text(
+                            '✨ Featured',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Flexible(
+                          child: Text(
+                            'Start Your Learning\nJourney Today!',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: fontSize,
+                              fontWeight: FontWeight.bold,
+                              height: 1.2,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 2,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        ElevatedButton(
+                          onPressed: () {},
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            foregroundColor: AppTheme.primaryPurple,
+                            padding: buttonPadding,
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                screenWidth < 400 ? 'Explore' : 'Explore Now',
+                                style: TextStyle(
+                                  fontSize: screenWidth < 400 ? 14 : 16,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              const Icon(Icons.arrow_forward_rounded, size: 18),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text('Explore Now'),
-                      SizedBox(width: 8),
-                      Icon(Icons.arrow_forward_rounded, size: 18),
-                    ],
                   ),
                 ),
               ],
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
@@ -427,28 +516,42 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
           ),
         ),
         const SizedBox(height: 16),
-        SizedBox(
-          height: 300,
-          child: ListView.separated(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            scrollDirection: Axis.horizontal,
-            itemCount: materials.length,
-            separatorBuilder: (context, index) => const SizedBox(width: 16),
-            itemBuilder: (context, index) {
-              final material = materials[index];
-              return MaterialCard(
-                title: material.title,
-                description: material.description,
-                thumbnailUrl: material.thumbnailUrl,
-                category: material.category,
-                duration: material.formattedDuration,
-                difficulty: material.difficulty,
-                onTap: () {
-                  // Navigate to material detail
+        LayoutBuilder(
+          builder: (context, constraints) {
+            // Responsive card height
+            double cardHeight;
+            if (constraints.maxWidth >= 1200) {
+              cardHeight = 320;
+            } else if (constraints.maxWidth >= 768) {
+              cardHeight = 310;
+            } else {
+              cardHeight = 300;
+            }
+
+            return SizedBox(
+              height: cardHeight,
+              child: ListView.separated(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                scrollDirection: Axis.horizontal,
+                itemCount: materials.length,
+                separatorBuilder: (context, index) => const SizedBox(width: 16),
+                itemBuilder: (context, index) {
+                  final material = materials[index];
+                  return MaterialCard(
+                    title: material.title,
+                    description: material.description,
+                    thumbnailUrl: material.thumbnailUrl,
+                    category: material.category,
+                    duration: material.formattedDuration,
+                    difficulty: material.difficulty,
+                    onTap: () {
+                      // Navigate to material detail
+                    },
+                  );
                 },
-              );
-            },
-          ),
+              ),
+            );
+          },
         ),
       ],
     );
@@ -467,27 +570,53 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
           ),
         ),
         const SizedBox(height: 16),
-        GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            mainAxisSpacing: 16,
-            crossAxisSpacing: 16,
-            childAspectRatio: 0.85,
-          ),
-          itemCount: groups.length > 4 ? 4 : groups.length,
-          itemBuilder: (context, index) {
-            final group = groups[index];
-            return StudyGroupCard(
-              name: group.name,
-              category: group.category,
-              memberCount: group.memberCount,
-              maxMembers: group.maxMembers,
-              imageUrl: group.imageUrl,
-              onTap: () {
-                // Navigate to group detail
+        LayoutBuilder(
+          builder: (context, constraints) {
+            // Responsive crossAxisCount for study groups
+            int crossAxisCount;
+            double childAspectRatio;
+            
+            if (constraints.maxWidth >= 1200) {
+              // Desktop
+              crossAxisCount = 4;
+              childAspectRatio = 0.85;
+            } else if (constraints.maxWidth >= 900) {
+              // Large Tablet
+              crossAxisCount = 3;
+              childAspectRatio = 0.85;
+            } else if (constraints.maxWidth >= 600) {
+              // Tablet
+              crossAxisCount = 2;
+              childAspectRatio = 0.9;
+            } else {
+              // Mobile
+              crossAxisCount = 2;
+              childAspectRatio = 0.85;
+            }
+
+            return GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: crossAxisCount,
+                mainAxisSpacing: 16,
+                crossAxisSpacing: 16,
+                childAspectRatio: childAspectRatio,
+              ),
+              itemCount: groups.length > 8 ? 8 : groups.length,
+              itemBuilder: (context, index) {
+                final group = groups[index];
+                return StudyGroupCard(
+                  name: group.name,
+                  category: group.category,
+                  memberCount: group.memberCount,
+                  maxMembers: group.maxMembers,
+                  imageUrl: group.imageUrl,
+                  onTap: () {
+                    // Navigate to group detail
+                  },
+                );
               },
             );
           },
@@ -509,96 +638,129 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
           ),
         ),
         const SizedBox(height: 16),
-        SizedBox(
-          height: 220,
-          child: ListView.separated(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            scrollDirection: Axis.horizontal,
-            itemCount: videos.length > 10 ? 10 : videos.length,
-            separatorBuilder: (context, index) => const SizedBox(width: 16),
-            itemBuilder: (context, index) {
-              final video = videos[index];
-              return Container(
-                width: 200,
-                decoration: BoxDecoration(
-                  color: Theme.of(context).cardColor,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.08),
-                      blurRadius: 8,
-                      offset: const Offset(0, 4),
+        LayoutBuilder(
+          builder: (context, constraints) {
+            // Responsive video card size
+            double cardWidth;
+            double cardHeight;
+            
+            if (constraints.maxWidth >= 1200) {
+              cardWidth = 240;
+              cardHeight = 240;
+            } else if (constraints.maxWidth >= 768) {
+              cardWidth = 220;
+              cardHeight = 230;
+            } else if (constraints.maxWidth >= 600) {
+              cardWidth = 200;
+              cardHeight = 220;
+            } else {
+              cardWidth = 180;
+              cardHeight = 210;
+            }
+
+            return SizedBox(
+              height: cardHeight,
+              child: ListView.separated(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                scrollDirection: Axis.horizontal,
+                itemCount: videos.length > 10 ? 10 : videos.length,
+                separatorBuilder: (context, index) => const SizedBox(width: 16),
+                itemBuilder: (context, index) {
+                  final video = videos[index];
+                  return Container(
+                    width: cardWidth,
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).cardColor,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.08),
+                          blurRadius: 8,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    ClipRRect(
-                      borderRadius: const BorderRadius.vertical(
-                        top: Radius.circular(12),
-                      ),
-                      child: Stack(
-                        children: [
-                          Image.network(
-                            video.thumbnailUrl,
-                            height: 120,
-                            width: double.infinity,
-                            fit: BoxFit.cover,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        ClipRRect(
+                          borderRadius: const BorderRadius.vertical(
+                            top: Radius.circular(12),
                           ),
-                          Positioned(
-                            bottom: 8,
-                            right: 8,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 6,
-                                vertical: 2,
+                          child: Stack(
+                            children: [
+                              Image.network(
+                                video.thumbnailUrl,
+                                height: cardWidth * 0.6, // 16:9 ratio
+                                width: double.infinity,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Container(
+                                    height: cardWidth * 0.6,
+                                    color: Colors.grey[300],
+                                    child: const Icon(Icons.error_outline),
+                                  );
+                                },
                               ),
-                              decoration: BoxDecoration(
-                                color: Colors.black.withOpacity(0.8),
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: Text(
-                                video.formattedDuration,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w600,
+                              Positioned(
+                                bottom: 8,
+                                right: 8,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 6,
+                                    vertical: 2,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.black.withOpacity(0.8),
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: Text(
+                                    video.formattedDuration,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
                                 ),
                               ),
+                            ],
+                          ),
+                        ),
+                        Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.all(12),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    video.title,
+                                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  video.channelTitle,
+                                  style: Theme.of(context).textTheme.bodySmall,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
                             ),
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
-                    Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            video.title,
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            video.channelTitle,
-                            style: Theme.of(context).textTheme.bodySmall,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            },
-          ),
+                  );
+                },
+              ),
+            );
+          },
         ),
       ],
     );

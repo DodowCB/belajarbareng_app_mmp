@@ -4,7 +4,6 @@ import '../../../../core/config/theme.dart';
 import '../bloc/auth_bloc.dart';
 import '../bloc/auth_event.dart';
 import '../bloc/auth_state.dart';
-import 'register_screen.dart';
 import 'guru_data_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -91,19 +90,42 @@ class _LoginScreenState extends State<LoginScreen>
             gradient: AppTheme.oceanGradient,
           ),
           child: SafeArea(
-            child: SingleChildScrollView(
-              child: Padding(
-                padding: const EdgeInsets.all(20.0),
-                child: Column(
-                  children: [
-                    const SizedBox(height: 40),
-                    _buildHeader(),
-                    const SizedBox(height: 60),
-                    _buildLoginCard(),
-                    const SizedBox(height: 32),
-                    _buildGuruDataButton(),
-                    const SizedBox(height: 20),
-                  ],
+            child: Center(
+              child: SingleChildScrollView(
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    // Get screen width
+                    final screenWidth = MediaQuery.of(context).size.width;
+                    
+                    // Determine max width for content
+                    double maxWidth;
+                    if (screenWidth >= 1200) {
+                      maxWidth = 500; // Desktop
+                    } else if (screenWidth >= 768) {
+                      maxWidth = 450; // Tablet
+                    } else if (screenWidth >= 600) {
+                      maxWidth = 400; // Small tablet
+                    } else {
+                      maxWidth = screenWidth * 0.9; // Mobile (90% of screen)
+                    }
+
+                    return Container(
+                      constraints: BoxConstraints(maxWidth: maxWidth),
+                      padding: const EdgeInsets.all(20.0),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const SizedBox(height: 40),
+                          _buildHeader(),
+                          const SizedBox(height: 60),
+                          _buildLoginCard(),
+                          const SizedBox(height: 32),
+                          _buildGuruDataButton(),
+                          const SizedBox(height: 20),
+                        ],
+                      ),
+                    );
+                  },
                 ),
               ),
             ),
@@ -160,75 +182,68 @@ class _LoginScreenState extends State<LoginScreen>
       opacity: _fadeAnimation,
       child: SlideTransition(
         position: _slideAnimation,
-        child: Container(
-          padding: const EdgeInsets.all(32),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(24),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.1),
-                blurRadius: 20,
-                offset: const Offset(0, 10),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            // Responsive padding
+            final cardPadding = constraints.maxWidth < 400 
+                ? const EdgeInsets.all(24) 
+                : const EdgeInsets.all(32);
+            
+            // Responsive font sizes
+            final titleFontSize = constraints.maxWidth < 400 ? 24.0 : 28.0;
+            final subtitleFontSize = constraints.maxWidth < 400 ? 14.0 : 16.0;
+
+            return Container(
+              padding: cardPadding,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(24),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 20,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
               ),
-            ],
-          ),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Masuk',
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: AppTheme.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Silakan masuk dengan akun Anda',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: AppTheme.textSecondary,
-                  ),
-                ),
-                const SizedBox(height: 32),
-
-                // Email Field
-                _buildEmailField(),
-                const SizedBox(height: 24),
-
-                // Password Field
-                _buildPasswordField(),
-                const SizedBox(height: 32),
-
-                // Login Button
-                _buildLoginButton(),
-                const SizedBox(height: 24),
-
-                // Divider
-                Row(
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(child: Divider(color: AppTheme.textLight)),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Text(
-                        'atau',
-                        style: TextStyle(color: AppTheme.textSecondary),
+                    Text(
+                      'Masuk',
+                      style: TextStyle(
+                        fontSize: titleFontSize,
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.textPrimary,
                       ),
                     ),
-                    Expanded(child: Divider(color: AppTheme.textLight)),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Silakan masuk dengan akun Anda',
+                      style: TextStyle(
+                        fontSize: subtitleFontSize,
+                        color: AppTheme.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+
+                    // Email Field
+                    _buildEmailField(),
+                    const SizedBox(height: 24),
+
+                    // Password Field
+                    _buildPasswordField(),
+                    const SizedBox(height: 32),
+
+                    // Login Button
+                    _buildLoginButton(),
                   ],
                 ),
-                const SizedBox(height: 24),
-
-                // Register Link
-                _buildRegisterLink(),
-              ],
-            ),
-          ),
+              ),
+            );
+          },
         ),
       ),
     );
@@ -369,39 +384,6 @@ class _LoginScreenState extends State<LoginScreen>
           ),
         );
       },
-    );
-  }
-
-  Widget _buildRegisterLink() {
-    return Center(
-      child: TextButton(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const RegisterScreen(),
-            ),
-          );
-        },
-        child: RichText(
-          text: const TextSpan(
-            text: 'Belum punya akun? ',
-            style: TextStyle(
-              color: AppTheme.textSecondary,
-              fontSize: 16,
-            ),
-            children: [
-              TextSpan(
-                text: 'Daftar sekarang',
-                style: TextStyle(
-                  color: AppTheme.primaryPurple,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 
