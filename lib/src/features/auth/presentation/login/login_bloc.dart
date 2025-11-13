@@ -37,58 +37,74 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
         return;
       }
 
-      // Cek user dari kedua collection: guru dan siswa
+      // Declare variables first
       Map<String, dynamic>? authenticatedUser;
       String userType = '';
 
-      // Cek di collection 'guru' dulu
-      final guruQuerySnapshot = await FirebaseFirestore.instance
-          .collection('guru')
-          .where('email', isEqualTo: event.email.trim().toLowerCase())
-          .where('password', isEqualTo: event.password)
-          .get();
-
-      if (guruQuerySnapshot.docs.isNotEmpty) {
-        final userDoc = guruQuerySnapshot.docs.first;
-        final userData = userDoc.data();
-        userType = 'guru';
-
+      // Cek admin credentials terlebih dahulu
+      print('Checking for admin credentials: ${event.email}'); // Debug log
+      print('Checking for admin credentials: ${event.password}'); // Debug log
+      if (event.email.trim().toLowerCase() == 'administrator@gmail.com' &&
+          event.password == 'starRailBestStoryEver123') {
         authenticatedUser = {
-          'uid': userDoc.id,
-          'email': userData['email'],
-          'namaLengkap':
-              userData['namaLengkap'] ?? userData['nama_lengkap'] ?? '',
-          'userType': userType,
-          'nig': userData['nig'],
-          'mataPelajaran': userData['mataPelajaran'] ?? '',
-          'sekolah': userData['sekolah'] ?? '',
+          'uid': 'admin_001',
+          'email': 'administrator@gmail.com',
+          'namaLengkap': 'Administrator',
+          'userType': 'admin',
+          'role': 'admin',
         };
+        userType = 'admin';
       } else {
-        // Jika tidak ditemukan di guru, cek di collection 'siswa'
-        final siswaQuerySnapshot = await FirebaseFirestore.instance
-            .collection('siswa')
+        // Cek user dari kedua collection: guru dan siswa
+        // Cek di collection 'guru' dulu
+        final guruQuerySnapshot = await FirebaseFirestore.instance
+            .collection('guru')
             .where('email', isEqualTo: event.email.trim().toLowerCase())
             .where('password', isEqualTo: event.password)
             .get();
 
-        if (siswaQuerySnapshot.docs.isNotEmpty) {
-          final userDoc = siswaQuerySnapshot.docs.first;
-          final userData = siswaQuerySnapshot.docs.first.data();
-          userType = 'siswa';
+        if (guruQuerySnapshot.docs.isNotEmpty) {
+          final userDoc = guruQuerySnapshot.docs.first;
+          final userData = userDoc.data();
+          userType = 'guru';
 
           authenticatedUser = {
             'uid': userDoc.id,
             'email': userData['email'],
-            'namaLengkap': userData['namaLengkap'] ?? userData['nama'] ?? '',
+            'namaLengkap':
+                userData['namaLengkap'] ?? userData['nama_lengkap'] ?? '',
             'userType': userType,
-            'nis': userData['nis'],
-            'kelas': userData['kelas'] ?? '',
+            'nig': userData['nig'],
+            'mataPelajaran': userData['mataPelajaran'] ?? '',
             'sekolah': userData['sekolah'] ?? '',
           };
-        }
-      }
+        } else {
+          // Jika tidak ditemukan di guru, cek di collection 'siswa'
+          final siswaQuerySnapshot = await FirebaseFirestore.instance
+              .collection('siswa')
+              .where('email', isEqualTo: event.email.trim().toLowerCase())
+              .where('password', isEqualTo: event.password)
+              .get();
 
-      // Jika tidak ditemukan di kedua collection
+          if (siswaQuerySnapshot.docs.isNotEmpty) {
+            final userDoc = siswaQuerySnapshot.docs.first;
+            final userData = siswaQuerySnapshot.docs.first.data();
+            userType = 'siswa';
+
+            authenticatedUser = {
+              'uid': userDoc.id,
+              'email': userData['email'],
+              'namaLengkap': userData['namaLengkap'] ?? userData['nama'] ?? '',
+              'userType': userType,
+              'nis': userData['nis'],
+              'kelas': userData['kelas'] ?? '',
+              'sekolah': userData['sekolah'] ?? '',
+            };
+          }
+        }
+      } // Close the else block for admin check
+
+      // Jika tidak ditemukan di kedua collection dan bukan admin
       if (authenticatedUser == null) {
         throw Exception('Login gagal: Email atau password salah');
       }
@@ -107,7 +123,17 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
         additionalData: authenticatedUser,
       );
 
-      if (userType == 'guru') {
+      if (userType == 'admin') {
+        // Untuk admin
+        print('Admin login successful'); // Debug log
+        emit(
+          LoginSuccess(
+            user: null,
+            guruProfile: null,
+            userData: authenticatedUser,
+          ),
+        );
+      } else if (userType == 'guru') {
         // Untuk guru, coba ambil guru profile juga
         final guruProfile = await _authRepository.getGuruProfile(
           authenticatedUser['uid']!,

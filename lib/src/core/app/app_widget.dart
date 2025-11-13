@@ -6,6 +6,8 @@ import '../config/theme.dart';
 import '../../features/auth/presentation/dashboard/dashboard_screen.dart';
 import '../../features/auth/presentation/profile/profile_screen.dart';
 import '../../features/auth/presentation/materials/create_material_screen.dart';
+import '../../features/auth/presentation/admin/admin_screen.dart';
+import '../../features/auth/presentation/halamanGuru/halaman_guru_screen.dart';
 import '../../features/auth/presentation/login/login_bloc.dart';
 import '../../features/auth/presentation/login/login_screen.dart';
 import '../../features/auth/presentation/guru_data/guru_data_bloc.dart';
@@ -38,6 +40,8 @@ class AppWidget extends ConsumerWidget {
           '/dashboard': (context) => const DashboardScreen(),
           '/profile': (context) => const ProfileScreen(),
           '/create-material': (context) => const CreateMaterialScreen(),
+          '/admin': (context) => const AdminScreen(),
+          '/halaman-guru': (context) => const HalamanGuruScreen(),
         },
       ),
     );

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../config/theme.dart';
-import '../providers/theme_provider.dart';
-import '../../features/auth/presentation/login/login_screen.dart';
-import '../../features/auth/presentation/profile/profile_screen.dart';
+import '../../../../core/config/theme.dart';
+import '../../../../core/providers/theme_provider.dart';
+import '../login/login_screen.dart';
+import '../profile/profile_screen.dart';
 
 /// Profile Menu Item Model
 class ProfileMenuItem {

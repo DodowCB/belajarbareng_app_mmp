@@ -10,16 +10,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-
 void main() {
-  testWidgets('BelajarBareng app theme toggle test', (WidgetTester tester) async {
+  testWidgets('BelajarBareng app theme toggle test', (
+    WidgetTester tester,
+  ) async {
     // Build the app with simple MaterialApp to avoid Firebase issues in tests
     await tester.pumpWidget(
-      const ProviderScope(
-        child: MaterialApp(
-          home: DashboardScreen(),
-        ),
-      ),
+      const ProviderScope(child: MaterialApp(home: DashboardScreen())),
     );
 
     // Verify that the basic dashboard loads correctly
@@ -29,11 +26,11 @@ void main() {
     expect(find.byType(Scaffold), findsOneWidget);
   });
 
-  testWidgets('Dashboard screen widget structure test', (WidgetTester tester) async {
+  testWidgets('Dashboard screen widget structure test', (
+    WidgetTester tester,
+  ) async {
     // Build our app and trigger a frame.
-    await tester.pumpWidget(const MaterialApp(
-      home: DashboardScreen(),
-    ));
+    await tester.pumpWidget(const MaterialApp(home: DashboardScreen()));
 
     // Verify the main welcome text is present
     expect(find.text('Selamat datang di BelajarBareng!'), findsOneWidget);
@@ -53,11 +50,9 @@ void main() {
 
   testWidgets('YouTube Search screen test', (WidgetTester tester) async {
     // Build the dashboard screen
-    await tester.pumpWidget(const ProviderScope(
-      child: MaterialApp(
-        home: DashboardScreen(),
-      ),
-    ));
+    await tester.pumpWidget(
+      const ProviderScope(child: MaterialApp(home: DashboardScreen())),
+    );
 
     // Verify the dashboard screen is present
     expect(find.text('BelajarBareng'), findsOneWidget);

@@ -1,4 +1,4 @@
-import '../providers/user_provider.dart';
+import 'user_provider.dart';
 
 /// Helper class untuk akses mudah ke data user global
 class AppUser {
@@ -79,6 +79,8 @@ class AppUser {
         return 'Guru';
       case 'siswa':
         return 'Siswa';
+      case 'admin':
+        return 'Administrator';
       default:
         return 'User';
     }

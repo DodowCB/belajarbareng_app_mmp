@@ -77,7 +77,21 @@ class _LoginScreenState extends State<LoginScreen>
             ),
           );
         } else if (state is LoginSuccess) {
-          Navigator.of(context).pushReplacementNamed('/dashboard');
+          // Route berdasarkan role user
+          final userType = state.userData?['userType'] ?? 'siswa';
+
+          switch (userType) {
+            case 'admin':
+              Navigator.of(context).pushReplacementNamed('/admin');
+              break;
+            case 'guru':
+              Navigator.of(context).pushReplacementNamed('/halaman-guru');
+              break;
+            case 'siswa':
+            default:
+              Navigator.of(context).pushReplacementNamed('/dashboard');
+              break;
+          }
         }
       },
       child: Scaffold(

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/config/theme.dart';
-import '../../../../core/widgets/profile_menu.dart';
-import '../../../../core/utils/app_user.dart';
+import '../profile_menu/profile_menu_widget.dart';
+import '../../../../core/providers/app_user.dart';
 import '../materials/create_material_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
