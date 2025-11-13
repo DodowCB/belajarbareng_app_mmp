@@ -1,15 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
+
 import '../../../core/config/theme.dart';
 import '../../../core/widgets/profile_menu.dart';
 import '../domain/dashboard_provider.dart';
 import 'widgets/dashboard_widgets.dart';
 import 'create_material_screen.dart';
-import '../../auth/presentation/bloc/auth_bloc.dart';
-import '../../auth/presentation/bloc/auth_state.dart';
-
-import '../../auth/presentation/screens/login_screen.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
@@ -25,7 +21,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
   late AnimationController _animationController;
 
   final List<Map<String, dynamic>> _categories = [
-      {'name': 'All', 'icon': Icons.apps_rounded},
+    {'name': 'All', 'icon': Icons.apps_rounded},
     {'name': 'Programming', 'icon': Icons.code_rounded},
     {'name': 'Mathematics', 'icon': Icons.calculate_rounded},
     {'name': 'Science', 'icon': Icons.science_rounded},
@@ -40,10 +36,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
       vsync: this,
       duration: const Duration(milliseconds: 1500),
     )..repeat();
-    
+
     // Load dashboard data on init
     Future.microtask(() {
-      ref.read(dashboardProvider.notifier).loadDashboardData(userId: 'demo_user');
+      ref
+          .read(dashboardProvider.notifier)
+          .loadDashboardData(userId: 'demo_user');
     });
   }
 
@@ -61,7 +59,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
     return Scaffold(
       body: RefreshIndicator(
         onRefresh: () async {
-          await ref.read(dashboardProvider.notifier).refresh(userId: 'demo_user');
+          await ref
+              .read(dashboardProvider.notifier)
+              .refresh(userId: 'demo_user');
         },
         child: CustomScrollView(
           slivers: [
@@ -142,7 +142,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
             // Hide title on very small screens when collapsed
             final isCollapsed = constraints.maxHeight <= 80;
             final screenWidth = MediaQuery.of(context).size.width;
-            
+
             return Row(
               children: [
                 Container(
@@ -162,7 +162,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                   Flexible(
                     child: Text(
                       'BelajarBareng',
-                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                      style: Theme.of(context).textTheme.headlineMedium
+                          ?.copyWith(
                             fontWeight: FontWeight.bold,
                             fontSize: isCollapsed ? 18 : 24,
                           ),
@@ -198,70 +199,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
             );
           },
         ),
-        BlocBuilder<AuthBloc, AuthState>(
-          builder: (context, state) {
-            if (state is AuthAuthenticated) {
-              return Padding(
-                padding: const EdgeInsets.only(right: 12, left: 8),
-                child: ProfileDropdownMenu(
-                  userName: state.guruProfile?.namaLengkap ?? 'User',
-                  userEmail: state.user.email ?? 'user@example.com',
-                ),
-              );
-            } else {
-              return Padding(
-                padding: const EdgeInsets.only(right: 12, left: 8),
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    final screenWidth = MediaQuery.of(context).size.width;
-                    
-                    // Show icon only on very small screens
-                    if (screenWidth < 380) {
-                      return IconButton(
-                        icon: const Icon(Icons.login_rounded),
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const LoginScreen(),
-                            ),
-                          );
-                        },
-                        style: IconButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          foregroundColor: AppTheme.primaryPurple,
-                        ),
-                      );
-                    }
-                    
-                    return ElevatedButton.icon(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const LoginScreen(),
-                          ),
-                        );
-                      },
-                      icon: const Icon(Icons.login_rounded, size: 18),
-                      label: const Text('Masuk'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: AppTheme.primaryPurple,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              );
-            }
-          },
+        Padding(
+          padding: const EdgeInsets.only(right: 12, left: 8),
+          child: ProfileDropdownMenu(
+            userName: 'Demo User',
+            userEmail: 'demo@example.com',
+          ),
         ),
       ],
     );
@@ -301,7 +244,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
         // Responsive crossAxisCount based on screen width
         int crossAxisCount;
         double childAspectRatio;
-        
+
         if (constraints.maxWidth >= 1200) {
           // Desktop/Large screens
           crossAxisCount = 4;
@@ -405,7 +348,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
           final screenWidth = constraints.maxWidth;
           final fontSize = screenWidth < 400 ? 20.0 : 24.0;
           final iconSize = screenWidth < 400 ? 100.0 : 120.0;
-          final buttonPadding = screenWidth < 400 
+          final buttonPadding = screenWidth < 400
               ? const EdgeInsets.symmetric(horizontal: 20, vertical: 10)
               : const EdgeInsets.symmetric(horizontal: 24, vertical: 12);
 
@@ -441,7 +384,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
                           decoration: BoxDecoration(
                             color: Colors.white.withOpacity(0.2),
                             borderRadius: BorderRadius.circular(20),
@@ -575,7 +521,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
             // Responsive crossAxisCount for study groups
             int crossAxisCount;
             double childAspectRatio;
-            
+
             if (constraints.maxWidth >= 1200) {
               // Desktop
               crossAxisCount = 4;
@@ -643,7 +589,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
             // Responsive video card size
             double cardWidth;
             double cardHeight;
-            
+
             if (constraints.maxWidth >= 1200) {
               cardWidth = 240;
               cardHeight = 240;
@@ -736,9 +682,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                 Expanded(
                                   child: Text(
                                     video.title,
-                                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                          fontWeight: FontWeight.w600,
-                                        ),
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodyMedium
+                                        ?.copyWith(fontWeight: FontWeight.w600),
                                     maxLines: 2,
                                     overflow: TextOverflow.ellipsis,
                                   ),
@@ -769,9 +716,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
   Widget _buildLoadingSection() {
     return const Padding(
       padding: EdgeInsets.all(40),
-      child: Center(
-        child: CircularProgressIndicator(),
-      ),
+      child: Center(child: CircularProgressIndicator()),
     );
   }
 
@@ -781,17 +726,13 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
       child: Center(
         child: Column(
           children: [
-            Icon(
-              Icons.inbox_outlined,
-              size: 64,
-              color: AppTheme.textLight,
-            ),
+            Icon(Icons.inbox_outlined, size: 64, color: AppTheme.textLight),
             const SizedBox(height: 16),
             Text(
               'No materials found',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: AppTheme.textSecondary,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(color: AppTheme.textSecondary),
             ),
             const SizedBox(height: 8),
             Text(

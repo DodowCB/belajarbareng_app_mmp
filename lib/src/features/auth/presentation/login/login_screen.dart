@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/config/theme.dart';
-import '../bloc/auth_bloc.dart';
-import '../bloc/auth_event.dart';
-import '../bloc/auth_state.dart';
-import 'guru_data_screen.dart';
+import 'login_bloc.dart';
+import 'login_event.dart';
+import 'login_state.dart';
+import '../guru_data/guru_data_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -32,21 +32,17 @@ class _LoginScreenState extends State<LoginScreen>
       duration: const Duration(milliseconds: 1500),
     );
 
-    _fadeAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeInOut,
-    ));
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
+    );
 
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.3),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeOutCubic,
-    ));
+    _slideAnimation =
+        Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero).animate(
+          CurvedAnimation(
+            parent: _animationController,
+            curve: Curves.easeOutCubic,
+          ),
+        );
 
     _animationController.forward();
   }
@@ -61,9 +57,9 @@ class _LoginScreenState extends State<LoginScreen>
 
   @override
   Widget build(BuildContext context) {
-    return BlocListener<AuthBloc, AuthState>(
+    return BlocListener<LoginBloc, LoginState>(
       listener: (context, state) {
-        if (state is AuthError) {
+        if (state is LoginError) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Row(
@@ -80,15 +76,13 @@ class _LoginScreenState extends State<LoginScreen>
               ),
             ),
           );
-        } else if (state is AuthAuthenticated) {
+        } else if (state is LoginSuccess) {
           Navigator.of(context).pushReplacementNamed('/dashboard');
         }
       },
       child: Scaffold(
         body: Container(
-          decoration: const BoxDecoration(
-            gradient: AppTheme.oceanGradient,
-          ),
+          decoration: const BoxDecoration(gradient: AppTheme.oceanGradient),
           child: SafeArea(
             child: Center(
               child: SingleChildScrollView(
@@ -96,7 +90,7 @@ class _LoginScreenState extends State<LoginScreen>
                   builder: (context, constraints) {
                     // Get screen width
                     final screenWidth = MediaQuery.of(context).size.width;
-                    
+
                     // Determine max width for content
                     double maxWidth;
                     if (screenWidth >= 1200) {
@@ -185,10 +179,10 @@ class _LoginScreenState extends State<LoginScreen>
         child: LayoutBuilder(
           builder: (context, constraints) {
             // Responsive padding
-            final cardPadding = constraints.maxWidth < 400 
-                ? const EdgeInsets.all(24) 
+            final cardPadding = constraints.maxWidth < 400
+                ? const EdgeInsets.all(24)
                 : const EdgeInsets.all(32);
-            
+
             // Responsive font sizes
             final titleFontSize = constraints.maxWidth < 400 ? 24.0 : 28.0;
             final subtitleFontSize = constraints.maxWidth < 400 ? 14.0 : 16.0;
@@ -276,7 +270,10 @@ class _LoginScreenState extends State<LoginScreen>
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppTheme.primaryPurple, width: 2),
+              borderSide: const BorderSide(
+                color: AppTheme.primaryPurple,
+                width: 2,
+              ),
             ),
           ),
           validator: (value) {
@@ -330,7 +327,10 @@ class _LoginScreenState extends State<LoginScreen>
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppTheme.primaryPurple, width: 2),
+              borderSide: const BorderSide(
+                color: AppTheme.primaryPurple,
+                width: 2,
+              ),
             ),
           ),
           validator: (value) {
@@ -348,9 +348,9 @@ class _LoginScreenState extends State<LoginScreen>
   }
 
   Widget _buildLoginButton() {
-    return BlocBuilder<AuthBloc, AuthState>(
+    return BlocBuilder<LoginBloc, LoginState>(
       builder: (context, state) {
-        final isLoading = state is AuthLoading;
+        final isLoading = state is LoginLoading;
 
         return SizedBox(
           width: double.infinity,
@@ -376,10 +376,7 @@ class _LoginScreenState extends State<LoginScreen>
                   )
                 : const Text(
                     'Masuk',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
                   ),
           ),
         );
@@ -394,18 +391,11 @@ class _LoginScreenState extends State<LoginScreen>
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.2),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: Colors.white.withOpacity(0.3),
-          width: 1,
-        ),
+        border: Border.all(color: Colors.white.withOpacity(0.3), width: 1),
       ),
       child: Column(
         children: [
-          const Icon(
-            Icons.people_outline,
-            size: 32,
-            color: Colors.white,
-          ),
+          const Icon(Icons.people_outline, size: 32, color: Colors.white),
           const SizedBox(height: 12),
           const Text(
             'Lihat Data Guru',
@@ -428,9 +418,7 @@ class _LoginScreenState extends State<LoginScreen>
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(
-                  builder: (context) => const GuruDataScreen(),
-                ),
+                MaterialPageRoute(builder: (context) => const GuruDataScreen()),
               );
             },
             style: ElevatedButton.styleFrom(
@@ -456,12 +444,12 @@ class _LoginScreenState extends State<LoginScreen>
 
   void _handleLogin() {
     if (_formKey.currentState!.validate()) {
-      context.read<AuthBloc>().add(
-            AuthLoginRequested(
-              email: _emailController.text.trim(),
-              password: _passwordController.text.trim(),
-            ),
-          );
+      context.read<LoginBloc>().add(
+        LoginRequested(
+          email: _emailController.text.trim(),
+          password: _passwordController.text.trim(),
+        ),
+      );
     }
   }
 }

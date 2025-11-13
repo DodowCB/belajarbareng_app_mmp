@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import '../config/theme.dart';
 import '../providers/theme_provider.dart';
-import '../../features/auth/presentation/bloc/auth_bloc.dart';
-import '../../features/auth/presentation/bloc/auth_event.dart';
+import '../../features/auth/presentation/login/login_screen.dart';
 
 /// Profile Menu Item Model
 class ProfileMenuItem {
@@ -45,16 +43,11 @@ class ProfileDropdownMenu extends ConsumerWidget {
 
     return PopupMenuButton<String>(
       offset: const Offset(0, 56),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       elevation: 8,
       itemBuilder: (context) => [
         // User Info Header
-        PopupMenuItem<String>(
-          enabled: false,
-          child: _buildUserHeader(context),
-        ),
+        PopupMenuItem<String>(enabled: false, child: _buildUserHeader(context)),
         const PopupMenuDivider(),
 
         // Profile
@@ -105,10 +98,7 @@ class ProfileDropdownMenu extends ConsumerWidget {
                 ),
                 subtitle: Text(
                   'Tap to switch',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: AppTheme.textSecondary,
-                  ),
+                  style: TextStyle(fontSize: 12, color: AppTheme.textSecondary),
                 ),
                 trailing: Switch(
                   value: isDarkMode,
@@ -161,7 +151,9 @@ class ProfileDropdownMenu extends ConsumerWidget {
       child: CircleAvatar(
         radius: 18,
         backgroundColor: AppTheme.primaryPurple.withOpacity(0.2),
-        backgroundImage: userPhotoUrl != null ? NetworkImage(userPhotoUrl!) : null,
+        backgroundImage: userPhotoUrl != null
+            ? NetworkImage(userPhotoUrl!)
+            : null,
         child: userPhotoUrl == null
             ? const Icon(
                 Icons.person_outline,
@@ -181,7 +173,9 @@ class ProfileDropdownMenu extends ConsumerWidget {
           CircleAvatar(
             radius: 24,
             backgroundColor: AppTheme.primaryPurple.withOpacity(0.2),
-            backgroundImage: userPhotoUrl != null ? NetworkImage(userPhotoUrl!) : null,
+            backgroundImage: userPhotoUrl != null
+                ? NetworkImage(userPhotoUrl!)
+                : null,
             child: userPhotoUrl == null
                 ? const Icon(
                     Icons.person,
@@ -207,10 +201,7 @@ class ProfileDropdownMenu extends ConsumerWidget {
                 const SizedBox(height: 2),
                 Text(
                   userEmail,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: AppTheme.textSecondary,
-                  ),
+                  style: TextStyle(fontSize: 12, color: AppTheme.textSecondary),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -248,18 +239,12 @@ class ProfileDropdownMenu extends ConsumerWidget {
         ),
         title: Text(
           title,
-          style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-          ),
+          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
         ),
         subtitle: subtitle != null
             ? Text(
                 subtitle,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: AppTheme.textSecondary,
-                ),
+                style: TextStyle(fontSize: 12, color: AppTheme.textSecondary),
               )
             : null,
         trailing: trailing,
@@ -302,9 +287,7 @@ class ProfileDropdownMenu extends ConsumerWidget {
         ),
         backgroundColor: AppTheme.primaryPurple,
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         duration: const Duration(seconds: 2),
       ),
     );
@@ -314,9 +297,7 @@ class ProfileDropdownMenu extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Row(
           children: [
             Icon(Icons.logout_rounded, color: AppTheme.accentOrange),
@@ -333,7 +314,12 @@ class ProfileDropdownMenu extends ConsumerWidget {
           ElevatedButton(
             onPressed: () {
               Navigator.pop(dialogContext);
-              context.read<AuthBloc>().add(const AuthLogoutRequested());
+              // Navigate to login screen
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(builder: (context) => const LoginScreen()),
+                (route) => false,
+              );
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: const Row(
@@ -373,19 +359,14 @@ class CompactProfileMenu extends ConsumerWidget {
 
     return PopupMenuButton<String>(
       offset: const Offset(0, 45),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       icon: const Icon(Icons.more_vert_rounded),
       itemBuilder: (context) => [
         PopupMenuItem<String>(
           value: 'theme',
           child: Row(
             children: [
-              Icon(
-                isDarkMode ? Icons.dark_mode : Icons.light_mode,
-                size: 20,
-              ),
+              Icon(isDarkMode ? Icons.dark_mode : Icons.light_mode, size: 20),
               const SizedBox(width: 12),
               Text(isDarkMode ? 'Dark Mode' : 'Light Mode'),
               const Spacer(),

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/config/theme.dart';
-import '../bloc/auth_bloc.dart';
-import '../bloc/auth_event.dart';
-import '../bloc/auth_state.dart';
+import 'guru_data_bloc.dart';
+import 'guru_data_event.dart';
+import 'guru_data_state.dart';
 import '../../data/models/guru_model.dart';
 
 class GuruDataScreen extends StatefulWidget {
@@ -29,18 +29,14 @@ class _GuruDataScreenState extends State<GuruDataScreen>
       duration: const Duration(milliseconds: 1200),
     );
 
-    _fadeAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeInOut,
-    ));
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
+    );
 
     _animationController.forward();
 
     // Load guru data
-    context.read<AuthBloc>().add(const LoadGuruData());
+    context.read<GuruDataBloc>().add(const LoadGuruData());
   }
 
   @override
@@ -56,10 +52,14 @@ class _GuruDataScreenState extends State<GuruDataScreen>
         _filteredGuruList = guruList;
       } else {
         _filteredGuruList = guruList.where((guru) {
-          return guru.namaLengkap.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-                 guru.mataPelajaran.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-                 guru.sekolah.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-                 guru.nig.toString().contains(_searchQuery);
+          return guru.namaLengkap.toLowerCase().contains(
+                _searchQuery.toLowerCase(),
+              ) ||
+              guru.mataPelajaran.toLowerCase().contains(
+                _searchQuery.toLowerCase(),
+              ) ||
+              guru.sekolah.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+              guru.nig.toString().contains(_searchQuery);
         }).toList();
       }
     });
@@ -69,9 +69,7 @@ class _GuruDataScreenState extends State<GuruDataScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: AppTheme.oceanGradient,
-        ),
+        decoration: const BoxDecoration(gradient: AppTheme.oceanGradient),
         child: SafeArea(
           child: Column(
             children: [
@@ -91,7 +89,7 @@ class _GuruDataScreenState extends State<GuruDataScreen>
                       _buildSearchBar(),
                       const SizedBox(height: 16),
                       Expanded(
-                        child: BlocConsumer<AuthBloc, AuthState>(
+                        child: BlocConsumer<GuruDataBloc, GuruDataState>(
                           listener: (context, state) {
                             if (state is GuruDataLoaded) {
                               _filterGuruList(state.guruList);
@@ -103,9 +101,11 @@ class _GuruDataScreenState extends State<GuruDataScreen>
                             } else if (state is GuruDataError) {
                               return _buildErrorState(state.message);
                             } else if (state is GuruDataLoaded) {
-                              if (_filteredGuruList.isEmpty && _searchQuery.isEmpty) {
+                              if (_filteredGuruList.isEmpty &&
+                                  _searchQuery.isEmpty) {
                                 return _buildEmptyState();
-                              } else if (_filteredGuruList.isEmpty && _searchQuery.isNotEmpty) {
+                              } else if (_filteredGuruList.isEmpty &&
+                                  _searchQuery.isNotEmpty) {
                                 return _buildNoResultsState();
                               }
                               return _buildGuruList();
@@ -139,10 +139,7 @@ class _GuruDataScreenState extends State<GuruDataScreen>
               ),
               child: IconButton(
                 onPressed: () => Navigator.pop(context),
-                icon: const Icon(
-                  Icons.arrow_back_rounded,
-                  color: Colors.white,
-                ),
+                icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
               ),
             ),
             const SizedBox(width: 16),
@@ -175,12 +172,9 @@ class _GuruDataScreenState extends State<GuruDataScreen>
               ),
               child: IconButton(
                 onPressed: () {
-                  context.read<AuthBloc>().add(const LoadGuruData());
+                  context.read<GuruDataBloc>().add(const LoadGuruData());
                 },
-                icon: const Icon(
-                  Icons.refresh_rounded,
-                  color: Colors.white,
-                ),
+                icon: const Icon(Icons.refresh_rounded, color: Colors.white),
               ),
             ),
           ],
@@ -205,7 +199,7 @@ class _GuruDataScreenState extends State<GuruDataScreen>
                     setState(() {
                       _searchQuery = '';
                     });
-                    final currentState = context.read<AuthBloc>().state;
+                    final currentState = context.read<GuruDataBloc>().state;
                     if (currentState is GuruDataLoaded) {
                       _filterGuruList(currentState.guruList);
                     }
@@ -220,14 +214,17 @@ class _GuruDataScreenState extends State<GuruDataScreen>
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: AppTheme.primaryPurple, width: 2),
+            borderSide: const BorderSide(
+              color: AppTheme.primaryPurple,
+              width: 2,
+            ),
           ),
         ),
         onChanged: (value) {
           setState(() {
             _searchQuery = value;
           });
-          final currentState = context.read<AuthBloc>().state;
+          final currentState = context.read<GuruDataBloc>().state;
           if (currentState is GuruDataLoaded) {
             _filterGuruList(currentState.guruList);
           }
@@ -285,7 +282,9 @@ class _GuruDataScreenState extends State<GuruDataScreen>
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
-                          guru.namaLengkap.isNotEmpty ? guru.namaLengkap[0].toUpperCase() : 'G',
+                          guru.namaLengkap.isNotEmpty
+                              ? guru.namaLengkap[0].toUpperCase()
+                              : 'G',
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 20,
@@ -365,9 +364,14 @@ class _GuruDataScreenState extends State<GuruDataScreen>
                         ),
                       ),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
-                          color: guru.status == 'aktif' ? AppTheme.accentGreen.withOpacity(0.2) : AppTheme.accentOrange.withOpacity(0.2),
+                          color: guru.status == 'aktif'
+                              ? AppTheme.accentGreen.withOpacity(0.2)
+                              : AppTheme.accentOrange.withOpacity(0.2),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
@@ -375,7 +379,9 @@ class _GuruDataScreenState extends State<GuruDataScreen>
                           style: TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.bold,
-                            color: guru.status == 'aktif' ? AppTheme.accentGreen : AppTheme.accentOrange,
+                            color: guru.status == 'aktif'
+                                ? AppTheme.accentGreen
+                                : AppTheme.accentOrange,
                           ),
                         ),
                       ),
@@ -398,11 +404,7 @@ class _GuruDataScreenState extends State<GuruDataScreen>
     return Expanded(
       child: Row(
         children: [
-          Icon(
-            icon,
-            size: 16,
-            color: color,
-          ),
+          Icon(icon, size: 16, color: color),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
@@ -432,10 +434,7 @@ class _GuruDataScreenState extends State<GuruDataScreen>
           SizedBox(height: 16),
           Text(
             'Memuat data guru...',
-            style: TextStyle(
-              color: AppTheme.textSecondary,
-              fontSize: 16,
-            ),
+            style: TextStyle(color: AppTheme.textSecondary, fontSize: 16),
           ),
         ],
       ),
@@ -467,14 +466,12 @@ class _GuruDataScreenState extends State<GuruDataScreen>
             Text(
               message,
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: AppTheme.textSecondary,
-              ),
+              style: const TextStyle(color: AppTheme.textSecondary),
             ),
             const SizedBox(height: 24),
             ElevatedButton.icon(
               onPressed: () {
-                context.read<AuthBloc>().add(const LoadGuruData());
+                context.read<GuruDataBloc>().add(const LoadGuruData());
               },
               icon: const Icon(Icons.refresh_rounded),
               label: const Text('Coba Lagi'),
@@ -514,9 +511,7 @@ class _GuruDataScreenState extends State<GuruDataScreen>
             const Text(
               'Data guru belum tersedia.\nSilakan daftar sebagai guru untuk menambah data.',
               textAlign: TextAlign.center,
-              style: TextStyle(
-                color: AppTheme.textSecondary,
-              ),
+              style: TextStyle(color: AppTheme.textSecondary),
             ),
           ],
         ),
@@ -531,11 +526,7 @@ class _GuruDataScreenState extends State<GuruDataScreen>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.search_off_rounded,
-              size: 64,
-              color: AppTheme.textLight,
-            ),
+            Icon(Icons.search_off_rounded, size: 64, color: AppTheme.textLight),
             const SizedBox(height: 16),
             const Text(
               'Tidak Ada Hasil',
@@ -549,9 +540,7 @@ class _GuruDataScreenState extends State<GuruDataScreen>
             Text(
               'Tidak ditemukan guru dengan pencarian "$_searchQuery"',
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: AppTheme.textSecondary,
-              ),
+              style: const TextStyle(color: AppTheme.textSecondary),
             ),
           ],
         ),
@@ -568,7 +557,7 @@ class _GuruDataScreenState extends State<GuruDataScreen>
           children: [
             ElevatedButton.icon(
               onPressed: () {
-                context.read<AuthBloc>().add(const LoadGuruData());
+                context.read<GuruDataBloc>().add(const LoadGuruData());
               },
               icon: const Icon(Icons.download_rounded),
               label: const Text('Muat Data Guru'),
