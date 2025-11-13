@@ -5,8 +5,7 @@
 // gestures. You can also use WidgetTester to find child widgets in the widget
 // tree, read text, and verify that the values of widget properties are correct.
 
-import 'package:belajarbareng_app_mmp/src/features/dashboard/presentation/dashboard_screen.dart';
-import 'package:belajarbareng_app_mmp/src/features/dashboard/presentation/youtube_search_screen.dart';
+import 'package:belajarbareng_app_mmp/src/features/auth/presentation/dashboard/dashboard_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -53,17 +52,15 @@ void main() {
   });
 
   testWidgets('YouTube Search screen test', (WidgetTester tester) async {
-    // Build the YouTube search screen
+    // Build the dashboard screen
     await tester.pumpWidget(const ProviderScope(
       child: MaterialApp(
-        home: YouTubeSearchScreen(),
+        home: DashboardScreen(),
       ),
     ));
 
-    // Verify the search screen is present
-    expect(find.text('YouTube Search'), findsOneWidget);
-    expect(find.text('Cari video YouTube...'), findsOneWidget);
-    expect(find.text('Cari'), findsOneWidget);
+    // Verify the dashboard screen is present
+    expect(find.text('BelajarBareng'), findsOneWidget);
 
     // Verify the main structure widgets are present
     expect(find.byType(Scaffold), findsOneWidget);

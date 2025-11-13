@@ -18,13 +18,14 @@ class LoginLoading extends LoginState {
 }
 
 class LoginSuccess extends LoginState {
-  final User user;
+  final User? user;
   final GuruModel? guruProfile;
+  final Map<String, dynamic>? userData; // Tambahan untuk data dari Firestore
 
-  const LoginSuccess({required this.user, this.guruProfile});
+  const LoginSuccess({this.user, this.guruProfile, this.userData});
 
   @override
-  List<Object?> get props => [user, guruProfile];
+  List<Object?> get props => [user, guruProfile, userData];
 }
 
 class LoginError extends LoginState {

@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:bloc/bloc.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
+import '../../../../core/providers/user_provider.dart';
 import '../../data/repositories/auth_repository.dart';
 import 'login_event.dart';
 import 'login_state.dart';
@@ -10,7 +12,7 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
 
   LoginBloc({required AuthRepository authRepository})
     : _authRepository = authRepository,
-      super(const LoginInitial()) {
+      super(LoginInitial()) {
     on<LoginRequested>(_onLoginRequested);
     on<LoginCheckRequested>(_onLoginCheckRequested);
   }
@@ -19,26 +21,131 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
     LoginRequested event,
     Emitter<LoginState> emit,
   ) async {
-    emit(const LoginLoading());
+    emit(LoginLoading());
 
     try {
-      final userCredential = await _authRepository.signInWithEmailAndPassword(
-        email: event.email,
-        password: event.password,
+      print('Starting login process for: ${event.email}'); // Debug log
+
+      // Validasi input
+      if (event.email.trim().isEmpty) {
+        emit(LoginError(message: 'Email tidak boleh kosong'));
+        return;
+      }
+
+      if (event.password.isEmpty) {
+        emit(LoginError(message: 'Password tidak boleh kosong'));
+        return;
+      }
+
+      // Cek user dari kedua collection: guru dan siswa
+      Map<String, dynamic>? authenticatedUser;
+      String userType = '';
+
+      // Cek di collection 'guru' dulu
+      final guruQuerySnapshot = await FirebaseFirestore.instance
+          .collection('guru')
+          .where('email', isEqualTo: event.email.trim().toLowerCase())
+          .where('password', isEqualTo: event.password)
+          .get();
+
+      if (guruQuerySnapshot.docs.isNotEmpty) {
+        final userDoc = guruQuerySnapshot.docs.first;
+        final userData = userDoc.data();
+        userType = 'guru';
+
+        authenticatedUser = {
+          'uid': userDoc.id,
+          'email': userData['email'],
+          'namaLengkap':
+              userData['namaLengkap'] ?? userData['nama_lengkap'] ?? '',
+          'userType': userType,
+          'nig': userData['nig'],
+          'mataPelajaran': userData['mataPelajaran'] ?? '',
+          'sekolah': userData['sekolah'] ?? '',
+        };
+      } else {
+        // Jika tidak ditemukan di guru, cek di collection 'siswa'
+        final siswaQuerySnapshot = await FirebaseFirestore.instance
+            .collection('siswa')
+            .where('email', isEqualTo: event.email.trim().toLowerCase())
+            .where('password', isEqualTo: event.password)
+            .get();
+
+        if (siswaQuerySnapshot.docs.isNotEmpty) {
+          final userDoc = siswaQuerySnapshot.docs.first;
+          final userData = siswaQuerySnapshot.docs.first.data();
+          userType = 'siswa';
+
+          authenticatedUser = {
+            'uid': userDoc.id,
+            'email': userData['email'],
+            'namaLengkap': userData['namaLengkap'] ?? userData['nama'] ?? '',
+            'userType': userType,
+            'nis': userData['nis'],
+            'kelas': userData['kelas'] ?? '',
+            'sekolah': userData['sekolah'] ?? '',
+          };
+        }
+      }
+
+      // Jika tidak ditemukan di kedua collection
+      if (authenticatedUser == null) {
+        throw Exception('Login gagal: Email atau password salah');
+      }
+
+      print('Login successful as $userType'); // Debug log
+      print('User ID: ${authenticatedUser['uid']}'); // Debug log
+      print('User Email: ${authenticatedUser['email']}'); // Debug log
+      print('User Name: ${authenticatedUser['namaLengkap']}'); // Debug log
+
+      // Set user data ke global provider
+      userProvider.setUserData(
+        userId: authenticatedUser['uid']!,
+        email: authenticatedUser['email']!,
+        namaLengkap: authenticatedUser['namaLengkap']!,
+        userType: authenticatedUser['userType']!,
+        additionalData: authenticatedUser,
       );
 
-      if (userCredential.user != null) {
-        // Load user profile
+      if (userType == 'guru') {
+        // Untuk guru, coba ambil guru profile juga
         final guruProfile = await _authRepository.getGuruProfile(
-          userCredential.user!.uid,
+          authenticatedUser['uid']!,
         );
 
+        if (guruProfile != null) {
+          print('Guru profile loaded: ${guruProfile.namaLengkap}'); // Debug log
+          emit(
+            LoginSuccess(
+              user: null,
+              guruProfile: guruProfile,
+              userData: authenticatedUser,
+            ),
+          );
+        } else {
+          print('No guru profile found, using basic guru data'); // Debug log
+          emit(
+            LoginSuccess(
+              user: null,
+              guruProfile: null,
+              userData: authenticatedUser,
+            ),
+          );
+        }
+      } else {
+        // Untuk siswa
+        print('Siswa login successful'); // Debug log
         emit(
-          LoginSuccess(user: userCredential.user!, guruProfile: guruProfile),
+          LoginSuccess(
+            user: null,
+            guruProfile: null, // Siswa tidak punya guru profile
+            userData: authenticatedUser,
+          ),
         );
       }
     } catch (e) {
-      emit(LoginError(message: e.toString()));
+      print('Login error caught: $e'); // Debug log
+      emit(LoginError(message: e.toString().replaceFirst('Exception: ', '')));
     }
   }
 
@@ -46,13 +153,48 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
     LoginCheckRequested event,
     Emitter<LoginState> emit,
   ) async {
-    final currentUser = _authRepository.currentUser;
+    try {
+      final currentUser = _authRepository.currentUser;
 
-    if (currentUser != null) {
-      final guruProfile = await _authRepository.getGuruProfile(currentUser.uid);
-      emit(LoginSuccess(user: currentUser, guruProfile: guruProfile));
-    } else {
-      emit(const LoginInitial());
+      if (currentUser != null) {
+        print('Current user found: ${currentUser.email}'); // Debug log
+
+        final guruProfile = await _authRepository.getGuruProfile(
+          currentUser.uid,
+        );
+
+        if (guruProfile != null) {
+          emit(
+            LoginSuccess(
+              user: currentUser,
+              guruProfile: guruProfile,
+              userData: {
+                'uid': currentUser.uid,
+                'email': currentUser.email ?? '',
+                'name': currentUser.displayName ?? '',
+              },
+            ),
+          );
+        } else {
+          emit(
+            LoginSuccess(
+              user: currentUser,
+              guruProfile: null,
+              userData: {
+                'uid': currentUser.uid,
+                'email': currentUser.email ?? '',
+                'name': currentUser.displayName ?? '',
+              },
+            ),
+          );
+        }
+      } else {
+        print('No current user found'); // Debug log
+        emit(LoginInitial());
+      }
+    } catch (e) {
+      print('Login check error: $e'); // Debug log
+      emit(LoginError(message: 'Gagal memeriksa status login'));
     }
   }
 }

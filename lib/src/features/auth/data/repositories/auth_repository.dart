@@ -18,13 +18,32 @@ class AuthRepository {
     required String password,
   }) async {
     try {
-      final UserCredential result = await _firebaseAuth.signInWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
+      // Validasi input sebelum mengirim ke Firebase
+      if (email.trim().isEmpty || password.isEmpty) {
+        throw Exception('Email dan password tidak boleh kosong');
+      }
+
+      // Validasi format email
+      if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email.trim())) {
+        throw Exception('Format email tidak valid');
+      }
+
+      // Trim whitespace dari email dan convert ke lowercase
+      final cleanEmail = email.trim().toLowerCase();
+
+      print('Attempting login with email: $cleanEmail'); // Debug log
+
+      final UserCredential result = await _firebaseAuth
+          .signInWithEmailAndPassword(email: cleanEmail, password: password);
+
+      print('Login successful for: ${result.user?.email}'); // Debug log
       return result;
     } on FirebaseAuthException catch (e) {
+      print('Firebase Auth Error: ${e.code} - ${e.message}'); // Debug log
       throw _handleAuthException(e);
+    } catch (e) {
+      print('General Error: $e'); // Debug log
+      throw Exception('Login failed: $e');
     }
   }
 
@@ -34,10 +53,8 @@ class AuthRepository {
     required String password,
   }) async {
     try {
-      final UserCredential result = await _firebaseAuth.createUserWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
+      final UserCredential result = await _firebaseAuth
+          .createUserWithEmailAndPassword(email: email, password: password);
       return result;
     } on FirebaseAuthException catch (e) {
       throw _handleAuthException(e);
@@ -46,7 +63,13 @@ class AuthRepository {
 
   // Sign out
   Future<void> signOut() async {
-    await _firebaseAuth.signOut();
+    try {
+      await _firebaseAuth.signOut();
+      print('User signed out successfully'); // Debug log
+    } catch (e) {
+      print('Sign out error: $e'); // Debug log
+      throw Exception('Failed to sign out: $e');
+    }
   }
 
   // Create or update guru profile
@@ -84,13 +107,22 @@ class AuthRepository {
   // Get guru profile
   Future<GuruModel?> getGuruProfile(String userId) async {
     try {
-      final DocumentSnapshot doc = await _firestore.collection('guru').doc(userId).get();
+      print('Fetching guru profile for userId: $userId'); // Debug log
+
+      final DocumentSnapshot doc = await _firestore
+          .collection('guru')
+          .doc(userId)
+          .get();
 
       if (doc.exists) {
+        print('Guru profile found'); // Debug log
         return GuruModel.fromFirestore(doc);
       }
+
+      print('No guru profile found for userId: $userId'); // Debug log
       return null;
     } catch (e) {
+      print('Error fetching guru profile: $e'); // Debug log
       throw Exception('Failed to get guru profile: $e');
     }
   }
@@ -98,9 +130,13 @@ class AuthRepository {
   // Get all guru data for display
   Future<List<GuruModel>> getAllGuru() async {
     try {
-      final QuerySnapshot querySnapshot = await _firestore.collection('guru').get();
+      final QuerySnapshot querySnapshot = await _firestore
+          .collection('guru')
+          .get();
 
-      return querySnapshot.docs.map((doc) => GuruModel.fromFirestore(doc)).toList();
+      return querySnapshot.docs
+          .map((doc) => GuruModel.fromFirestore(doc))
+          .toList();
     } catch (e) {
       throw Exception('Failed to get guru data: $e');
     }
@@ -130,23 +166,29 @@ class AuthRepository {
   String _handleAuthException(FirebaseAuthException e) {
     switch (e.code) {
       case 'weak-password':
-        return 'The password provided is too weak.';
+        return 'Password terlalu lemah';
       case 'email-already-in-use':
-        return 'The account already exists for that email.';
+        return 'Email sudah terdaftar';
       case 'user-not-found':
-        return 'No user found for that email.';
+        return 'Email tidak terdaftar dalam sistem';
       case 'wrong-password':
-        return 'Wrong password provided for that user.';
+        return 'Password salah';
       case 'invalid-email':
-        return 'The email address is invalid.';
+        return 'Format email tidak valid';
       case 'user-disabled':
-        return 'This user account has been disabled.';
+        return 'Akun pengguna telah dinonaktifkan';
       case 'too-many-requests':
-        return 'Too many requests. Try again later.';
+        return 'Terlalu banyak percobaan login. Coba lagi nanti';
       case 'operation-not-allowed':
-        return 'Operation not allowed.';
+        return 'Operasi tidak diizinkan';
+      case 'invalid-credential':
+        return 'Email atau password salah';
+      case 'network-request-failed':
+        return 'Tidak ada koneksi internet';
+      case 'internal-error':
+        return 'Terjadi kesalahan server. Coba lagi nanti';
       default:
-        return 'An error occurred: ${e.message}';
+        return 'Terjadi kesalahan: ${e.message ?? 'Unknown error'}';
     }
   }
 }

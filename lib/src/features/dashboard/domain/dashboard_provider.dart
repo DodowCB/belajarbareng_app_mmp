@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../api/models/firebase_models.dart';
 import '../../../api/models/youtube_models.dart';
-import '../../../api/services/integrated_api_service.dart';
+
 import '../../../api/youtube/youtube_api_service.dart';
 import '../../../api/firebase/firestore_service.dart';
 import '../../../core/utils/dummy_data.dart';
@@ -49,18 +49,15 @@ class DashboardState {
 
 /// Dashboard Provider
 class DashboardNotifier extends StateNotifier<DashboardState> {
-  final IntegratedApiService _integratedService;
   final YouTubeApiService _youtubeService;
   final FirestoreService _firestoreService;
 
   DashboardNotifier({
-    required IntegratedApiService integratedService,
     required YouTubeApiService youtubeService,
     required FirestoreService firestoreService,
-  })  : _integratedService = integratedService,
-        _youtubeService = youtubeService,
-        _firestoreService = firestoreService,
-        super(DashboardState());
+  }) : _youtubeService = youtubeService,
+       _firestoreService = firestoreService,
+       super(DashboardState());
 
   /// Load semua data dashboard
   Future<void> loadDashboardData({String? userId}) async {
@@ -128,88 +125,6 @@ class DashboardNotifier extends StateNotifier<DashboardState> {
     }
   }
 
-  /// Load recommended materials untuk user
-  Future<List<LearningMaterialModel>> _loadRecommendations(String? userId) async {
-    if (userId == null) {
-      return _loadTrendingMaterials();
-    }
-
-    try {
-      // Untuk saat ini, return trending materials
-      // Nanti bisa dikembangkan dengan AI recommendation
-      return _loadTrendingMaterials();
-    } catch (e) {
-      return [];
-    }
-  }
-
-  /// Load recent videos dari YouTube
-  Future<List<YouTubeVideo>> _loadRecentVideos() async {
-    try {
-      final searchResult = await _youtubeService.searchVideos(
-        query: 'programming tutorial',
-        maxResults: 8,
-        order: 'date',
-      );
-
-      if (searchResult['items'] != null) {
-        return (searchResult['items'] as List)
-            .map((item) => YouTubeVideo.fromJson(item))
-            .toList();
-      }
-
-      return [];
-    } catch (e) {
-      return [];
-    }
-  }
-
-  /// Load popular study groups
-  Future<List<StudyGroupModel>> _loadPopularGroups() async {
-    try {
-      final snapshot = await _firestoreService.getStudyGroups();
-      final groups = snapshot.docs
-          .map((doc) => StudyGroupModel.fromFirestore(doc))
-          .toList();
-
-      // Sort berdasarkan jumlah member
-      groups.sort((a, b) => b.memberCount.compareTo(a.memberCount));
-
-      return groups.take(6).toList();
-    } catch (e) {
-      return [];
-    }
-  }
-
-  /// Load user statistics
-  Future<Map<String, int>> _loadUserStats(String userId) async {
-    try {
-      final progressSnapshot = await _firestoreService.getUserProgress(userId);
-      final userDoc = await _firestoreService.getUserData(userId);
-
-      if (!userDoc.exists) {
-        return {};
-      }
-
-      final user = UserModel.fromFirestore(userDoc);
-      final progressList = progressSnapshot.docs
-          .map((doc) => UserProgressModel.fromFirestore(doc))
-          .toList();
-
-      final completedCount = progressList.where((p) => p.isCompleted).length;
-      final inProgressCount = progressList.where((p) => !p.isCompleted).length;
-
-      return {
-        'totalMaterials': progressList.length,
-        'completed': completedCount,
-        'inProgress': inProgressCount,
-        'studyGroups': user.joinedGroups.length,
-      };
-    } catch (e) {
-      return {};
-    }
-  }
-
   /// Refresh dashboard data
   Future<void> refresh({String? userId}) async {
     await loadDashboardData(userId: userId);
@@ -238,10 +153,7 @@ class DashboardNotifier extends StateNotifier<DashboardState> {
             material.tags.any((tag) => tag.toLowerCase().contains(searchLower));
       }).toList();
 
-      state = state.copyWith(
-        isLoading: false,
-        trendingMaterials: filtered,
-      );
+      state = state.copyWith(isLoading: false, trendingMaterials: filtered);
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
@@ -254,19 +166,13 @@ class DashboardNotifier extends StateNotifier<DashboardState> {
 /// Provider untuk Dashboard
 final dashboardProvider =
     StateNotifierProvider<DashboardNotifier, DashboardState>((ref) {
-  // Initialize services
-  final youtubeService = YouTubeApiService(
-    apiKey: 'AIzaSyA3DMOyDiG7F9dL7YIWc54QjPouNn01820E',
-  );
-  final firestoreService = FirestoreService();
-  final integratedService = IntegratedApiService(
-    youtubeService: youtubeService,
-    firestoreService: firestoreService,
-  );
-
-  return DashboardNotifier(
-    integratedService: integratedService,
-    youtubeService: youtubeService,
-    firestoreService: firestoreService,
-  );
-});
+      // Initialize services
+      final youtubeService = YouTubeApiService(
+        apiKey: 'AIzaSyA3DMOyDiG7F9dL7YIWc54QjPouNn01820E',
+      );
+      final firestoreService = FirestoreService();
+      return DashboardNotifier(
+        youtubeService: youtubeService,
+        firestoreService: firestoreService,
+      );
+    });

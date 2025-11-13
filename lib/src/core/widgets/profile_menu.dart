@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../config/theme.dart';
 import '../providers/theme_provider.dart';
 import '../../features/auth/presentation/login/login_screen.dart';
+import '../../features/auth/presentation/profile/profile_screen.dart';
 
 /// Profile Menu Item Model
 class ProfileMenuItem {
@@ -255,7 +256,10 @@ class ProfileDropdownMenu extends ConsumerWidget {
   void _handleMenuSelection(BuildContext context, String value, WidgetRef ref) {
     switch (value) {
       case 'profile':
-        _showComingSoonSnackbar(context, 'Profile');
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const ProfileScreen()),
+        );
         break;
       case 'settings':
         _showComingSoonSnackbar(context, 'Settings');

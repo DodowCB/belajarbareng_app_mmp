@@ -105,17 +105,18 @@ class _LoginScreenState extends State<LoginScreen>
 
                     return Container(
                       constraints: BoxConstraints(maxWidth: maxWidth),
-                      padding: const EdgeInsets.all(20.0),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20.0,
+                        vertical: 16.0,
+                      ),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const SizedBox(height: 40),
                           _buildHeader(),
-                          const SizedBox(height: 60),
+                          const SizedBox(height: 24),
                           _buildLoginCard(),
-                          const SizedBox(height: 32),
+                          const SizedBox(height: 16),
                           _buildGuruDataButton(),
-                          const SizedBox(height: 20),
                         ],
                       ),
                     );
@@ -259,9 +260,10 @@ class _LoginScreenState extends State<LoginScreen>
         TextFormField(
           controller: _emailController,
           keyboardType: TextInputType.emailAddress,
+          style: const TextStyle(color: Colors.black),
           decoration: InputDecoration(
             hintText: 'Masukkan email Anda',
-            prefixIcon: const Icon(Icons.email_outlined),
+            prefixIcon: const Icon(Icons.email_outlined, color: Colors.black),
             filled: true,
             fillColor: AppTheme.backgroundLight,
             border: OutlineInputBorder(
@@ -299,19 +301,21 @@ class _LoginScreenState extends State<LoginScreen>
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w600,
-            color: AppTheme.textPrimary,
+            color: Colors.black,
           ),
         ),
         const SizedBox(height: 8),
         TextFormField(
           controller: _passwordController,
           obscureText: !_isPasswordVisible,
+          style: const TextStyle(color: Colors.black),
           decoration: InputDecoration(
             hintText: 'Masukkan password Anda',
-            prefixIcon: const Icon(Icons.lock_outlined),
+            prefixIcon: const Icon(Icons.lock_outlined, color: Colors.black),
             suffixIcon: IconButton(
               icon: Icon(
                 _isPasswordVisible ? Icons.visibility_off : Icons.visibility,
+                color: Colors.black,
               ),
               onPressed: () {
                 setState(() {
@@ -337,8 +341,8 @@ class _LoginScreenState extends State<LoginScreen>
             if (value == null || value.isEmpty) {
               return 'Password tidak boleh kosong';
             }
-            if (value.length < 6) {
-              return 'Password minimal 6 karakter';
+            if (value.length < 3) {
+              return 'Password minimal 3 karakter';
             }
             return null;
           },
@@ -444,6 +448,8 @@ class _LoginScreenState extends State<LoginScreen>
 
   void _handleLogin() {
     if (_formKey.currentState!.validate()) {
+      // print('Email: ${_emailController.text}');
+      // print('Password: ${_passwordController.text}');
       context.read<LoginBloc>().add(
         LoginRequested(
           email: _emailController.text.trim(),
