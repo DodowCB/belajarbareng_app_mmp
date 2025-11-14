@@ -1,136 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../../core/config/theme.dart';
 import '../profile_menu/profile_menu_widget.dart';
+import 'siswa_bloc.dart';
 
-// Simple BLoC Events
-abstract class GuruDataEvent {}
-
-class LoadGuruData extends GuruDataEvent {}
-
-class DeleteGuru extends GuruDataEvent {
-  final String guruId;
-  DeleteGuru(this.guruId);
-}
-
-class DisableGuru extends GuruDataEvent {
-  final String guruId;
-  final bool isDisabled;
-  DisableGuru(this.guruId, this.isDisabled);
-}
-
-// Simple BLoC States
-abstract class GuruDataState {}
-
-class GuruDataInitial extends GuruDataState {}
-
-class GuruDataLoading extends GuruDataState {}
-
-class GuruDataLoaded extends GuruDataState {
-  final List<Map<String, dynamic>> guruList;
-  GuruDataLoaded(this.guruList);
-}
-
-class GuruDataError extends GuruDataState {
-  final String message;
-  GuruDataError(this.message);
-}
-
-class GuruDataActionSuccess extends GuruDataState {
-  final String message;
-  GuruDataActionSuccess(this.message);
-}
-
-// Simple BLoC
-class GuruDataBloc extends Bloc<GuruDataEvent, GuruDataState> {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-
-  GuruDataBloc() : super(GuruDataInitial()) {
-    on<LoadGuruData>(_onLoadGuruData);
-    on<DeleteGuru>(_onDeleteGuru);
-    on<DisableGuru>(_onDisableGuru);
-  }
-
-  Future<void> _onLoadGuruData(
-    LoadGuruData event,
-    Emitter<GuruDataState> emit,
-  ) async {
-    try {
-      emit(GuruDataLoading());
-
-      final QuerySnapshot snapshot = await _firestore.collection('guru').get();
-
-      final List<Map<String, dynamic>> guruList = snapshot.docs.map((doc) {
-        final data = doc.data() as Map<String, dynamic>;
-        return {
-          'id': doc.id,
-          'nama': data['nama'] ?? 'Unknown',
-          'email': data['email'] ?? 'No Email',
-          'nig': data['nig']?.toString() ?? 'No NIG',
-          'mataPelajaran': data['mataPelajaran'] ?? 'No Subject',
-          'sekolah': data['sekolah'] ?? 'No School',
-          'isDisabled': data['isDisabled'] ?? false,
-          'createdAt': data['createdAt'],
-        };
-      }).toList();
-
-      guruList.sort(
-        (a, b) => (a['nama'] as String).compareTo(b['nama'] as String),
-      );
-      emit(GuruDataLoaded(guruList));
-    } catch (e) {
-      emit(GuruDataError('Failed to load guru data: ${e.toString()}'));
-    }
-  }
-
-  Future<void> _onDeleteGuru(
-    DeleteGuru event,
-    Emitter<GuruDataState> emit,
-  ) async {
-    try {
-      await _firestore.collection('guru').doc(event.guruId).delete();
-      emit(GuruDataActionSuccess('Guru deleted successfully'));
-      add(LoadGuruData());
-    } catch (e) {
-      emit(GuruDataError('Failed to delete guru: ${e.toString()}'));
-    }
-  }
-
-  Future<void> _onDisableGuru(
-    DisableGuru event,
-    Emitter<GuruDataState> emit,
-  ) async {
-    try {
-      await _firestore.collection('guru').doc(event.guruId).update({
-        'isDisabled': event.isDisabled,
-      });
-
-      final action = event.isDisabled ? 'disabled' : 'enabled';
-      emit(GuruDataActionSuccess('Guru $action successfully'));
-      add(LoadGuruData());
-    } catch (e) {
-      emit(GuruDataError('Failed to update guru status: ${e.toString()}'));
-    }
-  }
-}
-
-class GuruDataScreen extends StatefulWidget {
-  const GuruDataScreen({super.key});
+class SiswaDataScreen extends StatefulWidget {
+  const SiswaDataScreen({super.key});
 
   @override
-  State<GuruDataScreen> createState() => _GuruDataScreenState();
+  State<SiswaDataScreen> createState() => _SiswaDataScreenState();
 }
 
-class _GuruDataScreenState extends State<GuruDataScreen> {
+class _SiswaDataScreenState extends State<SiswaDataScreen> {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => GuruDataBloc()..add(LoadGuruData()),
+      create: (context) => SiswaBloc()..add(LoadSiswaData()),
       child: Scaffold(
         backgroundColor: Colors.grey[50],
         appBar: AppBar(
-          title: const Text('Data Guru'),
+          title: const Text('Data Siswa'),
           backgroundColor: Colors.white,
           elevation: 1,
           titleTextStyle: const TextStyle(
@@ -149,16 +38,16 @@ class _GuruDataScreenState extends State<GuruDataScreen> {
             ),
           ],
         ),
-        body: BlocConsumer<GuruDataBloc, GuruDataState>(
+        body: BlocConsumer<SiswaBloc, SiswaState>(
           listener: (context, state) {
-            if (state is GuruDataError) {
+            if (state is SiswaError) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(state.message),
                   backgroundColor: Colors.red,
                 ),
               );
-            } else if (state is GuruDataActionSuccess) {
+            } else if (state is SiswaActionSuccess) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(state.message),
@@ -168,12 +57,12 @@ class _GuruDataScreenState extends State<GuruDataScreen> {
             }
           },
           builder: (context, state) {
-            if (state is GuruDataLoading) {
+            if (state is SiswaLoading) {
               return const Center(child: CircularProgressIndicator());
             }
 
-            if (state is GuruDataLoaded) {
-              return _buildGuruTable(state.guruList);
+            if (state is SiswaLoaded) {
+              return _buildSiswaTable(state.siswaList);
             }
 
             return const Center(child: Text('No data available'));
@@ -181,8 +70,9 @@ class _GuruDataScreenState extends State<GuruDataScreen> {
         ),
         floatingActionButton: FloatingActionButton(
           onPressed: () {
+            // TODO: Navigate to add siswa screen
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Add Guru feature coming soon')),
+              const SnackBar(content: Text('Add Siswa feature coming soon')),
             );
           },
           backgroundColor: AppTheme.primaryPurple,
@@ -192,7 +82,7 @@ class _GuruDataScreenState extends State<GuruDataScreen> {
     );
   }
 
-  Widget _buildGuruTable(List<Map<String, dynamic>> guruList) {
+  Widget _buildSiswaTable(List<Map<String, dynamic>> siswaList) {
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: Card(
@@ -204,7 +94,7 @@ class _GuruDataScreenState extends State<GuruDataScreen> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: AppTheme.secondaryTeal.withOpacity(0.1),
+                color: AppTheme.primaryPurple.withOpacity(0.1),
                 borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(12),
                   topRight: Radius.circular(12),
@@ -212,14 +102,14 @@ class _GuruDataScreenState extends State<GuruDataScreen> {
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.school, color: AppTheme.secondaryTeal),
+                  const Icon(Icons.groups, color: AppTheme.primaryPurple),
                   const SizedBox(width: 8),
                   Text(
-                    'Total Guru: ${guruList.length}',
+                    'Total Siswa: ${siswaList.length}',
                     style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: AppTheme.secondaryTeal,
+                      color: AppTheme.primaryPurple,
                     ),
                   ),
                 ],
@@ -239,7 +129,7 @@ class _GuruDataScreenState extends State<GuruDataScreen> {
                     ),
                     DataColumn(
                       label: Text(
-                        'NIG',
+                        'NIS',
                         style: TextStyle(fontWeight: FontWeight.bold),
                       ),
                     ),
@@ -251,7 +141,7 @@ class _GuruDataScreenState extends State<GuruDataScreen> {
                     ),
                     DataColumn(
                       label: Text(
-                        'Mata Pelajaran',
+                        'Kelas',
                         style: TextStyle(fontWeight: FontWeight.bold),
                       ),
                     ),
@@ -274,25 +164,25 @@ class _GuruDataScreenState extends State<GuruDataScreen> {
                       ),
                     ),
                   ],
-                  rows: guruList.map((guru) {
-                    final isDisabled = guru['isDisabled'] as bool;
+                  rows: siswaList.map((siswa) {
+                    final isDisabled = siswa['isDisabled'] as bool;
                     return DataRow(
                       cells: [
                         DataCell(
                           Text(
-                            guru['nama'] as String,
+                            siswa['nama'] as String,
                             style: TextStyle(
-                              color: isDisabled ? Colors.grey : Colors.black,
+                              color: isDisabled ? Colors.red : Colors.white,
                               decoration: isDisabled
                                   ? TextDecoration.lineThrough
                                   : null,
                             ),
                           ),
                         ),
-                        DataCell(Text(guru['nig'] as String)),
-                        DataCell(Text(guru['email'] as String)),
-                        DataCell(Text(guru['mataPelajaran'] as String)),
-                        DataCell(Text(guru['sekolah'] as String)),
+                        DataCell(Text(siswa['nis'] as String)),
+                        DataCell(Text(siswa['email'] as String)),
+                        DataCell(Text(siswa['kelas'] as String)),
+                        DataCell(Text(siswa['sekolah'] as String)),
                         DataCell(
                           Container(
                             padding: const EdgeInsets.symmetric(
@@ -328,8 +218,9 @@ class _GuruDataScreenState extends State<GuruDataScreen> {
                                   size: 20,
                                 ),
                                 onPressed: () => _showDisableDialog(
-                                  guru['id'] as String,
+                                  siswa['id'] as String,
                                   !isDisabled,
+                                  siswa['nama'] as String,
                                 ),
                                 tooltip: isDisabled ? 'Enable' : 'Disable',
                               ),
@@ -340,8 +231,8 @@ class _GuruDataScreenState extends State<GuruDataScreen> {
                                   size: 20,
                                 ),
                                 onPressed: () => _showDeleteDialog(
-                                  guru['id'] as String,
-                                  guru['nama'] as String,
+                                  siswa['id'] as String,
+                                  siswa['nama'] as String,
                                 ),
                                 tooltip: 'Delete',
                               ),
@@ -360,16 +251,16 @@ class _GuruDataScreenState extends State<GuruDataScreen> {
     );
   }
 
-  void _showDisableDialog(String guruId, bool disable) {
+  void _showDisableDialog(String siswaId, bool disable, String siswaName) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text(disable ? 'Disable Guru' : 'Enable Guru'),
+          title: Text(disable ? 'Disable Siswa' : 'Enable Siswa'),
           content: Text(
             disable
-                ? 'Are you sure you want to disable this guru?'
-                : 'Are you sure you want to enable this guru?',
+                ? 'Are you sure you want to disable this $siswaName?'
+                : 'Are you sure you want to enable this $siswaName?',
           ),
           actions: [
             TextButton(
@@ -378,7 +269,7 @@ class _GuruDataScreenState extends State<GuruDataScreen> {
             ),
             ElevatedButton(
               onPressed: () {
-                context.read<GuruDataBloc>().add(DisableGuru(guruId, disable));
+                context.read<SiswaBloc>().add(DisableSiswa(siswaId, disable));
                 Navigator.of(context).pop();
               },
               style: ElevatedButton.styleFrom(
@@ -392,14 +283,14 @@ class _GuruDataScreenState extends State<GuruDataScreen> {
     );
   }
 
-  void _showDeleteDialog(String guruId, String guruName) {
+  void _showDeleteDialog(String siswaId, String siswaName) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Delete Guru'),
+          title: const Text('Delete Siswa'),
           content: Text(
-            'Are you sure you want to delete "$guruName"? This action cannot be undone.',
+            'Are you sure you want to delete "$siswaName"? This action cannot be undone.',
           ),
           actions: [
             TextButton(
@@ -408,7 +299,7 @@ class _GuruDataScreenState extends State<GuruDataScreen> {
             ),
             ElevatedButton(
               onPressed: () {
-                context.read<GuruDataBloc>().add(DeleteGuru(guruId));
+                context.read<SiswaBloc>().add(DeleteSiswa(siswaId));
                 Navigator.of(context).pop();
               },
               style: ElevatedButton.styleFrom(backgroundColor: Colors.red),

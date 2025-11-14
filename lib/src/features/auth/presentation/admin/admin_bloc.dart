@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 // Admin Events
 abstract class AdminEvent {}
@@ -56,6 +57,8 @@ class AdminState {
 
 // Admin Bloc
 class AdminBloc extends Bloc<AdminEvent, AdminState> {
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
   AdminBloc() : super(AdminState()) {
     on<LoadAdminData>(_onLoadAdminData);
     on<RefreshAdminData>(_onRefreshAdminData);
@@ -69,14 +72,15 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
     emit(state.copyWith(isLoading: true));
 
     try {
-      // Simulate API call
-      await Future.delayed(const Duration(milliseconds: 1000));
+      // Get counts from Firebase collections
+      final guruSnapshot = await _firestore.collection('guru').get();
+      final siswaSnapshot = await _firestore.collection('siswa').get();
+      final materialsSnapshot = await _firestore.collection('materials').get();
 
-      // Mock data
-      const totalUsers = 150;
-      const totalTeachers = 25;
-      const totalStudents = 125;
-      const totalMaterials = 48;
+      final totalTeachers = guruSnapshot.docs.length;
+      final totalStudents = siswaSnapshot.docs.length;
+      final totalUsers = totalTeachers + totalStudents;
+      final totalMaterials = materialsSnapshot.docs.length;
 
       final recentActivities = [
         {

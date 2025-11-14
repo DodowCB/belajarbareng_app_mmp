@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/config/theme.dart';
 import '../profile_menu/profile_menu_widget.dart';
-import '../../../../core/providers/app_user.dart';
+import '../guru_data/guru_data_screen.dart';
+import '../siswa/siswa_data_screen.dart';
 import 'admin_bloc.dart';
 
 class AdminScreen extends StatefulWidget {
@@ -219,6 +220,7 @@ class _AdminScreenState extends State<AdminScreen> {
                   subtitle: 'Active',
                   icon: Icons.school,
                   color: AppTheme.secondaryTeal,
+                  onTap: () => _navigateToGuruData(),
                 ),
               ),
             ],
@@ -233,6 +235,7 @@ class _AdminScreenState extends State<AdminScreen> {
                   subtitle: 'Enrolled',
                   icon: Icons.groups,
                   color: AppTheme.accentGreen,
+                  onTap: () => _navigateToSiswaData(),
                 ),
               ),
               const SizedBox(width: 12),
@@ -258,45 +261,49 @@ class _AdminScreenState extends State<AdminScreen> {
     required String subtitle,
     required IconData icon,
     required Color color,
+    VoidCallback? onTap,
   }) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withOpacity(0.2)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                title,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: color,
-                  fontWeight: FontWeight.w600,
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: color.withOpacity(0.2)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  title,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: color,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
-              ),
-              Icon(icon, color: color, size: 20),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: color,
+                Icon(icon, color: color, size: 20),
+              ],
             ),
-          ),
-          Text(
-            subtitle,
-            style: Theme.of(
-              context,
-            ).textTheme.bodySmall?.copyWith(color: Colors.grey[600]),
-          ),
-        ],
+            const SizedBox(height: 8),
+            Text(
+              value,
+              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: color,
+              ),
+            ),
+            Text(
+              subtitle,
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: Colors.grey[600]),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -475,5 +482,17 @@ class _AdminScreenState extends State<AdminScreen> {
         ],
       ),
     );
+  }
+
+  void _navigateToGuruData() {
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (context) => const GuruDataScreen()));
+  }
+
+  void _navigateToSiswaData() {
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (context) => const SiswaDataScreen()));
   }
 }
