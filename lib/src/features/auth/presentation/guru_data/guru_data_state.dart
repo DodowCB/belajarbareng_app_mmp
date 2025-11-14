@@ -1,5 +1,4 @@
 import 'package:equatable/equatable.dart';
-import '../../data/models/guru_model.dart';
 
 abstract class GuruDataState extends Equatable {
   const GuruDataState();
@@ -17,9 +16,9 @@ class GuruDataLoading extends GuruDataState {
 }
 
 class GuruDataLoaded extends GuruDataState {
-  final List<GuruModel> guruList;
+  final List<Map<String, dynamic>> guruList;
 
-  const GuruDataLoaded({required this.guruList});
+  const GuruDataLoaded(this.guruList);
 
   @override
   List<Object?> get props => [guruList];
@@ -28,7 +27,16 @@ class GuruDataLoaded extends GuruDataState {
 class GuruDataError extends GuruDataState {
   final String message;
 
-  const GuruDataError({required this.message});
+  const GuruDataError(this.message);
+
+  @override
+  List<Object?> get props => [message];
+}
+
+class GuruDataActionSuccess extends GuruDataState {
+  final String message;
+
+  const GuruDataActionSuccess(this.message);
 
   @override
   List<Object?> get props => [message];

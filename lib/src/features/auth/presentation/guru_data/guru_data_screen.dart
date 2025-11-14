@@ -1,119 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../../core/config/theme.dart';
 import '../profile_menu/profile_menu_widget.dart';
-
-// Simple BLoC Events
-abstract class GuruDataEvent {}
-
-class LoadGuruData extends GuruDataEvent {}
-
-class DeleteGuru extends GuruDataEvent {
-  final String guruId;
-  DeleteGuru(this.guruId);
-}
-
-class DisableGuru extends GuruDataEvent {
-  final String guruId;
-  final bool isDisabled;
-  DisableGuru(this.guruId, this.isDisabled);
-}
-
-// Simple BLoC States
-abstract class GuruDataState {}
-
-class GuruDataInitial extends GuruDataState {}
-
-class GuruDataLoading extends GuruDataState {}
-
-class GuruDataLoaded extends GuruDataState {
-  final List<Map<String, dynamic>> guruList;
-  GuruDataLoaded(this.guruList);
-}
-
-class GuruDataError extends GuruDataState {
-  final String message;
-  GuruDataError(this.message);
-}
-
-class GuruDataActionSuccess extends GuruDataState {
-  final String message;
-  GuruDataActionSuccess(this.message);
-}
-
-// Simple BLoC
-class GuruDataBloc extends Bloc<GuruDataEvent, GuruDataState> {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-
-  GuruDataBloc() : super(GuruDataInitial()) {
-    on<LoadGuruData>(_onLoadGuruData);
-    on<DeleteGuru>(_onDeleteGuru);
-    on<DisableGuru>(_onDisableGuru);
-  }
-
-  Future<void> _onLoadGuruData(
-    LoadGuruData event,
-    Emitter<GuruDataState> emit,
-  ) async {
-    try {
-      emit(GuruDataLoading());
-
-      final QuerySnapshot snapshot = await _firestore.collection('guru').get();
-
-      final List<Map<String, dynamic>> guruList = snapshot.docs.map((doc) {
-        final data = doc.data() as Map<String, dynamic>;
-        return {
-          'id': doc.id,
-          'nama': data['nama'] ?? 'Unknown',
-          'email': data['email'] ?? 'No Email',
-          'nig': data['nig']?.toString() ?? 'No NIG',
-          'mataPelajaran': data['mataPelajaran'] ?? 'No Subject',
-          'sekolah': data['sekolah'] ?? 'No School',
-          'isDisabled': data['isDisabled'] ?? false,
-          'createdAt': data['createdAt'],
-        };
-      }).toList();
-
-      guruList.sort(
-        (a, b) => (a['nama'] as String).compareTo(b['nama'] as String),
-      );
-      emit(GuruDataLoaded(guruList));
-    } catch (e) {
-      emit(GuruDataError('Failed to load guru data: ${e.toString()}'));
-    }
-  }
-
-  Future<void> _onDeleteGuru(
-    DeleteGuru event,
-    Emitter<GuruDataState> emit,
-  ) async {
-    try {
-      await _firestore.collection('guru').doc(event.guruId).delete();
-      emit(GuruDataActionSuccess('Guru deleted successfully'));
-      add(LoadGuruData());
-    } catch (e) {
-      emit(GuruDataError('Failed to delete guru: ${e.toString()}'));
-    }
-  }
-
-  Future<void> _onDisableGuru(
-    DisableGuru event,
-    Emitter<GuruDataState> emit,
-  ) async {
-    try {
-      await _firestore.collection('guru').doc(event.guruId).update({
-        'isDisabled': event.isDisabled,
-      });
-
-      final action = event.isDisabled ? 'disabled' : 'enabled';
-      emit(GuruDataActionSuccess('Guru $action successfully'));
-      add(LoadGuruData());
-    } catch (e) {
-      emit(GuruDataError('Failed to update guru status: ${e.toString()}'));
-    }
-  }
-}
+import 'guru_data_bloc.dart';
+import 'guru_data_event.dart';
+import 'guru_data_state.dart';
 
 class GuruDataScreen extends StatefulWidget {
   const GuruDataScreen({super.key});
@@ -126,7 +17,7 @@ class _GuruDataScreenState extends State<GuruDataScreen> {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => GuruDataBloc()..add(LoadGuruData()),
+      create: (context) => GuruDataBloc()..add(const LoadGuruData()),
       child: Scaffold(
         backgroundColor: Colors.grey[50],
         appBar: AppBar(
@@ -179,14 +70,27 @@ class _GuruDataScreenState extends State<GuruDataScreen> {
             return const Center(child: Text('No data available'));
           },
         ),
-        floatingActionButton: FloatingActionButton(
-          onPressed: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Add Guru feature coming soon')),
-            );
-          },
-          backgroundColor: AppTheme.primaryPurple,
-          child: const Icon(Icons.add, color: Colors.white),
+        floatingActionButton: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            FloatingActionButton(
+              heroTag: "add_guru",
+              onPressed: () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Add Guru feature coming soon')),
+                );
+              },
+              backgroundColor: AppTheme.primaryPurple,
+              child: const Icon(Icons.add, color: Colors.white),
+            ),
+            const SizedBox(height: 10),
+            FloatingActionButton(
+              heroTag: "import_excel",
+              onPressed: _importFromExcel,
+              backgroundColor: AppTheme.accentGreen,
+              child: const Icon(Icons.file_upload, color: Colors.white),
+            ),
+          ],
         ),
       ),
     );
@@ -226,132 +130,87 @@ class _GuruDataScreenState extends State<GuruDataScreen> {
               ),
             ),
             Expanded(
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: DataTable(
-                  columnSpacing: 20,
-                  columns: const [
-                    DataColumn(
-                      label: Text(
-                        'Nama',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                    DataColumn(
-                      label: Text(
-                        'NIG',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                    DataColumn(
-                      label: Text(
-                        'Email',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                    DataColumn(
-                      label: Text(
-                        'Mata Pelajaran',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                    DataColumn(
-                      label: Text(
-                        'Sekolah',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                    DataColumn(
-                      label: Text(
-                        'Status',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                    DataColumn(
-                      label: Text(
-                        'Actions',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                  ],
-                  rows: guruList.map((guru) {
-                    final isDisabled = guru['isDisabled'] as bool;
-                    return DataRow(
-                      cells: [
-                        DataCell(
-                          Text(
-                            guru['nama'] as String,
-                            style: TextStyle(
-                              color: isDisabled ? Colors.grey : Colors.black,
-                              decoration: isDisabled
-                                  ? TextDecoration.lineThrough
-                                  : null,
-                            ),
-                          ),
-                        ),
-                        DataCell(Text(guru['nig'] as String)),
-                        DataCell(Text(guru['email'] as String)),
-                        DataCell(Text(guru['mataPelajaran'] as String)),
-                        DataCell(Text(guru['sekolah'] as String)),
-                        DataCell(
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: isDisabled
-                                  ? Colors.red.withOpacity(0.1)
-                                  : Colors.green.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              isDisabled ? 'Disabled' : 'Active',
-                              style: TextStyle(
-                                color: isDisabled ? Colors.red : Colors.green,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 12,
-                              ),
-                            ),
-                          ),
-                        ),
-                        DataCell(
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              IconButton(
-                                icon: Icon(
-                                  isDisabled ? Icons.check_circle : Icons.block,
-                                  color: isDisabled
-                                      ? Colors.green
-                                      : Colors.orange,
-                                  size: 20,
-                                ),
-                                onPressed: () => _showDisableDialog(
-                                  guru['id'] as String,
-                                  !isDisabled,
-                                ),
-                                tooltip: isDisabled ? 'Enable' : 'Disable',
-                              ),
-                              IconButton(
-                                icon: const Icon(
-                                  Icons.delete,
-                                  color: Colors.red,
-                                  size: 20,
-                                ),
-                                onPressed: () => _showDeleteDialog(
-                                  guru['id'] as String,
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  return SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(minWidth: constraints.maxWidth),
+                      child: DataTable(
+                        columnSpacing: constraints.maxWidth > 800 ? 20 : 10,
+                        columns: const [
+                          DataColumn(label: Text('Nama', style: TextStyle(fontWeight: FontWeight.bold))),
+                          DataColumn(label: Text('NIG', style: TextStyle(fontWeight: FontWeight.bold))),
+                          DataColumn(label: Text('Email', style: TextStyle(fontWeight: FontWeight.bold))),
+                          DataColumn(label: Text('Mata Pelajaran', style: TextStyle(fontWeight: FontWeight.bold))),
+                          DataColumn(label: Text('Jenis Kelamin', style: TextStyle(fontWeight: FontWeight.bold))),
+                          DataColumn(label: Text('Sekolah', style: TextStyle(fontWeight: FontWeight.bold))),
+                          DataColumn(label: Text('Status', style: TextStyle(fontWeight: FontWeight.bold))),
+                          DataColumn(label: Text('Actions', style: TextStyle(fontWeight: FontWeight.bold))),
+                        ],
+                        rows: guruList.map((guru) {
+                          final isDisabled = guru['isDisabled'] as bool;
+                          return DataRow(
+                            cells: [
+                              DataCell(
+                                Text(
                                   guru['nama'] as String,
+                                  style: TextStyle(
+                                    color: isDisabled ? Colors.grey : Colors.black,
+                                    decoration: isDisabled ? TextDecoration.lineThrough : null,
+                                  ),
                                 ),
-                                tooltip: 'Delete',
+                              ),
+                              DataCell(Text(guru['nig'] as String)),
+                              DataCell(Text(guru['email'] as String)),
+                              DataCell(Text(guru['mataPelajaran'] as String)),
+                              DataCell(Text(guru['jenisKelamin'] as String)),
+                              DataCell(Text(guru['sekolah'] as String)),
+                              DataCell(
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: isDisabled ? Colors.red.withOpacity(0.1) : Colors.green.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Text(
+                                    isDisabled ? 'Disabled' : 'Active',
+                                    style: TextStyle(
+                                      color: isDisabled ? Colors.red : Colors.green,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              DataCell(
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    IconButton(
+                                      icon: Icon(
+                                        isDisabled ? Icons.check_circle : Icons.block,
+                                        color: isDisabled ? Colors.green : Colors.orange,
+                                        size: 20,
+                                      ),
+                                      onPressed: () => _showDisableDialog(guru['id'] as String, !isDisabled),
+                                      tooltip: isDisabled ? 'Enable' : 'Disable',
+                                    ),
+                                    IconButton(
+                                      icon: const Icon(Icons.delete, color: Colors.red, size: 20),
+                                      onPressed: () => _showDeleteDialog(guru['id'] as String, guru['nama'] as String),
+                                      tooltip: 'Delete',
+                                    ),
+                                  ],
+                                ),
                               ),
                             ],
-                          ),
-                        ),
-                      ],
-                    );
-                  }).toList(),
-                ),
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                  );
+                },
               ),
             ),
           ],
@@ -361,9 +220,10 @@ class _GuruDataScreenState extends State<GuruDataScreen> {
   }
 
   void _showDisableDialog(String guruId, bool disable) {
+    final blocContext = context; // Capture the widget's context
     showDialog(
       context: context,
-      builder: (BuildContext context) {
+      builder: (BuildContext dialogContext) {
         return AlertDialog(
           title: Text(disable ? 'Disable Guru' : 'Enable Guru'),
           content: Text(
@@ -373,13 +233,13 @@ class _GuruDataScreenState extends State<GuruDataScreen> {
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.of(context).pop(),
+              onPressed: () => Navigator.of(dialogContext).pop(),
               child: const Text('Cancel'),
             ),
             ElevatedButton(
               onPressed: () {
-                context.read<GuruDataBloc>().add(DisableGuru(guruId, disable));
-                Navigator.of(context).pop();
+                blocContext.read<GuruDataBloc>().add(DisableGuru(guruId, disable));
+                Navigator.of(dialogContext).pop();
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: disable ? Colors.orange : Colors.green,
@@ -393,26 +253,43 @@ class _GuruDataScreenState extends State<GuruDataScreen> {
   }
 
   void _showDeleteDialog(String guruId, String guruName) {
+    final blocContext = context; // Capture the widget's context
     showDialog(
       context: context,
-      builder: (BuildContext context) {
+      builder: (BuildContext dialogContext) {
         return AlertDialog(
           title: const Text('Delete Guru'),
-          content: Text(
-            'Are you sure you want to delete "$guruName"? This action cannot be undone.',
-          ),
+          content: Text('Are you sure you want to delete "$guruName"? This action cannot be undone.'),
           actions: [
             TextButton(
-              onPressed: () => Navigator.of(context).pop(),
+              onPressed: () => Navigator.of(dialogContext).pop(),
               child: const Text('Cancel'),
             ),
             ElevatedButton(
               onPressed: () {
-                context.read<GuruDataBloc>().add(DeleteGuru(guruId));
-                Navigator.of(context).pop();
+                blocContext.read<GuruDataBloc>().add(DeleteGuru(guruId));
+                Navigator.of(dialogContext).pop();
               },
               style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
               child: const Text('Delete'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _importFromExcel() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Import from Excel'),
+          content: const Text('Excel import functionality will be implemented when file_picker and excel packages are added to pubspec.yaml'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('OK'),
             ),
           ],
         );

@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/config/theme.dart';
 import '../profile_menu/profile_menu_widget.dart';
-import 'siswa_bloc.dart';
+import 'siswa_data_bloc.dart';
+import 'siswa_data_event.dart';
+import 'siswa_data_state.dart';
 
 class SiswaDataScreen extends StatefulWidget {
   const SiswaDataScreen({super.key});
@@ -15,7 +17,7 @@ class _SiswaDataScreenState extends State<SiswaDataScreen> {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => SiswaBloc()..add(LoadSiswaData()),
+      create: (context) => SiswaDataBloc()..add(const LoadSiswaData()),
       child: Scaffold(
         backgroundColor: Colors.grey[50],
         appBar: AppBar(
@@ -38,16 +40,16 @@ class _SiswaDataScreenState extends State<SiswaDataScreen> {
             ),
           ],
         ),
-        body: BlocConsumer<SiswaBloc, SiswaState>(
+        body: BlocConsumer<SiswaDataBloc, SiswaState>(
           listener: (context, state) {
-            if (state is SiswaError) {
+            if (state is SiswaDataError) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(state.message),
                   backgroundColor: Colors.red,
                 ),
               );
-            } else if (state is SiswaActionSuccess) {
+            } else if (state is SiswaDataActionSuccess) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(state.message),
@@ -57,26 +59,38 @@ class _SiswaDataScreenState extends State<SiswaDataScreen> {
             }
           },
           builder: (context, state) {
-            if (state is SiswaLoading) {
+            if (state is SiswaDataLoading) {
               return const Center(child: CircularProgressIndicator());
             }
 
-            if (state is SiswaLoaded) {
+            if (state is SiswaDataLoaded) {
               return _buildSiswaTable(state.siswaList);
             }
 
             return const Center(child: Text('No data available'));
           },
         ),
-        floatingActionButton: FloatingActionButton(
-          onPressed: () {
-            // TODO: Navigate to add siswa screen
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Add Siswa feature coming soon')),
-            );
-          },
-          backgroundColor: AppTheme.primaryPurple,
-          child: const Icon(Icons.add, color: Colors.white),
+        floatingActionButton: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            FloatingActionButton(
+              heroTag: "add_siswa",
+              onPressed: () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Add Siswa feature coming soon')),
+                );
+              },
+              backgroundColor: AppTheme.primaryPurple,
+              child: const Icon(Icons.add, color: Colors.white),
+            ),
+            const SizedBox(height: 10),
+            FloatingActionButton(
+              heroTag: "import_excel_siswa",
+              onPressed: _importFromExcel,
+              backgroundColor: AppTheme.accentGreen,
+              child: const Icon(Icons.file_upload, color: Colors.white),
+            ),
+          ],
         ),
       ),
     );
@@ -102,7 +116,7 @@ class _SiswaDataScreenState extends State<SiswaDataScreen> {
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.groups, color: AppTheme.primaryPurple),
+                  const Icon(Icons.person, color: AppTheme.primaryPurple),
                   const SizedBox(width: 8),
                   Text(
                     'Total Siswa: ${siswaList.length}',
@@ -116,133 +130,85 @@ class _SiswaDataScreenState extends State<SiswaDataScreen> {
               ),
             ),
             Expanded(
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: DataTable(
-                  columnSpacing: 20,
-                  columns: const [
-                    DataColumn(
-                      label: Text(
-                        'Nama',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                    DataColumn(
-                      label: Text(
-                        'NIS',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                    DataColumn(
-                      label: Text(
-                        'Email',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                    DataColumn(
-                      label: Text(
-                        'Kelas',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                    DataColumn(
-                      label: Text(
-                        'Sekolah',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                    DataColumn(
-                      label: Text(
-                        'Status',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                    DataColumn(
-                      label: Text(
-                        'Actions',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                  ],
-                  rows: siswaList.map((siswa) {
-                    final isDisabled = siswa['isDisabled'] as bool;
-                    return DataRow(
-                      cells: [
-                        DataCell(
-                          Text(
-                            siswa['nama'] as String,
-                            style: TextStyle(
-                              color: isDisabled ? Colors.red : Colors.white,
-                              decoration: isDisabled
-                                  ? TextDecoration.lineThrough
-                                  : null,
-                            ),
-                          ),
-                        ),
-                        DataCell(Text(siswa['nis'] as String)),
-                        DataCell(Text(siswa['email'] as String)),
-                        DataCell(Text(siswa['kelas'] as String)),
-                        DataCell(Text(siswa['sekolah'] as String)),
-                        DataCell(
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: isDisabled
-                                  ? Colors.red.withOpacity(0.1)
-                                  : Colors.green.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              isDisabled ? 'Disabled' : 'Active',
-                              style: TextStyle(
-                                color: isDisabled ? Colors.red : Colors.green,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 12,
-                              ),
-                            ),
-                          ),
-                        ),
-                        DataCell(
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              IconButton(
-                                icon: Icon(
-                                  isDisabled ? Icons.check_circle : Icons.block,
-                                  color: isDisabled
-                                      ? Colors.green
-                                      : Colors.orange,
-                                  size: 20,
-                                ),
-                                onPressed: () => _showDisableDialog(
-                                  siswa['id'] as String,
-                                  !isDisabled,
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  return SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(minWidth: constraints.maxWidth),
+                      child: DataTable(
+                        columnSpacing: constraints.maxWidth > 800 ? 20 : 10,
+                        columns: const [
+                          DataColumn(label: Text('Nama', style: TextStyle(fontWeight: FontWeight.bold))),
+                          DataColumn(label: Text('NIS', style: TextStyle(fontWeight: FontWeight.bold))),
+                          DataColumn(label: Text('Email', style: TextStyle(fontWeight: FontWeight.bold))),
+                          DataColumn(label: Text('Jenis Kelamin', style: TextStyle(fontWeight: FontWeight.bold))),
+                          DataColumn(label: Text('Tanggal Lahir', style: TextStyle(fontWeight: FontWeight.bold))),
+                          DataColumn(label: Text('Status', style: TextStyle(fontWeight: FontWeight.bold))),
+                          DataColumn(label: Text('Actions', style: TextStyle(fontWeight: FontWeight.bold))),
+                        ],
+                        rows: siswaList.map((siswa) {
+                          final isDisabled = siswa['isDisabled'] as bool;
+                          return DataRow(
+                            cells: [
+                              DataCell(
+                                Text(
                                   siswa['nama'] as String,
+                                  style: TextStyle(
+                                    color: isDisabled ? Colors.grey : Colors.black,
+                                    decoration: isDisabled ? TextDecoration.lineThrough : null,
+                                  ),
                                 ),
-                                tooltip: isDisabled ? 'Enable' : 'Disable',
                               ),
-                              IconButton(
-                                icon: const Icon(
-                                  Icons.delete,
-                                  color: Colors.red,
-                                  size: 20,
+                              DataCell(Text(siswa['nis'] as String)),
+                              DataCell(Text(siswa['email'] as String)),
+                              DataCell(Text(siswa['jenisKelamin'] as String)),
+                              DataCell(Text(siswa['tanggalLahir'] as String)),
+                              DataCell(
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: isDisabled ? Colors.red.withOpacity(0.1) : Colors.green.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Text(
+                                    isDisabled ? 'Disabled' : 'Active',
+                                    style: TextStyle(
+                                      color: isDisabled ? Colors.red : Colors.green,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 12,
+                                    ),
+                                  ),
                                 ),
-                                onPressed: () => _showDeleteDialog(
-                                  siswa['id'] as String,
-                                  siswa['nama'] as String,
+                              ),
+                              DataCell(
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    IconButton(
+                                      icon: Icon(
+                                        isDisabled ? Icons.check_circle : Icons.block,
+                                        color: isDisabled ? Colors.green : Colors.orange,
+                                        size: 20,
+                                      ),
+                                      onPressed: () => _showDisableDialog(siswa['id'] as String, !isDisabled),
+                                      tooltip: isDisabled ? 'Enable' : 'Disable',
+                                    ),
+                                    IconButton(
+                                      icon: const Icon(Icons.delete, color: Colors.red, size: 20),
+                                      onPressed: () => _showDeleteDialog(siswa['id'] as String, siswa['nama'] as String),
+                                      tooltip: 'Delete',
+                                    ),
+                                  ],
                                 ),
-                                tooltip: 'Delete',
                               ),
                             ],
-                          ),
-                        ),
-                      ],
-                    );
-                  }).toList(),
-                ),
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                  );
+                },
               ),
             ),
           ],
@@ -251,26 +217,27 @@ class _SiswaDataScreenState extends State<SiswaDataScreen> {
     );
   }
 
-  void _showDisableDialog(String siswaId, bool disable, String siswaName) {
+  void _showDisableDialog(String siswaId, bool disable) {
+    final blocContext = context; // Capture the widget's context
     showDialog(
       context: context,
-      builder: (BuildContext context) {
+      builder: (BuildContext dialogContext) {
         return AlertDialog(
           title: Text(disable ? 'Disable Siswa' : 'Enable Siswa'),
           content: Text(
             disable
-                ? 'Are you sure you want to disable this $siswaName?'
-                : 'Are you sure you want to enable this $siswaName?',
+                ? 'Are you sure you want to disable this siswa?'
+                : 'Are you sure you want to enable this siswa?',
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.of(context).pop(),
+              onPressed: () => Navigator.of(dialogContext).pop(),
               child: const Text('Cancel'),
             ),
             ElevatedButton(
               onPressed: () {
-                context.read<SiswaBloc>().add(DisableSiswa(siswaId, disable));
-                Navigator.of(context).pop();
+                blocContext.read<SiswaDataBloc>().add(DisableSiswa(siswaId, disable));
+                Navigator.of(dialogContext).pop();
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: disable ? Colors.orange : Colors.green,
@@ -284,26 +251,43 @@ class _SiswaDataScreenState extends State<SiswaDataScreen> {
   }
 
   void _showDeleteDialog(String siswaId, String siswaName) {
+    final blocContext = context; // Capture the widget's context
     showDialog(
       context: context,
-      builder: (BuildContext context) {
+      builder: (BuildContext dialogContext) {
         return AlertDialog(
           title: const Text('Delete Siswa'),
-          content: Text(
-            'Are you sure you want to delete "$siswaName"? This action cannot be undone.',
-          ),
+          content: Text('Are you sure you want to delete "$siswaName"? This action cannot be undone.'),
           actions: [
             TextButton(
-              onPressed: () => Navigator.of(context).pop(),
+              onPressed: () => Navigator.of(dialogContext).pop(),
               child: const Text('Cancel'),
             ),
             ElevatedButton(
               onPressed: () {
-                context.read<SiswaBloc>().add(DeleteSiswa(siswaId));
-                Navigator.of(context).pop();
+                blocContext.read<SiswaDataBloc>().add(DeleteSiswa(siswaId));
+                Navigator.of(dialogContext).pop();
               },
               style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
               child: const Text('Delete'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _importFromExcel() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Import from Excel'),
+          content: const Text('Excel import functionality will be implemented when file_picker and excel packages are added to pubspec.yaml'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('OK'),
             ),
           ],
         );

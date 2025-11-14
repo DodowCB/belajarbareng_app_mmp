@@ -6,7 +6,7 @@ name: belajarbareng_app_mmp
 description: "Project Plan BelajarBareng. Collaborative Learning App with AI and User Generated Content (Flutter)"
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
-publish_to: 'none' # Remove this line if you wish to publish to pub.dev
+publish_to: "none" # Remove this line if you wish to publish to pub.dev
 
 # The following defines the version and build number for your application.
 # A version number is three numbers separated by dots, like 1.2.43
@@ -80,6 +80,8 @@ dependencies:
   equatable: ^2.0.7
   bloc: ^9.1.0
 
+  file_picker: ^8.0.0+1
+  excel: ^4.0.3
 
 dev_dependencies:
   flutter_test:
@@ -98,14 +100,11 @@ dev_dependencies:
   drift_dev: ^2.13.0
   riverpod_generator: ^2.3.9 # Jika Anda pakai Riverpod Generator
 
-
-
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
 
 # The following section is specific to Flutter packages.
 flutter:
-
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in
   # the material Icons class.
