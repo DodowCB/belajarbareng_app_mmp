@@ -31,10 +31,24 @@ class DisableGuru extends GuruDataEvent {
 }
 
 class ImportGuruFromExcel extends GuruDataEvent {
-  final String filePath;
+  const ImportGuruFromExcel();
+}
 
-  const ImportGuruFromExcel(this.filePath);
+class AddGuru extends GuruDataEvent {
+  final Map<String, dynamic> guruData;
+
+  const AddGuru(this.guruData);
 
   @override
-  List<Object?> get props => [filePath];
+  List<Object?> get props => [guruData];
+}
+
+class UpdateGuru extends GuruDataEvent {
+  final String guruId;
+  final Map<String, dynamic> guruData;
+
+  const UpdateGuru(this.guruId, this.guruData);
+
+  @override
+  List<Object?> get props => [guruId, guruData];
 }

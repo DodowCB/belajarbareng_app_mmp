@@ -1,5 +1,8 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
+import '../../../../core/services/excel_import_service.dart';
+import '../../../../core/services/id_generator_service.dart';
 import 'siswa_data_event.dart';
 import 'siswa_data_state.dart';
 
@@ -11,6 +14,38 @@ class SiswaDataBloc extends Bloc<SiswaEvent, SiswaState> {
     on<DeleteSiswa>(_onDeleteSiswa);
     on<DisableSiswa>(_onDisableSiswa);
     on<ImportSiswaFromExcel>(_onImportSiswaFromExcel);
+    on<AddSiswa>(_onAddSiswa);
+    on<UpdateSiswa>(_onUpdateSiswa);
+  }
+
+  // Stream untuk real-time data
+  Stream<List<Map<String, dynamic>>> getSiswaStream() {
+    return _firestore.collection('siswa').snapshots().map((snapshot) {
+      final List<Map<String, dynamic>> siswaList = snapshot.docs.map((doc) {
+        final data = doc.data();
+
+        return {
+          'id': doc.id,
+          'nama': data['nama'] ?? 'Unknown',
+          'email': data['email'] ?? 'No Email',
+          'password': data['password'] ?? 'No Password',
+          'nis': data['nis']?.toString() ?? 'No NIS',
+          'jenisKelamin': data['jenis_kelamin'] ?? 'Unknown',
+          'tanggalLahir': data['tanggal_lahir'] ?? 'Unknown',
+          'photoUrl': data['photo_url'] ?? '',
+          'status': data['status'] ?? 'active',
+          'isDisabled': data['status'] == 'disabled',
+          'createdAt': data['createdAt'],
+        };
+      }).toList();
+
+      // Sort by name
+      siswaList.sort(
+        (a, b) => (a['nama'] as String).compareTo(b['nama'] as String),
+      );
+
+      return siswaList;
+    });
   }
 
   Future<void> _onLoadSiswaData(
@@ -28,6 +63,7 @@ class SiswaDataBloc extends Bloc<SiswaEvent, SiswaState> {
           'id': doc.id,
           'nama': data['nama'] ?? 'Unknown',
           'email': data['email'] ?? 'No Email',
+          'password': data['password'] ?? 'No Password',
           'nis': data['nis']?.toString() ?? 'No NIS',
           'jenisKelamin': data['jenis_kelamin'] ?? 'Unknown',
           'tanggalLahir': data['tanggal_lahir'] ?? 'Unknown',
@@ -89,11 +125,77 @@ class SiswaDataBloc extends Bloc<SiswaEvent, SiswaState> {
     Emitter<SiswaState> emit,
   ) async {
     try {
-      // TODO: Implement Excel import functionality
-      // This will be implemented when file_picker and excel packages are added
-      emit(SiswaDataActionSuccess('Excel import functionality coming soon'));
+      emit(SiswaDataLoading());
+
+      // Import data from Excel
+      List<Map<String, dynamic>>? importedData =
+          await ExcelImportService.importSiswaFromExcel();
+
+      if (importedData != null && importedData.isNotEmpty) {
+        // Batch write to Firestore
+        final batch = _firestore.batch();
+        int successCount = 0;
+
+        // Get sequential IDs for all siswa data
+        final ids = await IdGeneratorService.getNextIds(
+          'siswa',
+          importedData.length,
+        );
+
+        for (int i = 0; i < importedData.length; i++) {
+          try {
+            final siswaData = importedData[i];
+            final docRef = _firestore.collection('siswa').doc(ids[i]);
+            batch.set(docRef, siswaData);
+            successCount++;
+          } catch (e) {
+            debugPrint('Error adding siswa: $e');
+          }
+        }
+
+        await batch.commit();
+        emit(
+          SiswaDataActionSuccess(
+            'Successfully imported $successCount siswa records',
+          ),
+        );
+
+        // Reload data
+        add(const LoadSiswaData());
+      } else {
+        emit(
+          SiswaDataActionSuccess(
+            'No data found in Excel file or import was cancelled',
+          ),
+        );
+      }
     } catch (e) {
       emit(SiswaDataError('Failed to import from Excel: ${e.toString()}'));
+    }
+  }
+
+  Future<void> _onAddSiswa(
+    AddSiswa event,
+    Emitter<SiswaState> emit,
+  ) async {
+    try {
+      final id = await IdGeneratorService.getNextId('siswa');
+      await _firestore.collection('siswa').doc(id).set(event.siswaData);
+      emit(SiswaDataActionSuccess('Siswa berhasil ditambahkan'));
+    } catch (e) {
+      emit(SiswaDataError('Failed to add siswa: ${e.toString()}'));
+    }
+  }
+
+  Future<void> _onUpdateSiswa(
+    UpdateSiswa event,
+    Emitter<SiswaState> emit,
+  ) async {
+    try {
+      await _firestore.collection('siswa').doc(event.siswaId).update(event.siswaData);
+      emit(SiswaDataActionSuccess('Siswa berhasil diupdate'));
+    } catch (e) {
+      emit(SiswaDataError('Failed to update siswa: ${e.toString()}'));
     }
   }
 }

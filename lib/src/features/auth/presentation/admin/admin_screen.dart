@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../../core/config/theme.dart';
 import '../profile_menu/profile_menu_widget.dart';
 import '../guru_data/guru_data_screen.dart';
@@ -14,14 +15,39 @@ class AdminScreen extends StatefulWidget {
 }
 
 class _AdminScreenState extends State<AdminScreen> {
+  late AdminBloc _adminBloc = AdminBloc();
+
+  @override
+  void initState() {
+    super.initState();
+    _adminBloc = AdminBloc();
+  }
+
+  @override
+  void dispose() {
+    _adminBloc.close();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) => AdminBloc()..add(LoadAdminData()),
+    return BlocProvider.value(
+      value: _adminBloc,
       child: Scaffold(
         backgroundColor: Colors.grey[50],
-        body: BlocBuilder<AdminBloc, AdminState>(
-          builder: (context, state) {
+        body: StreamBuilder<AdminState>(
+          stream: _adminBloc.getAdminDataStream(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+
+            if (snapshot.hasError) {
+              return Center(child: Text('Error: ${snapshot.error}'));
+            }
+
+            final state = snapshot.data ?? AdminState();
+
             return CustomScrollView(
               slivers: [
                 _buildAppBar(context),
@@ -29,8 +55,6 @@ class _AdminScreenState extends State<AdminScreen> {
                 SliverToBoxAdapter(child: _buildWelcomeCard()),
                 const SliverToBoxAdapter(child: SizedBox(height: 24)),
                 SliverToBoxAdapter(child: _buildStatsSection(state)),
-                const SliverToBoxAdapter(child: SizedBox(height: 24)),
-                SliverToBoxAdapter(child: _buildQuickActions()),
                 const SliverToBoxAdapter(child: SizedBox(height: 24)),
                 SliverToBoxAdapter(child: _buildRecentActivity(state)),
                 const SliverToBoxAdapter(child: SizedBox(height: 100)),
@@ -250,6 +274,23 @@ class _AdminScreenState extends State<AdminScreen> {
               ),
             ],
           ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _buildStatCard(
+                  title: 'Classes',
+                  value: state.totalClasses.toString(),
+                  subtitle: 'Available',
+                  icon: Icons.class_,
+                  color: Colors.purple,
+                  onTap: () => _showAddClassDialog(),
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(child: SizedBox()), // Empty space for symmetry
+            ],
+          ),
         ],
       ),
     );
@@ -296,126 +337,6 @@ class _AdminScreenState extends State<AdminScreen> {
                 color: color,
               ),
             ),
-            Text(
-              subtitle,
-              style: Theme.of(
-                context,
-              ).textTheme.bodySmall?.copyWith(color: Colors.grey[600]),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildQuickActions() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Quick Actions',
-            style: Theme.of(
-              context,
-            ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: _buildActionCard(
-                  title: 'Manage Users',
-                  subtitle: 'Add/Remove users',
-                  icon: Icons.manage_accounts,
-                  color: AppTheme.primaryPurple,
-                  onTap: () {
-                    // TODO: Navigate to user management
-                  },
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildActionCard(
-                  title: 'System Settings',
-                  subtitle: 'Configure system',
-                  icon: Icons.settings,
-                  color: AppTheme.secondaryTeal,
-                  onTap: () {
-                    // TODO: Navigate to system settings
-                  },
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: _buildActionCard(
-                  title: 'Reports',
-                  subtitle: 'View analytics',
-                  icon: Icons.analytics,
-                  color: AppTheme.accentGreen,
-                  onTap: () {
-                    // TODO: Navigate to reports
-                  },
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildActionCard(
-                  title: 'Backup',
-                  subtitle: 'Data backup',
-                  icon: Icons.backup,
-                  color: AppTheme.accentOrange,
-                  onTap: () {
-                    // TODO: Navigate to backup
-                  },
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildActionCard({
-    required String title,
-    required String subtitle,
-    required IconData icon,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: color.withOpacity(0.2)),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(icon, color: color, size: 24),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              title,
-              style: Theme.of(
-                context,
-              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 4),
             Text(
               subtitle,
               style: Theme.of(
@@ -494,5 +415,105 @@ class _AdminScreenState extends State<AdminScreen> {
     Navigator.of(
       context,
     ).push(MaterialPageRoute(builder: (context) => const SiswaDataScreen()));
+  }
+
+  void _showAddClassDialog() {
+    final namaKelasController = TextEditingController();
+    final tingkatController = TextEditingController();
+    final waliKelasController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          title: const Text('Tambah Kelas'),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: namaKelasController,
+                  decoration: const InputDecoration(
+                    labelText: 'Nama Kelas (misal: XII IPA 1)',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: tingkatController,
+                  decoration: const InputDecoration(
+                    labelText: 'Tingkat (misal: 12)',
+                    border: OutlineInputBorder(),
+                  ),
+                  keyboardType: TextInputType.number,
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: waliKelasController,
+                  decoration: const InputDecoration(
+                    labelText: 'Wali Kelas (opsional)',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('Batal'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                final namaKelas = namaKelasController.text.trim();
+                final tingkat = tingkatController.text.trim();
+                final waliKelas = waliKelasController.text.trim();
+
+                if (namaKelas.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Nama kelas harus diisi'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                  return;
+                }
+
+                try {
+                  await FirebaseFirestore.instance.collection('classes').add({
+                    'nama_kelas': namaKelas,
+                    'tingkat': tingkat,
+                    'wali_kelas': waliKelas,
+                    'createdAt': DateTime.now().toIso8601String(),
+                  });
+
+                  Navigator.of(dialogContext).pop();
+                  
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Kelas berhasil ditambahkan'),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+                  }
+                } catch (e) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Error: ${e.toString()}'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
+                }
+              },
+              child: const Text('Tambah'),
+            ),
+          ],
+        );
+      },
+    );
   }
 }

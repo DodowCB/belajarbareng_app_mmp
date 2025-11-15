@@ -14,10 +14,24 @@ class SiswaDataScreen extends StatefulWidget {
 }
 
 class _SiswaDataScreenState extends State<SiswaDataScreen> {
+  late SiswaDataBloc _siswaDataBloc;
+
+  @override
+  void initState() {
+    super.initState();
+    _siswaDataBloc = SiswaDataBloc();
+  }
+
+  @override
+  void dispose() {
+    _siswaDataBloc.close();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) => SiswaDataBloc()..add(const LoadSiswaData()),
+    return BlocProvider.value(
+      value: _siswaDataBloc,
       child: Scaffold(
         backgroundColor: Colors.grey[50],
         appBar: AppBar(
@@ -40,7 +54,7 @@ class _SiswaDataScreenState extends State<SiswaDataScreen> {
             ),
           ],
         ),
-        body: BlocConsumer<SiswaDataBloc, SiswaState>(
+        body: BlocListener<SiswaDataBloc, SiswaState>(
           listener: (context, state) {
             if (state is SiswaDataError) {
               ScaffoldMessenger.of(context).showSnackBar(
@@ -58,28 +72,31 @@ class _SiswaDataScreenState extends State<SiswaDataScreen> {
               );
             }
           },
-          builder: (context, state) {
-            if (state is SiswaDataLoading) {
-              return const Center(child: CircularProgressIndicator());
-            }
+          child: StreamBuilder<List<Map<String, dynamic>>>(
+            stream: _siswaDataBloc.getSiswaStream(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
 
-            if (state is SiswaDataLoaded) {
-              return _buildSiswaTable(state.siswaList);
-            }
+              if (snapshot.hasError) {
+                return Center(child: Text('Error: ${snapshot.error}'));
+              }
 
-            return const Center(child: Text('No data available'));
-          },
+              if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                return const Center(child: Text('No data available'));
+              }
+
+              return _buildSiswaTable(snapshot.data!);
+            },
+          ),
         ),
         floatingActionButton: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             FloatingActionButton(
               heroTag: "add_siswa",
-              onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Add Siswa feature coming soon')),
-                );
-              },
+              onPressed: () => _showAddSiswaDialog(),
               backgroundColor: AppTheme.primaryPurple,
               child: const Icon(Icons.add, color: Colors.white),
             ),
@@ -135,17 +152,60 @@ class _SiswaDataScreenState extends State<SiswaDataScreen> {
                   return SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     child: ConstrainedBox(
-                      constraints: BoxConstraints(minWidth: constraints.maxWidth),
+                      constraints: BoxConstraints(
+                        minWidth: constraints.maxWidth,
+                      ),
                       child: DataTable(
                         columnSpacing: constraints.maxWidth > 800 ? 20 : 10,
                         columns: const [
-                          DataColumn(label: Text('Nama', style: TextStyle(fontWeight: FontWeight.bold))),
-                          DataColumn(label: Text('NIS', style: TextStyle(fontWeight: FontWeight.bold))),
-                          DataColumn(label: Text('Email', style: TextStyle(fontWeight: FontWeight.bold))),
-                          DataColumn(label: Text('Jenis Kelamin', style: TextStyle(fontWeight: FontWeight.bold))),
-                          DataColumn(label: Text('Tanggal Lahir', style: TextStyle(fontWeight: FontWeight.bold))),
-                          DataColumn(label: Text('Status', style: TextStyle(fontWeight: FontWeight.bold))),
-                          DataColumn(label: Text('Actions', style: TextStyle(fontWeight: FontWeight.bold))),
+                          DataColumn(
+                            label: Text(
+                              'Nama',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                          DataColumn(
+                            label: Text(
+                              'NIS',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                          DataColumn(
+                            label: Text(
+                              'Email',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                          DataColumn(
+                            label: Text(
+                              'Password',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                          DataColumn(
+                            label: Text(
+                              'Jenis Kelamin',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                          DataColumn(
+                            label: Text(
+                              'Tanggal Lahir',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                          DataColumn(
+                            label: Text(
+                              'Status',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                          DataColumn(
+                            label: Text(
+                              'Actions',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          ),
                         ],
                         rows: siswaList.map((siswa) {
                           final isDisabled = siswa['isDisabled'] as bool;
@@ -155,26 +215,38 @@ class _SiswaDataScreenState extends State<SiswaDataScreen> {
                                 Text(
                                   siswa['nama'] as String,
                                   style: TextStyle(
-                                    color: isDisabled ? Colors.grey : Colors.black,
-                                    decoration: isDisabled ? TextDecoration.lineThrough : null,
+                                    color: isDisabled
+                                        ? Colors.red
+                                        : Colors.white,
+                                    decoration: isDisabled
+                                        ? TextDecoration.lineThrough
+                                        : null,
                                   ),
                                 ),
                               ),
                               DataCell(Text(siswa['nis'] as String)),
                               DataCell(Text(siswa['email'] as String)),
+                              DataCell(Text(siswa['password'] as String)),
                               DataCell(Text(siswa['jenisKelamin'] as String)),
                               DataCell(Text(siswa['tanggalLahir'] as String)),
                               DataCell(
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
                                   decoration: BoxDecoration(
-                                    color: isDisabled ? Colors.red.withOpacity(0.1) : Colors.green.withOpacity(0.1),
+                                    color: isDisabled
+                                        ? Colors.red.withOpacity(0.1)
+                                        : Colors.green.withOpacity(0.1),
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                   child: Text(
                                     isDisabled ? 'Disabled' : 'Active',
                                     style: TextStyle(
-                                      color: isDisabled ? Colors.red : Colors.green,
+                                      color: isDisabled
+                                          ? Colors.red
+                                          : Colors.green,
                                       fontWeight: FontWeight.bold,
                                       fontSize: 12,
                                     ),
@@ -186,17 +258,42 @@ class _SiswaDataScreenState extends State<SiswaDataScreen> {
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     IconButton(
-                                      icon: Icon(
-                                        isDisabled ? Icons.check_circle : Icons.block,
-                                        color: isDisabled ? Colors.green : Colors.orange,
+                                      icon: const Icon(
+                                        Icons.edit,
+                                        color: Colors.blue,
                                         size: 20,
                                       ),
-                                      onPressed: () => _showDisableDialog(siswa['id'] as String, !isDisabled),
-                                      tooltip: isDisabled ? 'Enable' : 'Disable',
+                                      onPressed: () => _showEditSiswaDialog(siswa),
+                                      tooltip: 'Edit',
                                     ),
                                     IconButton(
-                                      icon: const Icon(Icons.delete, color: Colors.red, size: 20),
-                                      onPressed: () => _showDeleteDialog(siswa['id'] as String, siswa['nama'] as String),
+                                      icon: Icon(
+                                        isDisabled
+                                            ? Icons.check_circle
+                                            : Icons.block,
+                                        color: isDisabled
+                                            ? Colors.green
+                                            : Colors.orange,
+                                        size: 20,
+                                      ),
+                                      onPressed: () => _showDisableDialog(
+                                        siswa['id'] as String,
+                                        !isDisabled,
+                                      ),
+                                      tooltip: isDisabled
+                                          ? 'Enable'
+                                          : 'Disable',
+                                    ),
+                                    IconButton(
+                                      icon: const Icon(
+                                        Icons.delete,
+                                        color: Colors.red,
+                                        size: 20,
+                                      ),
+                                      onPressed: () => _showDeleteDialog(
+                                        siswa['id'] as String,
+                                        siswa['nama'] as String,
+                                      ),
                                       tooltip: 'Delete',
                                     ),
                                   ],
@@ -236,7 +333,9 @@ class _SiswaDataScreenState extends State<SiswaDataScreen> {
             ),
             ElevatedButton(
               onPressed: () {
-                blocContext.read<SiswaDataBloc>().add(DisableSiswa(siswaId, disable));
+                blocContext.read<SiswaDataBloc>().add(
+                  DisableSiswa(siswaId, disable),
+                );
                 Navigator.of(dialogContext).pop();
               },
               style: ElevatedButton.styleFrom(
@@ -257,7 +356,9 @@ class _SiswaDataScreenState extends State<SiswaDataScreen> {
       builder: (BuildContext dialogContext) {
         return AlertDialog(
           title: const Text('Delete Siswa'),
-          content: Text('Are you sure you want to delete "$siswaName"? This action cannot be undone.'),
+          content: Text(
+            'Are you sure you want to delete "$siswaName"? This action cannot be undone.',
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(),
@@ -278,18 +379,199 @@ class _SiswaDataScreenState extends State<SiswaDataScreen> {
   }
 
   void _importFromExcel() {
+    final blocContext = context;
     showDialog(
       context: context,
-      builder: (BuildContext context) {
+      builder: (BuildContext dialogContext) {
         return AlertDialog(
-          title: const Text('Import from Excel'),
-          content: const Text('Excel import functionality will be implemented when file_picker and excel packages are added to pubspec.yaml'),
+          title: const Text('Import Siswa from Excel'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Format Excel yang diperlukan:',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Kolom A: Nama (Required)\n'
+                  'Kolom B: NIS\n'
+                  'Kolom C: Email (Required)\n'
+                  'Kolom D: Password (Required)\n'
+                  'Kolom D: Jenis Kelamin (L/P)\n'
+                  'Kolom E: Tanggal Lahir (DD/MM/YYYY)',
+                  style: TextStyle(fontSize: 12),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Pastikan file Excel Anda sesuai format di atas.',
+                  style: TextStyle(color: Colors.orange),
+                ),
+              ],
+            ),
+          ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('OK'),
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+                blocContext.read<SiswaDataBloc>().add(
+                  const ImportSiswaFromExcel(),
+                );
+              },
+              child: const Text('Choose Excel File'),
             ),
           ],
+        );
+      },
+    );
+  }
+
+  void _showAddSiswaDialog() {
+    _showSiswaFormDialog();
+  }
+
+  void _showEditSiswaDialog(Map<String, dynamic> siswa) {
+    _showSiswaFormDialog(siswa: siswa);
+  }
+
+  void _showSiswaFormDialog({Map<String, dynamic>? siswa}) {
+    final isEdit = siswa != null;
+    final namaController = TextEditingController(text: siswa?['nama'] ?? '');
+    final nisController = TextEditingController(text: siswa?['nis'] ?? '');
+    final emailController = TextEditingController(text: siswa?['email'] ?? '');
+    final tanggalLahirController = TextEditingController(text: siswa?['tanggalLahir'] ?? '');
+    String selectedJenisKelamin = siswa?['jenisKelamin'] ?? 'L';
+
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: Text(isEdit ? 'Edit Siswa' : 'Tambah Siswa'),
+              content: SizedBox(
+                width: double.maxFinite,
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      TextField(
+                        controller: namaController,
+                        decoration: const InputDecoration(
+                          labelText: 'Nama',
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      TextField(
+                        controller: nisController,
+                        decoration: const InputDecoration(
+                          labelText: 'NIS',
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      TextField(
+                        controller: emailController,
+                        decoration: const InputDecoration(
+                          labelText: 'Email',
+                          border: OutlineInputBorder(),
+                        ),
+                        keyboardType: TextInputType.emailAddress,
+                      ),
+                      const SizedBox(height: 16),
+                      DropdownButtonFormField<String>(
+                        value: selectedJenisKelamin,
+                        decoration: const InputDecoration(
+                          labelText: 'Jenis Kelamin',
+                          border: OutlineInputBorder(),
+                        ),
+                        items: const [
+                          DropdownMenuItem(value: 'L', child: Text('Laki-laki')),
+                          DropdownMenuItem(value: 'P', child: Text('Perempuan')),
+                        ],
+                        onChanged: (value) {
+                          setState(() {
+                            selectedJenisKelamin = value!;
+                          });
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      TextField(
+                        controller: tanggalLahirController,
+                        decoration: const InputDecoration(
+                          labelText: 'Tanggal Lahir (DD/MM/YYYY)',
+                          border: OutlineInputBorder(),
+                        ),
+                        onTap: () async {
+                          final DateTime? picked = await showDatePicker(
+                            context: context,
+                            initialDate: DateTime.now(),
+                            firstDate: DateTime(1900),
+                            lastDate: DateTime.now(),
+                          );
+                          if (picked != null) {
+                            tanggalLahirController.text = 
+                              '${picked.day.toString().padLeft(2, '0')}/${picked.month.toString().padLeft(2, '0')}/${picked.year}';
+                          }
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(),
+                  child: const Text('Batal'),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    final nama = namaController.text.trim();
+                    final nis = nisController.text.trim();
+                    final email = emailController.text.trim();
+                    final tanggalLahir = tanggalLahirController.text.trim();
+
+                    if (nama.isEmpty || email.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Nama dan Email harus diisi'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                      return;
+                    }
+
+                    final siswaData = {
+                      'nama': nama,
+                      'nis': nis,
+                      'email': email,
+                      'jenis_kelamin': selectedJenisKelamin,
+                      'tanggal_lahir': tanggalLahir,
+                      'status': 'active',
+                      'photo_url': '',
+                      'createdAt': DateTime.now().toIso8601String(),
+                    };
+
+                    Navigator.of(dialogContext).pop();
+
+                    if (isEdit) {
+                      _siswaDataBloc.add(UpdateSiswa(siswa['id'], siswaData));
+                    } else {
+                      _siswaDataBloc.add(AddSiswa(siswaData));
+                    }
+                  },
+                  child: Text(isEdit ? 'Update' : 'Tambah'),
+                ),
+              ],
+            );
+          },
         );
       },
     );

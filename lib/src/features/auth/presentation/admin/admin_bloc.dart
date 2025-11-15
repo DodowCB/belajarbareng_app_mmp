@@ -21,6 +21,7 @@ class AdminState {
   final int totalTeachers;
   final int totalStudents;
   final int totalMaterials;
+  final int totalClasses;
   final List<Map<String, dynamic>> recentActivities;
   final String? error;
 
@@ -30,6 +31,7 @@ class AdminState {
     this.totalTeachers = 0,
     this.totalStudents = 0,
     this.totalMaterials = 0,
+    this.totalClasses = 0,
     this.recentActivities = const [],
     this.error,
   });
@@ -40,6 +42,7 @@ class AdminState {
     int? totalTeachers,
     int? totalStudents,
     int? totalMaterials,
+    int? totalClasses,
     List<Map<String, dynamic>>? recentActivities,
     String? error,
   }) {
@@ -49,6 +52,7 @@ class AdminState {
       totalTeachers: totalTeachers ?? this.totalTeachers,
       totalStudents: totalStudents ?? this.totalStudents,
       totalMaterials: totalMaterials ?? this.totalMaterials,
+      totalClasses: totalClasses ?? this.totalClasses,
       recentActivities: recentActivities ?? this.recentActivities,
       error: error,
     );
@@ -63,6 +67,66 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
     on<LoadAdminData>(_onLoadAdminData);
     on<RefreshAdminData>(_onRefreshAdminData);
     on<UpdateUserStats>(_onUpdateUserStats);
+  }
+
+  // Stream untuk real-time admin data
+  Stream<AdminState> getAdminDataStream() async* {
+    await for (final _ in Stream.periodic(const Duration(seconds: 1))) {
+      try {
+        final guruSnapshot = await _firestore.collection('guru').get();
+        final siswaSnapshot = await _firestore.collection('siswa').get();
+        final materialsSnapshot = await _firestore
+            .collection('materials')
+            .get();
+        final classesSnapshot = await _firestore.collection('classes').get();
+
+        final totalTeachers = guruSnapshot.docs.length;
+        final totalStudents = siswaSnapshot.docs.length;
+        final totalUsers = totalTeachers + totalStudents;
+        final totalMaterials = materialsSnapshot.docs.length;
+        final totalClasses = classesSnapshot.docs.length;
+
+        final recentActivities = [
+          {
+            'title': 'New user registered',
+            'time': '2 minutes ago',
+            'icon': Icons.person_add,
+          },
+          {
+            'title': 'Teacher uploaded material',
+            'time': '15 minutes ago',
+            'icon': Icons.upload_file,
+          },
+          {
+            'title': 'System backup completed',
+            'time': '1 hour ago',
+            'icon': Icons.backup,
+          },
+          {
+            'title': 'Database optimized',
+            'time': '3 hours ago',
+            'icon': Icons.tune,
+          },
+          {
+            'title': 'Security scan completed',
+            'time': '6 hours ago',
+            'icon': Icons.security,
+          },
+        ];
+
+        yield AdminState(
+          isLoading: false,
+          totalUsers: totalUsers,
+          totalTeachers: totalTeachers,
+          totalStudents: totalStudents,
+          totalMaterials: totalMaterials,
+          totalClasses: totalClasses,
+          recentActivities: recentActivities,
+        );
+      } catch (e) {
+        yield AdminState(error: e.toString());
+      }
+    }
   }
 
   Future<void> _onLoadAdminData(
