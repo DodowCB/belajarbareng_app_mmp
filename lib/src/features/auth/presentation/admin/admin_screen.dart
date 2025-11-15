@@ -265,7 +265,7 @@ class _AdminScreenState extends State<AdminScreen> {
               const SizedBox(width: 12),
               Expanded(
                 child: _buildStatCard(
-                  title: 'Materials',
+                  title: 'Mapels',
                   value: state.totalMaterials.toString(),
                   subtitle: 'Published',
                   icon: Icons.library_books,
@@ -489,7 +489,7 @@ class _AdminScreenState extends State<AdminScreen> {
                   });
 
                   Navigator.of(dialogContext).pop();
-                  
+
                   if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(

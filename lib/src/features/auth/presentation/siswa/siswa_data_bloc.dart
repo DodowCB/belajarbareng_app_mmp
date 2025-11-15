@@ -174,10 +174,7 @@ class SiswaDataBloc extends Bloc<SiswaEvent, SiswaState> {
     }
   }
 
-  Future<void> _onAddSiswa(
-    AddSiswa event,
-    Emitter<SiswaState> emit,
-  ) async {
+  Future<void> _onAddSiswa(AddSiswa event, Emitter<SiswaState> emit) async {
     try {
       final id = await IdGeneratorService.getNextId('siswa');
       await _firestore.collection('siswa').doc(id).set(event.siswaData);
@@ -192,7 +189,10 @@ class SiswaDataBloc extends Bloc<SiswaEvent, SiswaState> {
     Emitter<SiswaState> emit,
   ) async {
     try {
-      await _firestore.collection('siswa').doc(event.siswaId).update(event.siswaData);
+      await _firestore
+          .collection('siswa')
+          .doc(event.siswaId)
+          .update(event.siswaData);
       emit(SiswaDataActionSuccess('Siswa berhasil diupdate'));
     } catch (e) {
       emit(SiswaDataError('Failed to update siswa: ${e.toString()}'));

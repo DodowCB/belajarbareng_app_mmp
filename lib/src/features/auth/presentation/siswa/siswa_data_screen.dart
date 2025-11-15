@@ -263,7 +263,8 @@ class _SiswaDataScreenState extends State<SiswaDataScreen> {
                                         color: Colors.blue,
                                         size: 20,
                                       ),
-                                      onPressed: () => _showEditSiswaDialog(siswa),
+                                      onPressed: () =>
+                                          _showEditSiswaDialog(siswa),
                                       tooltip: 'Edit',
                                     ),
                                     IconButton(
@@ -445,7 +446,9 @@ class _SiswaDataScreenState extends State<SiswaDataScreen> {
     final namaController = TextEditingController(text: siswa?['nama'] ?? '');
     final nisController = TextEditingController(text: siswa?['nis'] ?? '');
     final emailController = TextEditingController(text: siswa?['email'] ?? '');
-    final tanggalLahirController = TextEditingController(text: siswa?['tanggalLahir'] ?? '');
+    final tanggalLahirController = TextEditingController(
+      text: siswa?['tanggalLahir'] ?? '',
+    );
     String selectedJenisKelamin = siswa?['jenisKelamin'] ?? 'L';
 
     showDialog(
@@ -493,8 +496,14 @@ class _SiswaDataScreenState extends State<SiswaDataScreen> {
                           border: OutlineInputBorder(),
                         ),
                         items: const [
-                          DropdownMenuItem(value: 'L', child: Text('Laki-laki')),
-                          DropdownMenuItem(value: 'P', child: Text('Perempuan')),
+                          DropdownMenuItem(
+                            value: 'L',
+                            child: Text('Laki-laki'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'P',
+                            child: Text('Perempuan'),
+                          ),
                         ],
                         onChanged: (value) {
                           setState(() {
@@ -517,8 +526,8 @@ class _SiswaDataScreenState extends State<SiswaDataScreen> {
                             lastDate: DateTime.now(),
                           );
                           if (picked != null) {
-                            tanggalLahirController.text = 
-                              '${picked.day.toString().padLeft(2, '0')}/${picked.month.toString().padLeft(2, '0')}/${picked.year}';
+                            tanggalLahirController.text =
+                                '${picked.day.toString().padLeft(2, '0')}/${picked.month.toString().padLeft(2, '0')}/${picked.year}';
                           }
                         },
                       ),

@@ -168,10 +168,7 @@ class GuruDataBloc extends Bloc<GuruDataEvent, GuruDataState> {
     }
   }
 
-  Future<void> _onAddGuru(
-    AddGuru event,
-    Emitter<GuruDataState> emit,
-  ) async {
+  Future<void> _onAddGuru(AddGuru event, Emitter<GuruDataState> emit) async {
     try {
       final id = await IdGeneratorService.getNextId('guru');
       await _firestore.collection('guru').doc(id).set(event.guruData);
@@ -186,7 +183,10 @@ class GuruDataBloc extends Bloc<GuruDataEvent, GuruDataState> {
     Emitter<GuruDataState> emit,
   ) async {
     try {
-      await _firestore.collection('guru').doc(event.guruId).update(event.guruData);
+      await _firestore
+          .collection('guru')
+          .doc(event.guruId)
+          .update(event.guruData);
       emit(const GuruDataActionSuccess('Guru berhasil diupdate'));
     } catch (e) {
       emit(GuruDataError('Failed to update guru: ${e.toString()}'));

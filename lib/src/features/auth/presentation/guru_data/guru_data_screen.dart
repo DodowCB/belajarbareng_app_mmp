@@ -261,7 +261,8 @@ class _GuruDataScreenState extends State<GuruDataScreen> {
                                         color: Colors.blue,
                                         size: 20,
                                       ),
-                                      onPressed: () => _showEditGuruDialog(guru),
+                                      onPressed: () =>
+                                          _showEditGuruDialog(guru),
                                       tooltip: 'Edit',
                                     ),
                                     IconButton(
@@ -444,8 +445,12 @@ class _GuruDataScreenState extends State<GuruDataScreen> {
     final namaController = TextEditingController(text: guru?['nama'] ?? '');
     final nigController = TextEditingController(text: guru?['nig'] ?? '');
     final emailController = TextEditingController(text: guru?['email'] ?? '');
-    final mataPelajaranController = TextEditingController(text: guru?['mataPelajaran'] ?? '');
-    final sekolahController = TextEditingController(text: guru?['sekolah'] ?? '');
+    final mataPelajaranController = TextEditingController(
+      text: guru?['mataPelajaran'] ?? '',
+    );
+    final sekolahController = TextEditingController(
+      text: guru?['sekolah'] ?? '',
+    );
     final passwordController = TextEditingController();
     String selectedJenisKelamin = guru?['jenisKelamin'] ?? 'L';
 
@@ -502,8 +507,14 @@ class _GuruDataScreenState extends State<GuruDataScreen> {
                           border: OutlineInputBorder(),
                         ),
                         items: const [
-                          DropdownMenuItem(value: 'L', child: Text('Laki-laki')),
-                          DropdownMenuItem(value: 'P', child: Text('Perempuan')),
+                          DropdownMenuItem(
+                            value: 'L',
+                            child: Text('Laki-laki'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'P',
+                            child: Text('Perempuan'),
+                          ),
                         ],
                         onChanged: (value) {
                           setState(() {
@@ -523,7 +534,9 @@ class _GuruDataScreenState extends State<GuruDataScreen> {
                       TextField(
                         controller: passwordController,
                         decoration: InputDecoration(
-                          labelText: isEdit ? 'Password (kosongkan jika tidak diubah)' : 'Password',
+                          labelText: isEdit
+                              ? 'Password (kosongkan jika tidak diubah)'
+                              : 'Password',
                           border: const OutlineInputBorder(),
                         ),
                         obscureText: true,
@@ -546,10 +559,14 @@ class _GuruDataScreenState extends State<GuruDataScreen> {
                     final sekolah = sekolahController.text.trim();
                     final password = passwordController.text.trim();
 
-                    if (nama.isEmpty || email.isEmpty || (!isEdit && password.isEmpty)) {
+                    if (nama.isEmpty ||
+                        email.isEmpty ||
+                        (!isEdit && password.isEmpty)) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
-                          content: Text('Nama, Email, dan Password harus diisi'),
+                          content: Text(
+                            'Nama, Email, dan Password harus diisi',
+                          ),
                           backgroundColor: Colors.red,
                         ),
                       );
