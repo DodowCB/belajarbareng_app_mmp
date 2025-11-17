@@ -20,7 +20,7 @@ class AdminState {
   final int totalUsers;
   final int totalTeachers;
   final int totalStudents;
-  final int totalMaterials;
+  final int totalMapels;
   final int totalClasses;
   final List<Map<String, dynamic>> recentActivities;
   final String? error;
@@ -30,7 +30,7 @@ class AdminState {
     this.totalUsers = 0,
     this.totalTeachers = 0,
     this.totalStudents = 0,
-    this.totalMaterials = 0,
+    this.totalMapels = 0,
     this.totalClasses = 0,
     this.recentActivities = const [],
     this.error,
@@ -41,7 +41,7 @@ class AdminState {
     int? totalUsers,
     int? totalTeachers,
     int? totalStudents,
-    int? totalMaterials,
+    int? totalMapels,
     int? totalClasses,
     List<Map<String, dynamic>>? recentActivities,
     String? error,
@@ -51,7 +51,7 @@ class AdminState {
       totalUsers: totalUsers ?? this.totalUsers,
       totalTeachers: totalTeachers ?? this.totalTeachers,
       totalStudents: totalStudents ?? this.totalStudents,
-      totalMaterials: totalMaterials ?? this.totalMaterials,
+      totalMapels: totalMapels ?? this.totalMapels,
       totalClasses: totalClasses ?? this.totalClasses,
       recentActivities: recentActivities ?? this.recentActivities,
       error: error,
@@ -71,19 +71,26 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
 
   // Stream untuk real-time admin data
   Stream<AdminState> getAdminDataStream() async* {
-    await for (final _ in Stream.periodic(const Duration(seconds: 1))) {
+    yield state.copyWith(isLoading: true);
+
+    await for (final _ in Stream.periodic(const Duration(seconds: 5))) {
       try {
-        final guruSnapshot = await _firestore.collection('guru').get();
-        final siswaSnapshot = await _firestore.collection('siswa').get();
-        final materialsSnapshot = await _firestore
-            .collection('materials')
-            .get();
-        final classesSnapshot = await _firestore.collection('classes').get();
+        final futures = await Future.wait([
+          _firestore.collection('guru').get(),
+          _firestore.collection('siswa').get(),
+          _firestore.collection('mapel').get(),
+          _firestore.collection('classes').get(),
+        ]);
+
+        final guruSnapshot = futures[0];
+        final siswaSnapshot = futures[1];
+        final mapelSnapshot = futures[2];
+        final classesSnapshot = futures[3];
 
         final totalTeachers = guruSnapshot.docs.length;
         final totalStudents = siswaSnapshot.docs.length;
         final totalUsers = totalTeachers + totalStudents;
-        final totalMaterials = materialsSnapshot.docs.length;
+        final totalMapels = mapelSnapshot.docs.length;
         final totalClasses = classesSnapshot.docs.length;
 
         final recentActivities = [
@@ -119,12 +126,15 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
           totalUsers: totalUsers,
           totalTeachers: totalTeachers,
           totalStudents: totalStudents,
-          totalMaterials: totalMaterials,
+          totalMapels: totalMapels,
           totalClasses: totalClasses,
           recentActivities: recentActivities,
         );
       } catch (e) {
-        yield AdminState(error: e.toString());
+        yield AdminState(
+          isLoading: false,
+          error: 'Failed to load data: ${e.toString()}',
+        );
       }
     }
   }
@@ -139,12 +149,12 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
       // Get counts from Firebase collections
       final guruSnapshot = await _firestore.collection('guru').get();
       final siswaSnapshot = await _firestore.collection('siswa').get();
-      final materialsSnapshot = await _firestore.collection('materials').get();
+      final mapelSnapshot = await _firestore.collection('mapel').get();
 
       final totalTeachers = guruSnapshot.docs.length;
       final totalStudents = siswaSnapshot.docs.length;
       final totalUsers = totalTeachers + totalStudents;
-      final totalMaterials = materialsSnapshot.docs.length;
+      final totalMapels = mapelSnapshot.docs.length;
 
       final recentActivities = [
         {
@@ -180,7 +190,7 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
           totalUsers: totalUsers,
           totalTeachers: totalTeachers,
           totalStudents: totalStudents,
-          totalMaterials: totalMaterials,
+          totalMapels: totalMapels,
           recentActivities: recentActivities,
         ),
       );
@@ -208,7 +218,7 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
           totalUsers: state.totalUsers + 1,
           totalTeachers: state.totalTeachers,
           totalStudents: state.totalStudents + 1,
-          totalMaterials: state.totalMaterials,
+          totalMapels: state.totalMapels,
         ),
       );
     } catch (e) {
@@ -222,7 +232,7 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
         totalUsers: event.stats['totalUsers'],
         totalTeachers: event.stats['totalTeachers'],
         totalStudents: event.stats['totalStudents'],
-        totalMaterials: event.stats['totalMaterials'],
+        totalMapels: event.stats['totalMapels'],
       ),
     );
   }
@@ -230,26 +240,26 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
   // Helper methods for admin operations
   Future<void> addUser(String email, String role) async {
     // TODO: Implement add user functionality
-    print('Adding user: $email with role: $role');
+    debugPrint('Adding user: $email with role: $role');
   }
 
   Future<void> removeUser(String userId) async {
     // TODO: Implement remove user functionality
-    print('Removing user: $userId');
+    debugPrint('Removing user: $userId');
   }
 
   Future<void> updateUserRole(String userId, String newRole) async {
     // TODO: Implement update user role functionality
-    print('Updating user $userId to role: $newRole');
+    debugPrint('Updating user $userId to role: $newRole');
   }
 
   Future<void> generateReport() async {
     // TODO: Implement report generation
-    print('Generating admin report...');
+    debugPrint('Generating admin report...');
   }
 
   Future<void> backupData() async {
     // TODO: Implement data backup
-    print('Starting data backup...');
+    debugPrint('Starting data backup...');
   }
 }

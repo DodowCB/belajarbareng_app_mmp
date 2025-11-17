@@ -5,6 +5,7 @@ import '../../../../core/config/theme.dart';
 import '../profile_menu/profile_menu_widget.dart';
 import '../guru_data/guru_data_screen.dart';
 import '../siswa/siswa_data_screen.dart';
+import '../mapel/mapel_screen.dart';
 import 'admin_bloc.dart';
 
 class AdminScreen extends StatefulWidget {
@@ -265,11 +266,12 @@ class _AdminScreenState extends State<AdminScreen> {
               const SizedBox(width: 12),
               Expanded(
                 child: _buildStatCard(
-                  title: 'Mapels',
-                  value: state.totalMaterials.toString(),
-                  subtitle: 'Published',
+                  title: 'Mapel',
+                  value: state.totalMapels.toString(),
+                  subtitle: 'Available',
                   icon: Icons.library_books,
                   color: AppTheme.accentOrange,
+                  onTap: () => _navigateToMapel(),
                 ),
               ),
             ],
@@ -415,6 +417,12 @@ class _AdminScreenState extends State<AdminScreen> {
     Navigator.of(
       context,
     ).push(MaterialPageRoute(builder: (context) => const SiswaDataScreen()));
+  }
+
+  void _navigateToMapel() {
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (context) => const MapelScreen()));
   }
 
   void _showAddClassDialog() {
