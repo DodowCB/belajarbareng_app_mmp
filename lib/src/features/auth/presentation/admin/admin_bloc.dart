@@ -73,13 +73,13 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
   Stream<AdminState> getAdminDataStream() async* {
     yield state.copyWith(isLoading: true);
 
-    await for (final _ in Stream.periodic(const Duration(seconds: 5))) {
+    await for (final _ in Stream.periodic(const Duration(seconds: 1))) {
       try {
         final futures = await Future.wait([
           _firestore.collection('guru').get(),
           _firestore.collection('siswa').get(),
           _firestore.collection('mapel').get(),
-          _firestore.collection('classes').get(),
+          _firestore.collection('kelas').get(),
         ]);
 
         final guruSnapshot = futures[0];

@@ -6,6 +6,7 @@ import '../profile_menu/profile_menu_widget.dart';
 import '../guru_data/guru_data_screen.dart';
 import '../siswa/siswa_data_screen.dart';
 import '../mapel/mapel_screen.dart';
+import '../kelas/kelas_screen.dart';
 import 'admin_bloc.dart';
 
 class AdminScreen extends StatefulWidget {
@@ -281,12 +282,12 @@ class _AdminScreenState extends State<AdminScreen> {
             children: [
               Expanded(
                 child: _buildStatCard(
-                  title: 'Classes',
+                  title: 'Kelas',
                   value: state.totalClasses.toString(),
                   subtitle: 'Available',
                   icon: Icons.class_,
                   color: Colors.purple,
-                  onTap: () => _showAddClassDialog(),
+                  onTap: () => _navigateToKelas(),
                 ),
               ),
               const SizedBox(width: 12),
@@ -425,103 +426,9 @@ class _AdminScreenState extends State<AdminScreen> {
     ).push(MaterialPageRoute(builder: (context) => const MapelScreen()));
   }
 
-  void _showAddClassDialog() {
-    final namaKelasController = TextEditingController();
-    final tingkatController = TextEditingController();
-    final waliKelasController = TextEditingController();
-
-    showDialog(
-      context: context,
-      builder: (BuildContext dialogContext) {
-        return AlertDialog(
-          title: const Text('Tambah Kelas'),
-          content: SizedBox(
-            width: double.maxFinite,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: namaKelasController,
-                  decoration: const InputDecoration(
-                    labelText: 'Nama Kelas (misal: XII IPA 1)',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: tingkatController,
-                  decoration: const InputDecoration(
-                    labelText: 'Tingkat (misal: 12)',
-                    border: OutlineInputBorder(),
-                  ),
-                  keyboardType: TextInputType.number,
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: waliKelasController,
-                  decoration: const InputDecoration(
-                    labelText: 'Wali Kelas (opsional)',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(),
-              child: const Text('Batal'),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                final namaKelas = namaKelasController.text.trim();
-                final tingkat = tingkatController.text.trim();
-                final waliKelas = waliKelasController.text.trim();
-
-                if (namaKelas.isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Nama kelas harus diisi'),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
-                  return;
-                }
-
-                try {
-                  await FirebaseFirestore.instance.collection('classes').add({
-                    'nama_kelas': namaKelas,
-                    'tingkat': tingkat,
-                    'wali_kelas': waliKelas,
-                    'createdAt': DateTime.now().toIso8601String(),
-                  });
-
-                  Navigator.of(dialogContext).pop();
-
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Kelas berhasil ditambahkan'),
-                        backgroundColor: Colors.green,
-                      ),
-                    );
-                  }
-                } catch (e) {
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Error: ${e.toString()}'),
-                        backgroundColor: Colors.red,
-                      ),
-                    );
-                  }
-                }
-              },
-              child: const Text('Tambah'),
-            ),
-          ],
-        );
-      },
-    );
+  void _navigateToKelas() {
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (context) => const KelasScreen()));
   }
 }

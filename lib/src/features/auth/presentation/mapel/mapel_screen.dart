@@ -18,6 +18,98 @@ class _MapelScreenState extends State<MapelScreen> {
     super.dispose();
   }
 
+  Future<void> _editMapel(String docId, String currentName) async {
+    _namaMapelController.text = currentName;
+
+    final result = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Edit Mata Pelajaran'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: _namaMapelController,
+              decoration: const InputDecoration(
+                labelText: 'Nama Mata Pelajaran',
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.book),
+                hintText: 'Masukkan nama mata pelajaran',
+              ),
+              textCapitalization: TextCapitalization.words,
+              autofocus: true,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Mata pelajaran saat ini: $currentName',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey[600],
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              _namaMapelController.clear();
+              Navigator.of(context).pop();
+            },
+            child: const Text('Batal'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              final newName = _namaMapelController.text.trim();
+              if (newName.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Nama mata pelajaran tidak boleh kosong'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+                return;
+              }
+              Navigator.of(context).pop(newName);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.blue[700],
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Simpan'),
+          ),
+        ],
+      ),
+    );
+
+    if (result != null && result.isNotEmpty && result != currentName) {
+      try {
+        await _firestore.collection('mapel').doc(docId).update({
+          'namaMapel': result,
+        });
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Mata pelajaran berhasil diperbarui'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error: ${e.toString()}'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    }
+    _namaMapelController.clear();
+  }
+
   Future<void> _addMapel() async {
     if (_namaMapelController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -171,6 +263,16 @@ class _MapelScreenState extends State<MapelScreen> {
                   trailing: PopupMenuButton(
                     itemBuilder: (context) => [
                       const PopupMenuItem(
+                        value: 'edit',
+                        child: Row(
+                          children: [
+                            Icon(Icons.edit, color: Colors.blue),
+                            SizedBox(width: 8),
+                            Text('Edit'),
+                          ],
+                        ),
+                      ),
+                      const PopupMenuItem(
                         value: 'delete',
                         child: Row(
                           children: [
@@ -182,7 +284,9 @@ class _MapelScreenState extends State<MapelScreen> {
                       ),
                     ],
                     onSelected: (value) async {
-                      if (value == 'delete') {
+                      if (value == 'edit') {
+                        await _editMapel(docs[index].id, namaMapel);
+                      } else if (value == 'delete') {
                         final confirm = await showDialog<bool>(
                           context: context,
                           builder: (context) => AlertDialog(
