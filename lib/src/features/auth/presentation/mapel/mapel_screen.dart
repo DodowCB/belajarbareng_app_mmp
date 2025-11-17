@@ -41,7 +41,7 @@ class _MapelScreenState extends State<MapelScreen> {
       });
 
       _namaMapelController.clear();
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -83,10 +83,7 @@ class _MapelScreenState extends State<MapelScreen> {
             },
             child: const Text('Batal'),
           ),
-          ElevatedButton(
-            onPressed: _addMapel,
-            child: const Text('Tambah'),
-          ),
+          ElevatedButton(onPressed: _addMapel, child: const Text('Tambah')),
         ],
       ),
     );
@@ -101,7 +98,10 @@ class _MapelScreenState extends State<MapelScreen> {
         foregroundColor: Colors.white,
       ),
       body: StreamBuilder<QuerySnapshot>(
-        stream: _firestore.collection('mapel').orderBy('createdAt', descending: true).snapshots(),
+        stream: _firestore
+            .collection('mapel')
+            .orderBy('createdAt', descending: true)
+            .snapshots(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -190,11 +190,13 @@ class _MapelScreenState extends State<MapelScreen> {
                             content: Text('Hapus mata pelajaran "$namaMapel"?'),
                             actions: [
                               TextButton(
-                                onPressed: () => Navigator.of(context).pop(false),
+                                onPressed: () =>
+                                    Navigator.of(context).pop(false),
                                 child: const Text('Batal'),
                               ),
                               ElevatedButton(
-                                onPressed: () => Navigator.of(context).pop(true),
+                                onPressed: () =>
+                                    Navigator.of(context).pop(true),
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.red,
                                 ),
@@ -206,11 +208,16 @@ class _MapelScreenState extends State<MapelScreen> {
 
                         if (confirm == true) {
                           try {
-                            await _firestore.collection('mapel').doc(docs[index].id).delete();
+                            await _firestore
+                                .collection('mapel')
+                                .doc(docs[index].id)
+                                .delete();
                             if (mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
-                                  content: Text('Mata pelajaran berhasil dihapus'),
+                                  content: Text(
+                                    'Mata pelajaran berhasil dihapus',
+                                  ),
                                   backgroundColor: Colors.green,
                                 ),
                               );
