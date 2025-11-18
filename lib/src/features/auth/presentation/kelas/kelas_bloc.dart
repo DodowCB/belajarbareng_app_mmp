@@ -189,9 +189,7 @@ class KelasBloc extends Bloc<KelasEvent, KelasState> {
 
   Future<void> _onLoadGuru(LoadGuru event, Emitter<KelasState> emit) async {
     try {
-      final querySnapshot = await _firestore
-          .collection('guru')
-          .get();
+      final querySnapshot = await _firestore.collection('guru').get();
 
       final guruList = querySnapshot.docs
           .map((doc) => GuruModel.fromFirestore(doc))
