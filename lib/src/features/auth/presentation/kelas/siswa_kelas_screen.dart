@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../../data/models/siswa_kelas_model.dart';
 
 class SiswaKelasScreen extends StatefulWidget {
   final String kelasId;
@@ -18,49 +17,17 @@ class SiswaKelasScreen extends StatefulWidget {
 
 class _SiswaKelasScreenState extends State<SiswaKelasScreen> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  List<SiswaKelasModel> _siswaKelasList = [];
-  bool _isLoading = true;
 
-  @override
-  void initState() {
-    super.initState();
-    _loadSiswaKelas();
-  }
-
-  Future<void> _loadSiswaKelas() async {
-    setState(() {
-      _isLoading = true;
-    });
-
+  Future<Map<String, dynamic>?> _getSiswaData(String siswaId) async {
     try {
-      final querySnapshot = await _firestore
-          .collection('siswa_kelas')
-          .where('kelas_id', isEqualTo: widget.kelasId)
-          .where('status', isEqualTo: true)
-          .orderBy('nama_siswa')
-          .get();
-
-      final siswaKelasList = querySnapshot.docs
-          .map((doc) => SiswaKelasModel.fromFirestore(doc))
-          .toList();
-
-      setState(() {
-        _siswaKelasList = siswaKelasList;
-        _isLoading = false;
-      });
-    } catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error loading data: ${e.toString()}'),
-            backgroundColor: Colors.red,
-          ),
-        );
+      final siswaDoc = await _firestore.collection('siswa').doc(siswaId).get();
+      if (siswaDoc.exists) {
+        return siswaDoc.data() as Map<String, dynamic>;
       }
+    } catch (e) {
+      print('Error getting siswa data: $e');
     }
+    return null;
   }
 
   @override
@@ -71,21 +38,51 @@ class _SiswaKelasScreenState extends State<SiswaKelasScreen> {
         title: Text('Siswa - ${widget.namaKelas}'),
         backgroundColor: Colors.blue[700],
         foregroundColor: Colors.white,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _loadSiswaKelas,
-          ),
-        ],
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _siswaKelasList.isEmpty
-          ? Center(
+      body: StreamBuilder<QuerySnapshot>(
+        stream: _firestore
+            .collection('siswa_kelas')
+            .where('kelas_id', isEqualTo: widget.kelasId)
+            .snapshots(),
+        builder: (context, snapshot) {
+          // print('=== SISWA KELAS DEBUG ===');
+          // print('Kelas ID: ${widget.kelasId}');
+          // print('ConnectionState: ${snapshot.connectionState}');
+          // print('HasData: ${snapshot.hasData}');
+          // print('HasError: ${snapshot.hasError}');
+
+          if (snapshot.hasError) {
+            print('Error: ${snapshot.error}');
+            return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.groups, size: 64, color: Colors.grey[400]),
+                  Icon(Icons.error, size: 64, color: Colors.red[400]),
+                  const SizedBox(height: 16),
+                  Text('Error: ${snapshot.error}'),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () => setState(() {}),
+                    child: const Text('Coba Lagi'),
+                  ),
+                ],
+              ),
+            );
+          }
+
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          final docs = snapshot.data?.docs ?? [];
+          print('Siswa count in this kelas: ${docs.length}');
+
+          if (docs.isEmpty) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.people_outline, size: 64, color: Colors.grey[400]),
                   const SizedBox(height: 16),
                   Text(
                     'Belum ada siswa di kelas ini',
@@ -99,158 +96,306 @@ class _SiswaKelasScreenState extends State<SiswaKelasScreen> {
                   ),
                 ],
               ),
-            )
-          : ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: _siswaKelasList.length,
-              itemBuilder: (context, index) {
-                final siswaKelas = _siswaKelasList[index];
+            );
+          }
 
-                return Card(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  elevation: 2,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: ListTile(
-                    contentPadding: const EdgeInsets.all(16),
-                    leading: CircleAvatar(
-                      backgroundColor: Colors.blue[700],
-                      child: Text(
-                        siswaKelas.namaSiswa.isNotEmpty
-                            ? siswaKelas.namaSiswa[0].toUpperCase()
-                            : 'S',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
+          return ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: docs.length,
+            itemBuilder: (context, index) {
+              final data = docs[index].data() as Map<String, dynamic>;
+              final docId = docs[index].id;
+              final siswaId = data['siswa_id'] ?? '';
+              print('Siswa Kelas Document $docId: $data');
+
+              return FutureBuilder<Map<String, dynamic>?>(
+                future: _getSiswaData(siswaId),
+                builder: (context, siswaSnapshot) {
+                  print(siswaSnapshot.data);
+                  final siswaData = siswaSnapshot.data;
+                  final namaSiswa = siswaData?['nama'] ?? 'Nama tidak tersedia';
+                  final nis = siswaData?['nis'] ?? '-';
+
+                  return Card(
+                    margin: const EdgeInsets.only(bottom: 8),
+                    child: ListTile(
+                      leading: CircleAvatar(
+                        backgroundColor: Colors.green[700],
+                        child: Text(
+                          (index + 1).toString(),
+                          style: const TextStyle(color: Colors.white),
                         ),
                       ),
-                    ),
-                    title: Text(
-                      siswaKelas.namaSiswa,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
+                      title: Text('Nama Siswa: $namaSiswa'),
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('NIS: $nis'),
+                          Text('Siswa ID: $siswaId'),
+                          Text('Kelas ID: ${data['kelas_id'] ?? '-'}'),
+                        ],
                       ),
-                    ),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const SizedBox(height: 4),
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.school,
-                              size: 14,
-                              color: Colors.grey[600],
+                      trailing: PopupMenuButton(
+                        itemBuilder: (context) => [
+                          const PopupMenuItem(
+                            value: 'view',
+                            child: Row(
+                              children: [
+                                Icon(Icons.visibility, color: Colors.blue),
+                                SizedBox(width: 8),
+                                Text('Lihat Detail'),
+                              ],
                             ),
-                            const SizedBox(width: 4),
-                            Text(
-                              'Tahun Ajaran: ${siswaKelas.tahunAjaran}',
-                              style: TextStyle(
-                                color: Colors.grey[600],
-                                fontSize: 12,
-                              ),
+                          ),
+                          const PopupMenuItem(
+                            value: 'remove',
+                            child: Row(
+                              children: [
+                                Icon(Icons.remove_circle, color: Colors.red),
+                                SizedBox(width: 8),
+                                Text('Keluarkan dari Kelas'),
+                              ],
                             ),
-                          ],
-                        ),
-                        if (siswaKelas.tanggalMasuk != null) ...[
-                          const SizedBox(height: 4),
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.calendar_today,
-                                size: 14,
-                                color: Colors.grey[600],
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                'Masuk: ${_formatDate(siswaKelas.tanggalMasuk!)}',
-                                style: TextStyle(
-                                  color: Colors.grey[600],
-                                  fontSize: 12,
-                                ),
-                              ),
-                            ],
                           ),
                         ],
-                      ],
+                        onSelected: (value) async {
+                          if (value == 'view') {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  'View detail feature coming soon',
+                                ),
+                              ),
+                            );
+                          } else if (value == 'remove') {
+                            final confirm = await showDialog<bool>(
+                              context: context,
+                              builder: (context) => AlertDialog(
+                                title: const Text('Konfirmasi'),
+                                content: Text(
+                                  'Keluarkan "$namaSiswa" dari kelas ${widget.namaKelas}?',
+                                ),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () =>
+                                        Navigator.of(context).pop(false),
+                                    child: const Text('Batal'),
+                                  ),
+                                  ElevatedButton(
+                                    onPressed: () =>
+                                        Navigator.of(context).pop(true),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.red,
+                                    ),
+                                    child: const Text('Keluarkan'),
+                                  ),
+                                ],
+                              ),
+                            );
+
+                            if (confirm == true) {
+                              try {
+                                await _firestore
+                                    .collection('siswa_kelas')
+                                    .doc(docId)
+                                    .delete();
+                                if (mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                        'Siswa berhasil dikeluarkan',
+                                      ),
+                                      backgroundColor: Colors.green,
+                                    ),
+                                  );
+                                }
+                              } catch (e) {
+                                if (mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text('Error: ${e.toString()}'),
+                                      backgroundColor: Colors.red,
+                                    ),
+                                  );
+                                }
+                              }
+                            }
+                          }
+                        },
+                      ),
                     ),
-                    trailing: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: siswaKelas.status
-                            ? Colors.green.withOpacity(0.1)
-                            : Colors.red.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        siswaKelas.status ? 'Aktif' : 'Tidak Aktif',
-                        style: TextStyle(
-                          color: siswaKelas.status ? Colors.green : Colors.red,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ),
-                );
-              },
-            ),
-      bottomNavigationBar: Container(
-        padding: const EdgeInsets.all(16),
-        child: Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'Total Siswa:',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.blue[700],
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        _siswaKelasList.length.toString(),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Siswa aktif di kelas ${widget.namaKelas}',
-                  style: TextStyle(color: Colors.grey[600], fontSize: 12),
-                ),
-              ],
-            ),
-          ),
-        ),
+                  );
+                },
+              );
+            },
+          );
+        },
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _showAddSiswaDialog,
+        backgroundColor: Colors.blue[700],
+        child: const Icon(Icons.person_add, color: Colors.white),
       ),
     );
   }
 
-  String _formatDate(DateTime date) {
-    return '${date.day}/${date.month}/${date.year}';
+  void _showAddSiswaDialog() {
+    showDialog(
+      context: context,
+      builder: (context) =>
+          AddSiswaDialog(kelasId: widget.kelasId, namaKelas: widget.namaKelas),
+    );
+  }
+}
+
+class AddSiswaDialog extends StatefulWidget {
+  final String kelasId;
+  final String namaKelas;
+
+  const AddSiswaDialog({
+    super.key,
+    required this.kelasId,
+    required this.namaKelas,
+  });
+
+  @override
+  State<AddSiswaDialog> createState() => _AddSiswaDialogState();
+}
+
+class _AddSiswaDialogState extends State<AddSiswaDialog> {
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  List<Map<String, dynamic>> _availableSiswa = [];
+  String? _selectedSiswaId;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadAvailableSiswa();
+  }
+
+  Future<void> _loadAvailableSiswa() async {
+    try {
+      // Get all siswa from siswa collection
+      final siswaSnapshot = await _firestore.collection('siswa').get();
+
+      // Get siswa already in this kelas
+      final siswaKelasSnapshot = await _firestore
+          .collection('siswa_kelas')
+          .where('kelas_id', isEqualTo: widget.kelasId)
+          .get();
+
+      final siswaInKelas = siswaKelasSnapshot.docs
+          .map((doc) => doc.data()['siswa_id'] as String)
+          .toSet();
+
+      // Filter out siswa already in this kelas
+      final availableSiswa = siswaSnapshot.docs
+          .where((doc) => !siswaInKelas.contains(doc.id))
+          .map((doc) {
+            final data = doc.data() as Map<String, dynamic>;
+            return {
+              'id': doc.id,
+              'nama': data['nama'] ?? 'Nama tidak tersedia',
+              'nis': data['nis'] ?? '',
+            };
+          })
+          .toList();
+
+      setState(() {
+        _availableSiswa = availableSiswa;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error loading siswa: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text('Tambah Siswa ke ${widget.namaKelas}'),
+      content: _isLoading
+          ? const SizedBox(
+              height: 100,
+              child: Center(child: CircularProgressIndicator()),
+            )
+          : _availableSiswa.isEmpty
+          ? const Text('Tidak ada siswa yang tersedia untuk ditambahkan')
+          : Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                DropdownButtonFormField<String>(
+                  value: _selectedSiswaId,
+                  decoration: const InputDecoration(
+                    labelText: 'Pilih Siswa',
+                    border: OutlineInputBorder(),
+                  ),
+                  items: _availableSiswa.map((siswa) {
+                    return DropdownMenuItem<String>(
+                      value: siswa['id'],
+                      child: Text('${siswa['nama']} (${siswa['nis']})'),
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedSiswaId = value;
+                    });
+                  },
+                ),
+              ],
+            ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Batal'),
+        ),
+        ElevatedButton(
+          onPressed: _selectedSiswaId == null ? null : _addSiswaToKelas,
+          child: const Text('Tambah'),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _addSiswaToKelas() async {
+    if (_selectedSiswaId == null) return;
+
+    try {
+      // Add to siswa_kelas collection with simple structure
+      await _firestore.collection('siswa_kelas').add({
+        'kelas_id': widget.kelasId,
+        'siswa_id': _selectedSiswaId!,
+      });
+
+      if (mounted) {
+        Navigator.of(context).pop();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Siswa berhasil ditambahkan ke kelas'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 }

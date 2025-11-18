@@ -23,17 +23,11 @@ class KelasBloc extends Bloc<KelasEvent, KelasState> {
     emit(state.copyWith(isLoading: true, error: null));
 
     try {
-      print('Loading kelas from Firestore...');
       final querySnapshot = await _firestore.collection('kelas').get();
 
-      print('Found ${querySnapshot.docs.length} documents');
-
       final kelasList = querySnapshot.docs.map((doc) {
-        print('Document ID: ${doc.id}, Data: ${doc.data()}');
         return KelasModel.fromFirestore(doc);
       }).toList();
-
-      print('Parsed ${kelasList.length} kelas objects');
       emit(state.copyWith(isLoading: false, kelasList: kelasList));
     } catch (e) {
       print('Error loading kelas: $e');
@@ -57,7 +51,29 @@ class KelasBloc extends Bloc<KelasEvent, KelasState> {
     emit(state.copyWith(isLoading: true, error: null, successMessage: null));
 
     try {
-      final docRef = await _firestore.collection('kelas').add({
+      // Get all documents to find the highest numeric ID
+      final allDocs = await _firestore.collection('kelas').get();
+
+      int nextId = 1;
+
+      if (allDocs.docs.isNotEmpty) {
+        // Find the highest numeric ID
+        int maxId = 0;
+        for (var doc in allDocs.docs) {
+          try {
+            int currentId = int.parse(doc.id);
+            if (currentId > maxId) {
+              maxId = currentId;
+            }
+          } catch (e) {
+            // Skip non-numeric IDs
+            continue;
+          }
+        }
+        nextId = maxId + 1;
+      }
+
+      await _firestore.collection('kelas').doc(nextId.toString()).set({
         'namaKelas': event.namaKelas,
         'jenjang_kelas': event.jenjangKelas,
         'nomor_kelas': event.nomorKelas,
@@ -137,7 +153,6 @@ class KelasBloc extends Bloc<KelasEvent, KelasState> {
       final siswaKelasSnapshot = await _firestore
           .collection('siswa_kelas')
           .where('kelas_id', isEqualTo: event.id)
-          .where('status', isEqualTo: true)
           .get();
 
       if (siswaKelasSnapshot.docs.isNotEmpty) {
@@ -176,7 +191,6 @@ class KelasBloc extends Bloc<KelasEvent, KelasState> {
     try {
       final querySnapshot = await _firestore
           .collection('guru')
-          .orderBy('nama')
           .get();
 
       final guruList = querySnapshot.docs
@@ -199,8 +213,6 @@ class KelasBloc extends Bloc<KelasEvent, KelasState> {
       final querySnapshot = await _firestore
           .collection('siswa_kelas')
           .where('kelas_id', isEqualTo: event.kelasId)
-          .where('status', isEqualTo: true)
-          .orderBy('nama_siswa')
           .get();
 
       final siswaKelasList = querySnapshot.docs

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'siswa_kelas_screen.dart';
 
 class KelasScreen extends StatefulWidget {
   const KelasScreen({super.key});
@@ -116,6 +117,18 @@ class _KelasScreenState extends State<KelasScreen> {
                       ),
                     ],
                   ),
+                  onTap: () {
+                    // Navigate to siswa kelas screen
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => SiswaKelasScreen(
+                          kelasId: docId,
+                          namaKelas: namaKelas,
+                        ),
+                      ),
+                    );
+                  },
                   trailing: PopupMenuButton(
                     itemBuilder: (context) => [
                       const PopupMenuItem(
