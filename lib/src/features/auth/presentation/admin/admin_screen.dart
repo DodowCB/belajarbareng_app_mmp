@@ -3,10 +3,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../../core/config/theme.dart';
 import '../profile_menu/profile_menu_widget.dart';
-import '../guru_data/guru_data_screen.dart';
-import '../siswa/siswa_data_screen.dart';
-import '../mapel/mapel_screen.dart';
-import '../kelas/kelas_screen.dart';
+import '../all_users/all_users_screen.dart';
+import '../guru_data/teachers_screen.dart';
+import '../siswa/students_screen.dart';
+import '../mapel/subjects_screen.dart';
+import '../kelas/classes_screen.dart';
 import 'admin_bloc.dart';
 
 class AdminScreen extends StatefulWidget {
@@ -36,7 +37,7 @@ class _AdminScreenState extends State<AdminScreen> {
     return BlocProvider.value(
       value: _adminBloc,
       child: Scaffold(
-        backgroundColor: Colors.grey[50],
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         body: StreamBuilder<AdminState>(
           stream: _adminBloc.getAdminDataStream(),
           builder: (context, snapshot) {
@@ -150,16 +151,26 @@ class _AdminScreenState extends State<AdminScreen> {
   }
 
   Widget _buildWelcomeCard() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          gradient: AppTheme.sunsetGradient,
+          gradient: isDark
+              ? LinearGradient(
+                  colors: [
+                    AppTheme.primaryPurpleLight,
+                    AppTheme.secondaryTealLight,
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                )
+              : AppTheme.sunsetGradient,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: AppTheme.primaryPurple.withOpacity(0.2),
+              color: AppTheme.primaryPurple.withOpacity(isDark ? 0.3 : 0.2),
               blurRadius: 10,
               offset: const Offset(0, 5),
             ),
@@ -217,84 +228,90 @@ class _AdminScreenState extends State<AdminScreen> {
   Widget _buildStatsSection(AdminState state) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'System Overview',
-            style: Theme.of(
-              context,
-            ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 16),
-          Row(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final screenWidth = MediaQuery.of(context).size.width;
+          final crossAxisCount = screenWidth >= 1200
+              ? 4
+              : screenWidth >= 768
+                  ? 3
+                  : screenWidth >= 600
+                      ? 2
+                      : 2;
+
+          final statCards = [
+            _buildStatCard(
+              title: 'Total Users',
+              value: state.totalUsers.toString(),
+              subtitle: 'Registered',
+              icon: Icons.people,
+              color: AppTheme.primaryPurple,
+              onTap: () => _navigateToAllUsers(),
+            ),
+            _buildStatCard(
+              title: 'Teachers',
+              value: state.totalTeachers.toString(),
+              subtitle: 'Active',
+              icon: Icons.school,
+              color: AppTheme.secondaryTeal,
+              onTap: () => _navigateToGuruData(),
+            ),
+            _buildStatCard(
+              title: 'Students',
+              value: state.totalStudents.toString(),
+              subtitle: 'Enrolled',
+              icon: Icons.groups,
+              color: AppTheme.accentGreen,
+              onTap: () => _navigateToSiswaData(),
+            ),
+            _buildStatCard(
+              title: 'Mapel',
+              value: state.totalMapels.toString(),
+              subtitle: 'Available',
+              icon: Icons.library_books,
+              color: AppTheme.accentOrange,
+              onTap: () => _navigateToMapel(),
+            ),
+            _buildStatCard(
+              title: 'Kelas',
+              value: state.totalClasses.toString(),
+              subtitle: 'Available',
+              icon: Icons.class_,
+              color: AppTheme.accentPink,
+              onTap: () => _navigateToKelas(),
+            ),
+          ];
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: _buildStatCard(
-                  title: 'Total Users',
-                  value: state.totalUsers.toString(),
-                  subtitle: 'Registered',
-                  icon: Icons.people,
-                  color: AppTheme.primaryPurple,
-                ),
+              Text(
+                'System Overview',
+                style: Theme.of(context)
+                    .textTheme
+                    .headlineSmall
+                    ?.copyWith(fontWeight: FontWeight.bold),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildStatCard(
-                  title: 'Teachers',
-                  value: state.totalTeachers.toString(),
-                  subtitle: 'Active',
-                  icon: Icons.school,
-                  color: AppTheme.secondaryTeal,
-                  onTap: () => _navigateToGuruData(),
+              const SizedBox(height: 16),
+              GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: crossAxisCount,
+                  crossAxisSpacing: 12,
+                  mainAxisSpacing: 12,
+                  childAspectRatio: screenWidth >= 1200
+                      ? 1.5
+                      : screenWidth >= 768
+                          ? 1.3
+                          : 1.2,
                 ),
+                itemCount: statCards.length,
+                itemBuilder: (context, index) => statCards[index],
               ),
             ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: _buildStatCard(
-                  title: 'Students',
-                  value: state.totalStudents.toString(),
-                  subtitle: 'Enrolled',
-                  icon: Icons.groups,
-                  color: AppTheme.accentGreen,
-                  onTap: () => _navigateToSiswaData(),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildStatCard(
-                  title: 'Mapel',
-                  value: state.totalMapels.toString(),
-                  subtitle: 'Available',
-                  icon: Icons.library_books,
-                  color: AppTheme.accentOrange,
-                  onTap: () => _navigateToMapel(),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: _buildStatCard(
-                  title: 'Kelas',
-                  value: state.totalClasses.toString(),
-                  subtitle: 'Available',
-                  icon: Icons.class_,
-                  color: Colors.purple,
-                  onTap: () => _navigateToKelas(),
-                ),
-              ),
-              const SizedBox(width: 12),
-              const Expanded(child: SizedBox()), // Empty space for symmetry
-            ],
-          ),
-        ],
+          );
+        },
       ),
     );
   }
@@ -307,46 +324,74 @@ class _AdminScreenState extends State<AdminScreen> {
     required Color color,
     VoidCallback? onTap,
   }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: color.withOpacity(0.2)),
-        ),
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final cardPadding = screenWidth >= 1200
+        ? 20.0
+        : screenWidth >= 768
+            ? 18.0
+            : 16.0;
+
+    return MouseRegion(
+      cursor: onTap != null ? SystemMouseCursors.click : SystemMouseCursors.basic,
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: EdgeInsets.all(cardPadding),
+          decoration: BoxDecoration(
+            color: isDark
+                ? color.withOpacity(0.15)
+                : color.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: isDark
+                  ? color.withOpacity(0.3)
+                  : color.withOpacity(0.2),
+            ),
+          ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  title,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: color,
-                    fontWeight: FontWeight.w600,
+                Expanded(
+                  child: Text(
+                    title,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: color,
+                      fontWeight: FontWeight.w600,
+                      fontSize: screenWidth >= 1200 ? 16 : 14,
+                    ),
                   ),
                 ),
-                Icon(icon, color: color, size: 20),
+                Icon(
+                  icon,
+                  color: color,
+                  size: screenWidth >= 1200 ? 28 : 24,
+                ),
               ],
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: screenWidth >= 1200 ? 12 : 8),
             Text(
               value,
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+              style: Theme.of(context).textTheme.headlineLarge?.copyWith(
                 fontWeight: FontWeight.bold,
                 color: color,
+                fontSize: screenWidth >= 1200 ? 36 : 28,
               ),
             ),
+            const SizedBox(height: 4),
             Text(
               subtitle,
-              style: Theme.of(
-                context,
-              ).textTheme.bodySmall?.copyWith(color: Colors.grey[600]),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: isDark ? Colors.grey[400] : Colors.grey[600],
+              fontSize: screenWidth >= 1200 ? 14 : 12,
             ),
+          ),
           ],
+        ),
         ),
       ),
     );
@@ -367,11 +412,13 @@ class _AdminScreenState extends State<AdminScreen> {
           const SizedBox(height: 16),
           Container(
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: Theme.of(context).cardColor,
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.grey.withOpacity(0.1),
+                  color: Colors.black.withOpacity(
+                    Theme.of(context).brightness == Brightness.dark ? 0.3 : 0.1,
+                  ),
                   blurRadius: 10,
                   offset: const Offset(0, 2),
                 ),
@@ -408,27 +455,33 @@ class _AdminScreenState extends State<AdminScreen> {
     );
   }
 
+  void _navigateToAllUsers() {
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (context) => const AllUsersScreen()));
+  }
+
   void _navigateToGuruData() {
     Navigator.of(
       context,
-    ).push(MaterialPageRoute(builder: (context) => const GuruDataScreen()));
+    ).push(MaterialPageRoute(builder: (context) => const TeachersScreen()));
   }
 
   void _navigateToSiswaData() {
     Navigator.of(
       context,
-    ).push(MaterialPageRoute(builder: (context) => const SiswaDataScreen()));
+    ).push(MaterialPageRoute(builder: (context) => const StudentsScreen()));
   }
 
   void _navigateToMapel() {
     Navigator.of(
       context,
-    ).push(MaterialPageRoute(builder: (context) => const MapelScreen()));
+    ).push(MaterialPageRoute(builder: (context) => const SubjectsScreen()));
   }
 
   void _navigateToKelas() {
     Navigator.of(
       context,
-    ).push(MaterialPageRoute(builder: (context) => const KelasScreen()));
+    ).push(MaterialPageRoute(builder: (context) => const ClassesScreen()));
   }
 }

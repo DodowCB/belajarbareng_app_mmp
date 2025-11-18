@@ -1,19 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/config/theme.dart';
+import '../../../../core/providers/theme_provider.dart';
 import 'login_bloc.dart';
 import 'login_event.dart';
 import 'login_state.dart';
-import '../guru_data/guru_data_screen.dart';
 
-class LoginScreen extends StatefulWidget {
+class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  ConsumerState<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen>
+class _LoginScreenState extends ConsumerState<LoginScreen>
     with SingleTickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController(
@@ -100,7 +101,18 @@ class _LoginScreenState extends State<LoginScreen>
       },
       child: Scaffold(
         body: Container(
-          decoration: const BoxDecoration(gradient: AppTheme.oceanGradient),
+          decoration: BoxDecoration(
+            gradient: Theme.of(context).brightness == Brightness.dark
+                ? LinearGradient(
+                    colors: [
+                      AppTheme.cardDark,
+                      AppTheme.backgroundDark,
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  )
+                : AppTheme.oceanGradient,
+          ),
           child: SafeArea(
             child: Center(
               child: SingleChildScrollView(
@@ -133,8 +145,6 @@ class _LoginScreenState extends State<LoginScreen>
                           _buildHeader(),
                           const SizedBox(height: 24),
                           _buildLoginCard(),
-                          const SizedBox(height: 16),
-                          _buildGuruDataButton(),
                         ],
                       ),
                     );
@@ -149,16 +159,43 @@ class _LoginScreenState extends State<LoginScreen>
   }
 
   Widget _buildHeader() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return FadeTransition(
       opacity: _fadeAnimation,
       child: SlideTransition(
         position: _slideAnimation,
         child: Column(
           children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                MouseRegion(
+                  cursor: SystemMouseCursors.click,
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(isDark ? 0.1 : 0.2),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: IconButton(
+                      icon: Icon(
+                        isDark ? Icons.light_mode : Icons.dark_mode,
+                        color: Colors.white,
+                      ),
+                      onPressed: () {
+                        ref.read(themeModeProvider.notifier).toggleTheme();
+                      },
+                      tooltip: isDark ? 'Light Mode' : 'Dark Mode',
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
+                color: Colors.white.withOpacity(isDark ? 0.1 : 0.2),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: const Icon(
@@ -206,14 +243,15 @@ class _LoginScreenState extends State<LoginScreen>
             final titleFontSize = constraints.maxWidth < 400 ? 24.0 : 28.0;
             final subtitleFontSize = constraints.maxWidth < 400 ? 14.0 : 16.0;
 
+            final isDark = Theme.of(context).brightness == Brightness.dark;
             return Container(
               padding: cardPadding,
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: isDark ? AppTheme.cardDark : Colors.white,
                 borderRadius: BorderRadius.circular(24),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
+                    color: Colors.black.withOpacity(isDark ? 0.3 : 0.1),
                     blurRadius: 20,
                     offset: const Offset(0, 10),
                   ),
@@ -229,7 +267,7 @@ class _LoginScreenState extends State<LoginScreen>
                       style: TextStyle(
                         fontSize: titleFontSize,
                         fontWeight: FontWeight.bold,
-                        color: AppTheme.textPrimary,
+                        color: Theme.of(context).textTheme.displayLarge?.color,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -237,7 +275,7 @@ class _LoginScreenState extends State<LoginScreen>
                       'Silakan masuk dengan akun Anda',
                       style: TextStyle(
                         fontSize: subtitleFontSize,
-                        color: AppTheme.textSecondary,
+                        color: Theme.of(context).textTheme.bodyMedium?.color,
                       ),
                     ),
                     const SizedBox(height: 32),
@@ -263,27 +301,33 @@ class _LoginScreenState extends State<LoginScreen>
   }
 
   Widget _buildEmailField() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Email',
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w600,
-            color: AppTheme.textPrimary,
+            color: Theme.of(context).textTheme.titleLarge?.color,
           ),
         ),
         const SizedBox(height: 8),
         TextFormField(
           controller: _emailController,
           keyboardType: TextInputType.emailAddress,
-          style: const TextStyle(color: Colors.black),
+          style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color),
           decoration: InputDecoration(
             hintText: 'Masukkan email Anda',
-            prefixIcon: const Icon(Icons.email_outlined, color: Colors.black),
+            prefixIcon: Icon(
+              Icons.email_outlined,
+              color: Theme.of(context).iconTheme.color,
+            ),
             filled: true,
-            fillColor: AppTheme.backgroundLight,
+            fillColor: isDark
+                ? AppTheme.backgroundDark.withOpacity(0.5)
+                : AppTheme.backgroundLight,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide.none,
@@ -311,29 +355,33 @@ class _LoginScreenState extends State<LoginScreen>
   }
 
   Widget _buildPasswordField() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Password',
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w600,
-            color: Colors.black,
+            color: Theme.of(context).textTheme.titleLarge?.color,
           ),
         ),
         const SizedBox(height: 8),
         TextFormField(
           controller: _passwordController,
           obscureText: !_isPasswordVisible,
-          style: const TextStyle(color: Colors.black),
+          style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color),
           decoration: InputDecoration(
             hintText: 'Masukkan password Anda',
-            prefixIcon: const Icon(Icons.lock_outlined, color: Colors.black),
+            prefixIcon: Icon(
+              Icons.lock_outlined,
+              color: Theme.of(context).iconTheme.color,
+            ),
             suffixIcon: IconButton(
               icon: Icon(
                 _isPasswordVisible ? Icons.visibility_off : Icons.visibility,
-                color: Colors.black,
+                color: Theme.of(context).iconTheme.color,
               ),
               onPressed: () {
                 setState(() {
@@ -342,7 +390,9 @@ class _LoginScreenState extends State<LoginScreen>
               },
             ),
             filled: true,
-            fillColor: AppTheme.backgroundLight,
+            fillColor: isDark
+                ? AppTheme.backgroundDark.withOpacity(0.5)
+                : AppTheme.backgroundLight,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide.none,
@@ -374,93 +424,39 @@ class _LoginScreenState extends State<LoginScreen>
       builder: (context, state) {
         final isLoading = state is LoginLoading;
 
-        return SizedBox(
-          width: double.infinity,
-          height: 56,
-          child: ElevatedButton(
-            onPressed: isLoading ? null : _handleLogin,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.primaryPurple,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+        return MouseRegion(
+          cursor: isLoading ? SystemMouseCursors.basic : SystemMouseCursors.click,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            width: double.infinity,
+            height: 56,
+            child: ElevatedButton(
+              onPressed: isLoading ? null : _handleLogin,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primaryPurple,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 0,
               ),
-              elevation: 0,
-            ),
-            child: isLoading
-                ? const SizedBox(
-                    height: 24,
-                    width: 24,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+              child: isLoading
+                  ? const SizedBox(
+                      height: 24,
+                      width: 24,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    )
+                  : const Text(
+                      'Masuk',
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
                     ),
-                  )
-                : const Text(
-                    'Masuk',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-                  ),
+            ),
           ),
         );
       },
-    );
-  }
-
-  Widget _buildGuruDataButton() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.2),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withOpacity(0.3), width: 1),
-      ),
-      child: Column(
-        children: [
-          const Icon(Icons.people_outline, size: 32, color: Colors.white),
-          const SizedBox(height: 12),
-          const Text(
-            'Lihat Data Guru',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: Colors.white,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Tampilkan data guru dari Firebase',
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.white.withOpacity(0.8),
-            ),
-          ),
-          const SizedBox(height: 16),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const GuruDataScreen()),
-              );
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.white,
-              foregroundColor: AppTheme.primaryPurple,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            child: const Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text('Lihat Data'),
-                SizedBox(width: 8),
-                Icon(Icons.arrow_forward_rounded, size: 18),
-              ],
-            ),
-          ),
-        ],
-      ),
     );
   }
 

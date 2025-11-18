@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../providers/theme_provider.dart';
 import '../config/theme.dart';
+import 'splash_screen.dart';
 import '../../features/auth/presentation/dashboard/dashboard_screen.dart';
 import '../../features/auth/presentation/profile/profile_screen.dart';
 import '../../features/auth/presentation/materials/create_material_screen.dart';
@@ -34,9 +35,10 @@ class AppWidget extends ConsumerWidget {
         theme: AppTheme.lightTheme,
         darkTheme: AppTheme.darkTheme,
         themeMode: themeMode,
-        home: const LoginScreen(),
+        home: const SplashScreen(),
         debugShowCheckedModeBanner: false,
         routes: {
+          '/login': (context) => const LoginScreen(),
           '/dashboard': (context) => const DashboardScreen(),
           '/profile': (context) => const ProfileScreen(),
           '/create-material': (context) => const CreateMaterialScreen(),
