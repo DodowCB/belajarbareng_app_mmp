@@ -4,6 +4,9 @@ import '../../../../core/config/theme.dart';
 import '../../../../core/providers/theme_provider.dart';
 import '../login/login_screen.dart';
 import '../profile/profile_screen.dart';
+import '../settings/settings_screen.dart';
+import '../notifications/notifications_screen.dart';
+import '../help/help_support_screen.dart';
 
 /// Profile Menu Item Model
 class ProfileMenuItem {
@@ -149,19 +152,20 @@ class ProfileDropdownMenu extends ConsumerWidget {
         ),
       ],
       onSelected: (value) => _handleMenuSelection(context, value, ref),
-      child: CircleAvatar(
-        radius: 18,
-        backgroundColor: AppTheme.primaryPurple.withOpacity(0.2),
-        backgroundImage: userPhotoUrl != null
-            ? NetworkImage(userPhotoUrl!)
-            : null,
-        child: userPhotoUrl == null
-            ? const Icon(
-                Icons.person_outline,
-                color: AppTheme.primaryPurple,
-                size: 20,
-              )
-            : null,
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        child: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: AppTheme.primaryPurple.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: const Icon(
+            Icons.menu,
+            color: AppTheme.primaryPurple,
+            size: 24,
+          ),
+        ),
       ),
     );
   }
@@ -262,13 +266,22 @@ class ProfileDropdownMenu extends ConsumerWidget {
         );
         break;
       case 'settings':
-        _showComingSoonSnackbar(context, 'Settings');
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const SettingsScreen()),
+        );
         break;
       case 'notifications':
-        _showComingSoonSnackbar(context, 'Notifications');
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const NotificationsScreen()),
+        );
         break;
       case 'help':
-        _showComingSoonSnackbar(context, 'Help & Support');
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const HelpSupportScreen()),
+        );
         break;
       case 'logout':
         _showLogoutDialog(context);

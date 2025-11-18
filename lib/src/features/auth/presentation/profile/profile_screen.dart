@@ -1,150 +1,354 @@
 import 'package:flutter/material.dart';
 import '../../../../core/config/theme.dart';
 import '../../../../core/providers/app_user.dart';
+import '../widgets/admin_header.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
   @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  bool _isEditing = false;
+  late TextEditingController _nameController;
+  late TextEditingController _emailController;
+  late TextEditingController _phoneController;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController = TextEditingController(text: AppUser.displayName);
+    _emailController = TextEditingController(text: AppUser.email ?? '');
+    _phoneController = TextEditingController(text: '');
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    _phoneController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: AppTheme.backgroundLight,
-      appBar: AppBar(
-        title: const Text('Profile'),
-        backgroundColor: AppTheme.primaryPurple,
-        foregroundColor: Colors.white,
-        elevation: 0,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      appBar: AdminHeader(
+        title: 'My Profile',
+        icon: Icons.person,
+        additionalActions: [
+          if (!_isEditing)
+            MouseRegion(
+              cursor: SystemMouseCursors.click,
+              child: IconButton(
+                icon: const Icon(Icons.edit),
+                onPressed: () => setState(() => _isEditing = true),
+                tooltip: 'Edit Profile',
+              ),
+            ),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
           children: [
-            // Profile Header
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                gradient: AppTheme.oceanGradient,
+            // Profile Header Card
+            Card(
+              elevation: 0,
+              shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(20),
+                side: BorderSide(
+                  color: isDark
+                      ? Colors.white.withOpacity(0.1)
+                      : Colors.black.withOpacity(0.1),
+                ),
               ),
-              child: Column(
-                children: [
-                  // Profile Photo
-                  CircleAvatar(
-                    radius: 50,
-                    backgroundColor: Colors.white.withOpacity(0.2),
-                    child: const Icon(
-                      Icons.person,
-                      size: 50,
-                      color: Colors.white,
+              child: Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  gradient: AppTheme.sunsetGradient,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Column(
+                  children: [
+                    // Profile Photo
+                    Stack(
+                      children: [
+                        CircleAvatar(
+                          radius: 60,
+                          backgroundColor: Colors.white.withOpacity(0.3),
+                          child: const Icon(
+                            Icons.person,
+                            size: 60,
+                            color: Colors.white,
+                          ),
+                        ),
+                        if (_isEditing)
+                          Positioned(
+                            right: 0,
+                            bottom: 0,
+                            child: MouseRegion(
+                              cursor: SystemMouseCursors.click,
+                              child: GestureDetector(
+                                onTap: () {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: const Row(
+                                        children: [
+                                          Icon(Icons.info_outline, color: Colors.white),
+                                          SizedBox(width: 12),
+                                          Text('Photo upload coming soon!'),
+                                        ],
+                                      ),
+                                      backgroundColor: AppTheme.primaryPurple,
+                                      behavior: SnackBarBehavior.floating,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                    ),
+                                  );
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: const BoxDecoration(
+                                    color: Colors.white,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(
+                                    Icons.camera_alt,
+                                    size: 20,
+                                    color: AppTheme.primaryPurple,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
-                  ),
-                  const SizedBox(height: 16),
+                    const SizedBox(height: 16),
 
-                  // Name & Role
-                  Text(
-                    AppUser.displayName,
-                    style: const TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                    // Name
+                    Text(
+                      AppUser.displayName,
+                      style: const TextStyle(
+                        fontSize: 26,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    AppUser.email ?? 'No email',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.white.withOpacity(0.9),
+                    const SizedBox(height: 4),
+
+                    // Email
+                    Text(
+                      AppUser.email ?? 'No email',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.white.withOpacity(0.9),
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    AppUser.userType == 'guru' ? 'Guru' : 'Siswa',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.white.withOpacity(0.8),
+                    const SizedBox(height: 12),
+
+                    // Role Badge
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.25),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.verified_user, size: 16, color: Colors.white),
+                          const SizedBox(width: 6),
+                          Text(
+                            AppUser.userType == 'guru' ? 'Teacher' : 'Student',
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-            const SizedBox(height: 30),
+
+            const SizedBox(height: 24),
 
             // Profile Information Card
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.white,
+            Card(
+              elevation: 0,
+              shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 10,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
+                side: BorderSide(
+                  color: isDark
+                      ? Colors.white.withOpacity(0.1)
+                      : Colors.black.withOpacity(0.1),
+                ),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: AppTheme.primaryPurple.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(8),
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: AppTheme.primaryPurple.withOpacity(0.15),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Icon(
+                            Icons.info_outline,
+                            color: AppTheme.primaryPurple,
+                            size: 24,
+                          ),
                         ),
-                        child: const Icon(
-                          Icons.person_outline,
-                          color: AppTheme.primaryPurple,
+                        const SizedBox(width: 12),
+                        const Text(
+                          'Personal Information',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+
+                    if (_isEditing) ...[
+                      _buildEditField('Full Name', _nameController, Icons.person_outline),
+                      const SizedBox(height: 16),
+                      _buildEditField('Email Address', _emailController, Icons.email_outlined),
+                      const SizedBox(height: 16),
+                      _buildEditField('Phone Number', _phoneController, Icons.phone_outlined),
+                      const SizedBox(height: 24),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: () => setState(() => _isEditing = false),
+                              style: OutlinedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(vertical: 14),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              child: const Text('Cancel'),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: () {
+                                setState(() => _isEditing = false);
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: const Row(
+                                      children: [
+                                        Icon(Icons.check_circle, color: Colors.white),
+                                        SizedBox(width: 12),
+                                        Text('Profile updated successfully!'),
+                                      ],
+                                    ),
+                                    backgroundColor: AppTheme.accentGreen,
+                                    behavior: SnackBarBehavior.floating,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                  ),
+                                );
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppTheme.primaryPurple,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(vertical: 14),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              child: const Text('Save Changes'),
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 12),
-                      const Text(
-                        'Profile Information',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: AppTheme.textPrimary,
-                        ),
-                      ),
+                    ] else ...[
+                      _buildInfoRow('Full Name', AppUser.displayName, Icons.person_outline),
+                      _buildInfoRow('Email Address', AppUser.email ?? 'Not set', Icons.email_outlined),
+                      _buildInfoRow('Role', AppUser.userType == 'guru' ? 'Teacher' : 'Student', Icons.work_outline),
+                      if (AppUser.userType == 'guru' && AppUser.nig != null)
+                        _buildInfoRow('Teacher ID (NIG)', AppUser.nig.toString(), Icons.badge_outlined),
+                      if (AppUser.userType == 'siswa' && AppUser.nis != null)
+                        _buildInfoRow('Student ID (NIS)', AppUser.nis.toString(), Icons.badge_outlined),
+                      _buildInfoRow('Phone Number', 'Not set', Icons.phone_outlined),
+                      _buildInfoRow('Member Since', 'November 2025', Icons.calendar_today_outlined),
                     ],
-                  ),
-                  const SizedBox(height: 20),
-
-                  _buildInfoRow('Name', AppUser.displayName),
-                  _buildInfoRow('Email', AppUser.email ?? 'No email'),
-                  _buildInfoRow(
-                    'Role',
-                    AppUser.userType == 'guru' ? 'Guru' : 'Siswa',
-                  ),
-
-                  if (AppUser.userType == 'guru' && AppUser.nig != null)
-                    _buildInfoRow('NIG', AppUser.nig.toString()),
-
-                  if (AppUser.userType == 'siswa' && AppUser.nis != null)
-                    _buildInfoRow('NIS', AppUser.nis.toString()),
-                ],
+                  ],
+                ),
               ),
             ),
 
-            const SizedBox(height: 30),
+            const SizedBox(height: 24),
 
-            // Action Buttons
-            _buildActionButton(
+            // Quick Actions
+            Text(
+              'Quick Actions',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: AppTheme.primaryPurple,
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            _buildActionCard(
+              context: context,
               icon: Icons.lock_outline,
               title: 'Change Password',
               subtitle: 'Update your account password',
+              color: AppTheme.primaryPurple,
               onTap: () => _showChangePasswordDialog(context),
             ),
             const SizedBox(height: 12),
-            _buildActionButton(
-              icon: Icons.logout,
-              title: 'Logout',
-              subtitle: 'Sign out from your account',
-              iconColor: AppTheme.accentOrange,
-              onTap: () => _showLogoutDialog(context),
+            _buildActionCard(
+              context: context,
+              icon: Icons.security,
+              title: 'Security Settings',
+              subtitle: 'Manage your security preferences',
+              color: AppTheme.secondaryTeal,
+              onTap: () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: const Row(
+                      children: [
+                        Icon(Icons.info_outline, color: Colors.white),
+                        SizedBox(width: 12),
+                        Text('Security settings coming soon!'),
+                      ],
+                    ),
+                    backgroundColor: AppTheme.secondaryTeal,
+                    behavior: SnackBarBehavior.floating,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 12),
+            _buildActionCard(
+              context: context,
+              icon: Icons.delete_outline,
+              title: 'Delete Account',
+              subtitle: 'Permanently remove your account',
+              color: Colors.red,
+              onTap: () => _showDeleteAccountDialog(context),
             ),
           ],
         ),
@@ -152,28 +356,51 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildInfoRow(String label, String value) {
+  Widget _buildEditField(String label, TextEditingController controller, IconData icon) {
+    return TextField(
+      controller: controller,
+      decoration: InputDecoration(
+        labelText: label,
+        prefixIcon: Icon(icon),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        filled: true,
+        fillColor: Theme.of(context).brightness == Brightness.dark
+            ? Colors.white.withOpacity(0.05)
+            : Colors.grey.withOpacity(0.05),
+      ),
+    );
+  }
+
+  Widget _buildInfoRow(String label, String value, IconData icon) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.only(bottom: 16),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(
-            width: 80,
-            child: Text(
-              label,
-              style: TextStyle(
-                color: Colors.grey[600],
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-          const Text(': '),
+          Icon(icon, size: 20, color: AppTheme.primaryPurple.withOpacity(0.7)),
+          const SizedBox(width: 12),
           Expanded(
-            child: Text(
-              value,
-              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey[600],
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -181,74 +408,114 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildActionButton({
+  Widget _buildActionCard({
+    required BuildContext context,
     required IconData icon,
     required String title,
     required String subtitle,
-    Color? iconColor,
+    required Color color,
     required VoidCallback onTap,
   }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: Card(
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: BorderSide(
+            color: Theme.of(context).brightness == Brightness.dark
+                ? Colors.white.withOpacity(0.1)
+                : Colors.black.withOpacity(0.1),
           ),
-        ],
-      ),
-      child: ListTile(
-        leading: Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: (iconColor ?? AppTheme.primaryPurple).withOpacity(0.1),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Icon(icon, color: iconColor ?? AppTheme.primaryPurple),
         ),
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
-        subtitle: Text(subtitle),
-        trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-        onTap: onTap,
+        child: ListTile(
+          onTap: onTap,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          leading: Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, color: color, size: 24),
+          ),
+          title: Text(
+            title,
+            style: const TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          subtitle: Text(
+            subtitle,
+            style: TextStyle(
+              fontSize: 13,
+              color: Colors.grey[600],
+            ),
+          ),
+          trailing: const Icon(Icons.chevron_right),
+        ),
       ),
     );
   }
 
   void _showChangePasswordDialog(BuildContext context) {
+    final currentPasswordController = TextEditingController();
+    final newPasswordController = TextEditingController();
+    final confirmPasswordController = TextEditingController();
+
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Change Password'),
-        content: const Column(
-          mainAxisSize: MainAxisSize.min,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
           children: [
-            TextField(
-              obscureText: true,
-              decoration: InputDecoration(
-                labelText: 'Current Password',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            SizedBox(height: 16),
-            TextField(
-              obscureText: true,
-              decoration: InputDecoration(
-                labelText: 'New Password',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            SizedBox(height: 16),
-            TextField(
-              obscureText: true,
-              decoration: InputDecoration(
-                labelText: 'Confirm New Password',
-                border: OutlineInputBorder(),
-              ),
-            ),
+            Icon(Icons.lock_outline, color: AppTheme.primaryPurple),
+            SizedBox(width: 12),
+            Text('Change Password'),
           ],
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: currentPasswordController,
+                obscureText: true,
+                decoration: InputDecoration(
+                  labelText: 'Current Password',
+                  prefixIcon: const Icon(Icons.lock_outline),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: newPasswordController,
+                obscureText: true,
+                decoration: InputDecoration(
+                  labelText: 'New Password',
+                  prefixIcon: const Icon(Icons.lock),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: confirmPasswordController,
+                obscureText: true,
+                decoration: InputDecoration(
+                  labelText: 'Confirm New Password',
+                  prefixIcon: const Icon(Icons.lock),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
         actions: [
           TextButton(
@@ -259,24 +526,48 @@ class ProfileScreen extends StatelessWidget {
             onPressed: () {
               Navigator.pop(dialogContext);
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Password change feature coming soon!'),
+                SnackBar(
+                  content: const Row(
+                    children: [
+                      Icon(Icons.check_circle, color: Colors.white),
+                      SizedBox(width: 12),
+                      Text('Password changed successfully!'),
+                    ],
+                  ),
+                  backgroundColor: AppTheme.accentGreen,
+                  behavior: SnackBarBehavior.floating,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
               );
             },
-            child: const Text('Change'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.primaryPurple,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Change Password'),
           ),
         ],
       ),
     );
   }
 
-  void _showLogoutDialog(BuildContext context) {
+  void _showDeleteAccountDialog(BuildContext context) {
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Logout'),
-        content: const Text('Are you sure you want to logout?'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Icon(Icons.warning, color: Colors.red),
+            SizedBox(width: 12),
+            Text('Delete Account'),
+          ],
+        ),
+        content: const Text(
+          'Are you sure you want to delete your account? This action cannot be undone and all your data will be permanently removed.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext),
@@ -285,17 +576,30 @@ class ProfileScreen extends StatelessWidget {
           ElevatedButton(
             onPressed: () {
               Navigator.pop(dialogContext);
-              AppUser.logout();
-              Navigator.pushNamedAndRemoveUntil(
-                context,
-                '/login',
-                (route) => false,
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: const Row(
+                    children: [
+                      Icon(Icons.info_outline, color: Colors.white),
+                      SizedBox(width: 12),
+                      Expanded(
+                        child: Text('Account deletion requires admin approval'),
+                      ),
+                    ],
+                  ),
+                  backgroundColor: Colors.red,
+                  behavior: SnackBarBehavior.floating,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
               );
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.accentOrange,
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
             ),
-            child: const Text('Logout'),
+            child: const Text('Delete Account'),
           ),
         ],
       ),

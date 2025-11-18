@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/config/theme.dart';
 import '../profile_menu/profile_menu_widget.dart';
+import '../notifications/notifications_screen.dart';
 
 class AdminHeader extends StatelessWidget implements PreferredSizeWidget {
   final String title;
@@ -46,27 +47,19 @@ class AdminHeader extends StatelessWidget implements PreferredSizeWidget {
       elevation: 0,
       actions: [
         if (additionalActions != null) ...additionalActions!,
-        IconButton(
-          icon: const Icon(Icons.notifications_outlined),
-          onPressed: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: const Row(
-                  children: [
-                    Icon(Icons.notifications_active, color: Colors.white),
-                    SizedBox(width: 12),
-                    Expanded(child: Text('No new notifications')),
-                  ],
+        MouseRegion(
+          cursor: SystemMouseCursors.click,
+          child: IconButton(
+            icon: const Icon(Icons.notifications_outlined),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const NotificationsScreen(),
                 ),
-                backgroundColor: AppTheme.primaryPurple,
-                behavior: SnackBarBehavior.floating,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                duration: const Duration(seconds: 2),
-              ),
-            );
-          },
+              );
+            },
+          ),
         ),
         Padding(
           padding: const EdgeInsets.only(right: 12, left: 8),
