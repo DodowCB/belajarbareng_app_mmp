@@ -57,7 +57,17 @@ class PengumumanBloc extends Bloc<PengumumanEvent, PengumumanState> {
     emit(state.copyWith(isLoading: true, error: null, successMessage: null));
 
     try {
-      await _firestore.collection('pengumuman').add({
+      // Get next ID
+      final counterDoc = await _firestore.collection('counters').doc('pengumuman').get();
+      int nextId = 1;
+      
+      if (counterDoc.exists) {
+        nextId = (counterDoc.data()?['count'] ?? 0) + 1;
+      }
+      
+      // Create pengumuman with numeric ID
+      await _firestore.collection('pengumuman').doc(nextId.toString()).set({
+        'id': nextId,
         'judul': event.judul,
         'deskripsi': event.deskripsi,
         'guru_id': event.guruId,
@@ -66,6 +76,11 @@ class PengumumanBloc extends Bloc<PengumumanEvent, PengumumanState> {
         'createdAt': FieldValue.serverTimestamp(),
         'updatedAt': null,
       });
+      
+      // Update counter
+      await _firestore.collection('counters').doc('pengumuman').set({
+        'count': nextId,
+      }, SetOptions(merge: true));
 
       emit(
         state.copyWith(

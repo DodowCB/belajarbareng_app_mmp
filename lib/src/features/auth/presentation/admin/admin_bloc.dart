@@ -22,6 +22,7 @@ class AdminState {
   final int totalStudents;
   final int totalMapels;
   final int totalClasses;
+  final int totalPengumuman;
   final List<Map<String, dynamic>> recentActivities;
   final String? error;
 
@@ -32,6 +33,7 @@ class AdminState {
     this.totalStudents = 0,
     this.totalMapels = 0,
     this.totalClasses = 0,
+    this.totalPengumuman = 0,
     this.recentActivities = const [],
     this.error,
   });
@@ -43,6 +45,7 @@ class AdminState {
     int? totalStudents,
     int? totalMapels,
     int? totalClasses,
+    int? totalPengumuman,
     List<Map<String, dynamic>>? recentActivities,
     String? error,
   }) {
@@ -53,6 +56,7 @@ class AdminState {
       totalStudents: totalStudents ?? this.totalStudents,
       totalMapels: totalMapels ?? this.totalMapels,
       totalClasses: totalClasses ?? this.totalClasses,
+      totalPengumuman: totalPengumuman ?? this.totalPengumuman,
       recentActivities: recentActivities ?? this.recentActivities,
       error: error,
     );
@@ -80,18 +84,21 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
           _firestore.collection('siswa').get(),
           _firestore.collection('mapel').get(),
           _firestore.collection('kelas').get(),
+          _firestore.collection('pengumuman').get(),
         ]);
 
         final guruSnapshot = futures[0];
         final siswaSnapshot = futures[1];
         final mapelSnapshot = futures[2];
         final classesSnapshot = futures[3];
+        final pengumumanSnapshot = futures[4];
 
         final totalTeachers = guruSnapshot.docs.length;
         final totalStudents = siswaSnapshot.docs.length;
         final totalUsers = totalTeachers + totalStudents;
         final totalMapels = mapelSnapshot.docs.length;
         final totalClasses = classesSnapshot.docs.length;
+        final totalPengumuman = pengumumanSnapshot.docs.length;
 
         final recentActivities = [
           {
@@ -128,6 +135,7 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
           totalStudents: totalStudents,
           totalMapels: totalMapels,
           totalClasses: totalClasses,
+          totalPengumuman: totalPengumuman,
           recentActivities: recentActivities,
         );
       } catch (e) {

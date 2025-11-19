@@ -283,7 +283,7 @@ class _AdminScreenState extends State<AdminScreen> {
             ),
             _buildStatCard(
               title: 'Pengumuman',
-              value: '0', // TODO: Add pengumuman count to AdminState
+              value: state.totalPengumuman.toString(),
               subtitle: 'Announcements',
               icon: Icons.announcement,
               color: Colors.orange,
