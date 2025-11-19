@@ -8,6 +8,7 @@ import '../guru_data/teachers_screen.dart';
 import '../siswa/students_screen.dart';
 import '../mapel/subjects_screen.dart';
 import '../kelas/classes_screen.dart';
+import '../pengumuman/pengumuman_screen.dart';
 import 'admin_bloc.dart';
 
 class AdminScreen extends StatefulWidget {
@@ -234,10 +235,10 @@ class _AdminScreenState extends State<AdminScreen> {
           final crossAxisCount = screenWidth >= 1200
               ? 4
               : screenWidth >= 768
-                  ? 3
-                  : screenWidth >= 600
-                      ? 2
-                      : 2;
+              ? 3
+              : screenWidth >= 600
+              ? 2
+              : 2;
 
           final statCards = [
             _buildStatCard(
@@ -280,6 +281,14 @@ class _AdminScreenState extends State<AdminScreen> {
               color: AppTheme.accentPink,
               onTap: () => _navigateToKelas(),
             ),
+            _buildStatCard(
+              title: 'Pengumuman',
+              value: '0', // TODO: Add pengumuman count to AdminState
+              subtitle: 'Announcements',
+              icon: Icons.announcement,
+              color: Colors.orange,
+              onTap: () => _navigateToPengumuman(),
+            ),
           ];
 
           return Column(
@@ -287,10 +296,9 @@ class _AdminScreenState extends State<AdminScreen> {
             children: [
               Text(
                 'System Overview',
-                style: Theme.of(context)
-                    .textTheme
-                    .headlineSmall
-                    ?.copyWith(fontWeight: FontWeight.bold),
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               const SizedBox(height: 16),
               GridView.builder(
@@ -303,8 +311,8 @@ class _AdminScreenState extends State<AdminScreen> {
                   childAspectRatio: screenWidth >= 1200
                       ? 1.5
                       : screenWidth >= 768
-                          ? 1.3
-                          : 1.2,
+                      ? 1.3
+                      : 1.2,
                 ),
                 itemCount: statCards.length,
                 itemBuilder: (context, index) => statCards[index],
@@ -329,69 +337,63 @@ class _AdminScreenState extends State<AdminScreen> {
     final cardPadding = screenWidth >= 1200
         ? 20.0
         : screenWidth >= 768
-            ? 18.0
-            : 16.0;
+        ? 18.0
+        : 16.0;
 
     return MouseRegion(
-      cursor: onTap != null ? SystemMouseCursors.click : SystemMouseCursors.basic,
+      cursor: onTap != null
+          ? SystemMouseCursors.click
+          : SystemMouseCursors.basic,
       child: GestureDetector(
         onTap: onTap,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           padding: EdgeInsets.all(cardPadding),
           decoration: BoxDecoration(
-            color: isDark
-                ? color.withOpacity(0.15)
-                : color.withOpacity(0.1),
+            color: isDark ? color.withOpacity(0.15) : color.withOpacity(0.1),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: isDark
-                  ? color.withOpacity(0.3)
-                  : color.withOpacity(0.2),
+              color: isDark ? color.withOpacity(0.3) : color.withOpacity(0.2),
             ),
           ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Text(
-                    title,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: color,
-                      fontWeight: FontWeight.w600,
-                      fontSize: screenWidth >= 1200 ? 16 : 14,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Text(
+                      title,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: color,
+                        fontWeight: FontWeight.w600,
+                        fontSize: screenWidth >= 1200 ? 16 : 14,
+                      ),
                     ),
                   ),
-                ),
-                Icon(
-                  icon,
-                  color: color,
-                  size: screenWidth >= 1200 ? 28 : 24,
-                ),
-              ],
-            ),
-            SizedBox(height: screenWidth >= 1200 ? 12 : 8),
-            Text(
-              value,
-              style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: color,
-                fontSize: screenWidth >= 1200 ? 36 : 28,
+                  Icon(icon, color: color, size: screenWidth >= 1200 ? 28 : 24),
+                ],
               ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              subtitle,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: isDark ? Colors.grey[400] : Colors.grey[600],
-              fontSize: screenWidth >= 1200 ? 14 : 12,
-            ),
+              SizedBox(height: screenWidth >= 1200 ? 12 : 8),
+              Text(
+                value,
+                style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: color,
+                  fontSize: screenWidth >= 1200 ? 36 : 28,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                subtitle,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: isDark ? Colors.grey[400] : Colors.grey[600],
+                  fontSize: screenWidth >= 1200 ? 14 : 12,
+                ),
+              ),
+            ],
           ),
-          ],
-        ),
         ),
       ),
     );
@@ -483,5 +485,11 @@ class _AdminScreenState extends State<AdminScreen> {
     Navigator.of(
       context,
     ).push(MaterialPageRoute(builder: (context) => const ClassesScreen()));
+  }
+
+  void _navigateToPengumuman() {
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (context) => const PengumumanScreen()));
   }
 }
