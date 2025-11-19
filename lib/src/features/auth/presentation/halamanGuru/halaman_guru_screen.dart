@@ -116,17 +116,21 @@ class HalamanGuruBloc extends Bloc<HalamanGuruEvent, HalamanGuruState> {
         },
       ];
 
-      emit(state.copyWith(
-        isLoading: false,
-        recentAnnouncements: recentAnnouncements,
-        teachingStats: teachingStats,
-        recentMaterials: recentMaterials,
-      ));
+      emit(
+        state.copyWith(
+          isLoading: false,
+          recentAnnouncements: recentAnnouncements,
+          teachingStats: teachingStats,
+          recentMaterials: recentMaterials,
+        ),
+      );
     } catch (e) {
-      emit(state.copyWith(
-        isLoading: false,
-        error: 'Error loading data: ${e.toString()}',
-      ));
+      emit(
+        state.copyWith(
+          isLoading: false,
+          error: 'Error loading data: ${e.toString()}',
+        ),
+      );
     }
   }
 
@@ -149,16 +153,16 @@ class HalamanGuruBloc extends Bloc<HalamanGuruEvent, HalamanGuruState> {
           .get();
 
       final myClasses = <Map<String, dynamic>>[];
-      
+
       for (final doc in kelasSnapshot.docs) {
         final kelasData = doc.data();
-        
+
         // Get student count for this class
         final siswaKelasSnapshot = await _firestore
             .collection('siswa_kelas')
             .where('kelas_id', isEqualTo: doc.id)
             .get();
-            
+
         myClasses.add({
           'id': doc.id,
           'nama_kelas': kelasData['nama_kelas'] ?? '',
@@ -171,9 +175,7 @@ class HalamanGuruBloc extends Bloc<HalamanGuruEvent, HalamanGuruState> {
 
       emit(state.copyWith(myClasses: myClasses));
     } catch (e) {
-      emit(state.copyWith(
-        error: 'Error loading classes: ${e.toString()}',
-      ));
+      emit(state.copyWith(error: 'Error loading classes: ${e.toString()}'));
     }
   }
 }
@@ -264,10 +266,11 @@ class _HalamanGuruScreenState extends State<HalamanGuruScreen> {
                   Flexible(
                     child: Text(
                       'Teacher Portal',
-                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        fontSize: isCollapsed ? 18 : 24,
-                      ),
+                      style: Theme.of(context).textTheme.headlineMedium
+                          ?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            fontSize: isCollapsed ? 18 : 24,
+                          ),
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
@@ -320,10 +323,7 @@ class _HalamanGuruScreenState extends State<HalamanGuruScreen> {
         decoration: BoxDecoration(
           gradient: isDark
               ? LinearGradient(
-                  colors: [
-                    AppTheme.secondaryTeal,
-                    AppTheme.accentGreen,
-                  ],
+                  colors: [AppTheme.secondaryTeal, AppTheme.accentGreen],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 )
@@ -374,11 +374,7 @@ class _HalamanGuruScreenState extends State<HalamanGuruScreen> {
                 color: Colors.white.withOpacity(0.2),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Icon(
-                Icons.school,
-                color: Colors.white,
-                size: 32,
-              ),
+              child: const Icon(Icons.school, color: Colors.white, size: 32),
             ),
           ],
         ),
@@ -394,9 +390,9 @@ class _HalamanGuruScreenState extends State<HalamanGuruScreen> {
         children: [
           Text(
             'Statistik Mengajar',
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
           GridView.count(
@@ -427,7 +423,8 @@ class _HalamanGuruScreenState extends State<HalamanGuruScreen> {
               ),
               _buildStatCard(
                 title: 'Tugas',
-                value: state.teachingStats['totalAssignments']?.toString() ?? '0',
+                value:
+                    state.teachingStats['totalAssignments']?.toString() ?? '0',
                 icon: Icons.assignment,
                 color: AppTheme.accentGreen,
               ),
@@ -598,10 +595,7 @@ class _HalamanGuruScreenState extends State<HalamanGuruScreen> {
                     const SizedBox(height: 4),
                     Text(
                       announcement.deskripsi,
-                      style: TextStyle(
-                        color: Colors.grey[600],
-                        fontSize: 14,
-                      ),
+                      style: TextStyle(color: Colors.grey[600], fontSize: 14),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -649,9 +643,9 @@ class _HalamanGuruScreenState extends State<HalamanGuruScreen> {
         children: [
           Text(
             'Aksi Cepat',
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
           GridView.count(
@@ -720,9 +714,9 @@ class _HalamanGuruScreenState extends State<HalamanGuruScreen> {
         children: [
           Text(
             'Kelas Wali',
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
           if (state.myClasses.isEmpty)
@@ -834,10 +828,7 @@ class _HalamanGuruScreenState extends State<HalamanGuruScreen> {
                         ],
                       ),
                       const SizedBox(width: 8),
-                      const Icon(
-                        Icons.chevron_right,
-                        color: Colors.grey,
-                      ),
+                      const Icon(Icons.chevron_right, color: Colors.grey),
                     ],
                   ),
                 ),
@@ -883,9 +874,9 @@ class _HalamanGuruScreenState extends State<HalamanGuruScreen> {
         children: [
           Text(
             'Jadwal Mengajar Hari Ini',
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
           Container(
@@ -1039,7 +1030,9 @@ class _HalamanGuruScreenState extends State<HalamanGuruScreen> {
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: _getFileTypeColor(material['type']).withOpacity(0.1),
+                        color: _getFileTypeColor(
+                          material['type'],
+                        ).withOpacity(0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Icon(
@@ -1073,11 +1066,7 @@ class _HalamanGuruScreenState extends State<HalamanGuruScreen> {
                     ),
                     Column(
                       children: [
-                        Icon(
-                          Icons.download,
-                          size: 16,
-                          color: Colors.grey[600],
-                        ),
+                        Icon(Icons.download, size: 16, color: Colors.grey[600]),
                         const SizedBox(height: 2),
                         Text(
                           material['downloads'].toString(),
@@ -1129,9 +1118,7 @@ class _HalamanGuruScreenState extends State<HalamanGuruScreen> {
         content: Text('$feature akan segera hadir'),
         backgroundColor: AppTheme.primaryPurple,
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
     );
   }
