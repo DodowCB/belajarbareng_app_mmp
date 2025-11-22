@@ -19,9 +19,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController(
     text: "administrator@gmail.com",
+    // text: "Castorice@gmail.com",
   );
   final _passwordController = TextEditingController(
     text: "starRailBestStoryEver123",
+    // text: "123",
   );
 
   bool _isPasswordVisible = false;
@@ -104,10 +106,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
           decoration: BoxDecoration(
             gradient: Theme.of(context).brightness == Brightness.dark
                 ? LinearGradient(
-                    colors: [
-                      AppTheme.cardDark,
-                      AppTheme.backgroundDark,
-                    ],
+                    colors: [AppTheme.cardDark, AppTheme.backgroundDark],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   )
@@ -425,7 +424,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
         final isLoading = state is LoginLoading;
 
         return MouseRegion(
-          cursor: isLoading ? SystemMouseCursors.basic : SystemMouseCursors.click,
+          cursor: isLoading
+              ? SystemMouseCursors.basic
+              : SystemMouseCursors.click,
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 200),
             width: double.infinity,
@@ -451,7 +452,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                     )
                   : const Text(
                       'Masuk',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
             ),
           ),

@@ -55,7 +55,7 @@ dependencies:
 
   # 4. Networking (Sesuai proposal: dio)
   dio: ^5.4.0 # Untuk API call ke AI Helper
-  http: ^1.1.0 # Untuk YouTube API calls
+  http: ^1.2.2 # Untuk YouTube API calls dan connectivity test
 
   # 5. Local Storage (Sesuai proposal: Drift & Encrypted Box)
   drift: ^2.13.0 # Database lokal
@@ -82,6 +82,10 @@ dependencies:
 
   file_picker: ^8.0.0+1
   excel: ^4.0.3
+
+  # 8. Connectivity & Local Storage for Offline Support
+  connectivity_plus: ^6.0.5
+  tostore: ^1.8.8
 
 dev_dependencies:
   flutter_test:

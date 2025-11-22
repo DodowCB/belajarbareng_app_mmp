@@ -25,6 +25,8 @@ class _AdminScreenState extends State<AdminScreen> {
   void initState() {
     super.initState();
     _adminBloc = AdminBloc();
+    // Load initial data
+    _adminBloc.add(LoadAdminData());
   }
 
   @override
@@ -57,7 +59,12 @@ class _AdminScreenState extends State<AdminScreen> {
                 _buildAppBar(context),
                 const SliverToBoxAdapter(child: SizedBox(height: 20)),
                 SliverToBoxAdapter(child: _buildWelcomeCard()),
-                const SliverToBoxAdapter(child: SizedBox(height: 24)),
+                const SliverToBoxAdapter(child: SizedBox(height: 16)),
+                if (!state.isOnline) ...[
+                  SliverToBoxAdapter(child: _buildOfflineBanner(state)),
+                  const SliverToBoxAdapter(child: SizedBox(height: 16)),
+                ],
+                const SliverToBoxAdapter(child: SizedBox(height: 8)),
                 SliverToBoxAdapter(child: _buildStatsSection(state)),
                 const SliverToBoxAdapter(child: SizedBox(height: 24)),
                 SliverToBoxAdapter(child: _buildRecentActivity(state)),
@@ -118,6 +125,90 @@ class _AdminScreenState extends State<AdminScreen> {
         ),
       ),
       actions: [
+        // Connection Status Indicator
+        BlocBuilder<AdminBloc, AdminState>(
+          builder: (context, state) {
+            return Container(
+              margin: const EdgeInsets.only(right: 8, top: 12, bottom: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: state.isOnline
+                    ? Colors.green.withOpacity(0.1)
+                    : Colors.red.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: state.isOnline ? Colors.green : Colors.red,
+                  width: 1,
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    state.isOnline ? Icons.wifi : Icons.wifi_off,
+                    color: state.isOnline ? Colors.green : Colors.red,
+                    size: 16,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    state.isOnline ? 'Online' : 'Offline',
+                    style: TextStyle(
+                      color: state.isOnline ? Colors.green : Colors.red,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
+        // Manual Sync Button
+        BlocBuilder<AdminBloc, AdminState>(
+          builder: (context, state) {
+            return IconButton(
+              icon: state.isLoading
+                  ? SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          Theme.of(context).iconTheme.color ?? Colors.white,
+                        ),
+                      ),
+                    )
+                  : const Icon(Icons.sync),
+              tooltip: state.isLoading
+                  ? 'Syncing...'
+                  : 'Sync data from Firebase',
+              onPressed: state.isLoading
+                  ? null
+                  : () {
+                      context.read<AdminBloc>().add(TriggerManualSync());
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: const Row(
+                            children: [
+                              Icon(Icons.sync, color: Colors.white),
+                              SizedBox(width: 12),
+                              Expanded(
+                                child: Text('Syncing data from Firebase...'),
+                              ),
+                            ],
+                          ),
+                          backgroundColor: AppTheme.primaryPurple,
+                          behavior: SnackBarBehavior.floating,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          duration: const Duration(seconds: 2),
+                        ),
+                      );
+                    },
+            );
+          },
+        ),
         IconButton(
           icon: const Icon(Icons.notifications_outlined),
           onPressed: () {
@@ -244,50 +335,68 @@ class _AdminScreenState extends State<AdminScreen> {
             _buildStatCard(
               title: 'Total Users',
               value: state.totalUsers.toString(),
-              subtitle: 'Registered',
+              subtitle: state.isOnline ? 'Registered' : 'Cached data',
               icon: Icons.people,
               color: AppTheme.primaryPurple,
-              onTap: () => _navigateToAllUsers(),
+              onTap: state.isOnline
+                  ? () => _navigateToAllUsers()
+                  : () => _showOfflineMessage(),
+              isOffline: !state.isOnline,
             ),
             _buildStatCard(
               title: 'Teachers',
               value: state.totalTeachers.toString(),
-              subtitle: 'Active',
+              subtitle: state.isOnline ? 'Active' : 'Cached data',
               icon: Icons.school,
               color: AppTheme.secondaryTeal,
-              onTap: () => _navigateToGuruData(),
+              onTap: state.isOnline
+                  ? () => _navigateToGuruData()
+                  : () => _showOfflineMessage(),
+              isOffline: !state.isOnline,
             ),
             _buildStatCard(
               title: 'Students',
               value: state.totalStudents.toString(),
-              subtitle: 'Enrolled',
+              subtitle: state.isOnline ? 'Enrolled' : 'Cached data',
               icon: Icons.groups,
               color: AppTheme.accentGreen,
-              onTap: () => _navigateToSiswaData(),
+              onTap: state.isOnline
+                  ? () => _navigateToSiswaData()
+                  : () => _showOfflineMessage(),
+              isOffline: !state.isOnline,
             ),
             _buildStatCard(
               title: 'Mapel',
               value: state.totalMapels.toString(),
-              subtitle: 'Available',
+              subtitle: state.isOnline ? 'Available' : 'Cached data',
               icon: Icons.library_books,
               color: AppTheme.accentOrange,
-              onTap: () => _navigateToMapel(),
+              onTap: state.isOnline
+                  ? () => _navigateToMapel()
+                  : () => _showOfflineMessage(),
+              isOffline: !state.isOnline,
             ),
             _buildStatCard(
               title: 'Kelas',
               value: state.totalClasses.toString(),
-              subtitle: 'Available',
+              subtitle: state.isOnline ? 'Available' : 'Cached data',
               icon: Icons.class_,
               color: AppTheme.accentPink,
-              onTap: () => _navigateToKelas(),
+              onTap: state.isOnline
+                  ? () => _navigateToKelas()
+                  : () => _showOfflineMessage(),
+              isOffline: !state.isOnline,
             ),
             _buildStatCard(
               title: 'Pengumuman',
               value: state.totalPengumuman.toString(),
-              subtitle: 'Announcements',
+              subtitle: state.isOnline ? 'Announcements' : 'Cached data',
               icon: Icons.announcement,
               color: Colors.orange,
-              onTap: () => _navigateToPengumuman(),
+              onTap: state.isOnline
+                  ? () => _navigateToPengumuman()
+                  : () => _showOfflineMessage(),
+              isOffline: !state.isOnline,
             ),
           ];
 
@@ -331,6 +440,7 @@ class _AdminScreenState extends State<AdminScreen> {
     required IconData icon,
     required Color color,
     VoidCallback? onTap,
+    bool isOffline = false,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final screenWidth = MediaQuery.of(context).size.width;
@@ -363,16 +473,35 @@ class _AdminScreenState extends State<AdminScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Expanded(
-                    child: Text(
-                      title,
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: color,
-                        fontWeight: FontWeight.w600,
-                        fontSize: screenWidth >= 1200 ? 16 : 14,
-                      ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            title,
+                            style: Theme.of(context).textTheme.titleMedium
+                                ?.copyWith(
+                                  color: isOffline ? Colors.grey : color,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: screenWidth >= 1200 ? 16 : 14,
+                                ),
+                          ),
+                        ),
+                        if (isOffline) ...[
+                          const SizedBox(width: 4),
+                          Icon(
+                            Icons.offline_bolt,
+                            color: Colors.grey,
+                            size: 16,
+                          ),
+                        ],
+                      ],
                     ),
                   ),
-                  Icon(icon, color: color, size: screenWidth >= 1200 ? 28 : 24),
+                  Icon(
+                    icon,
+                    color: isOffline ? Colors.grey : color,
+                    size: screenWidth >= 1200 ? 28 : 24,
+                  ),
                 ],
               ),
               SizedBox(height: screenWidth >= 1200 ? 12 : 8),
@@ -380,7 +509,7 @@ class _AdminScreenState extends State<AdminScreen> {
                 value,
                 style: Theme.of(context).textTheme.headlineLarge?.copyWith(
                   fontWeight: FontWeight.bold,
-                  color: color,
+                  color: isOffline ? Colors.grey : color,
                   fontSize: screenWidth >= 1200 ? 36 : 28,
                 ),
               ),
@@ -388,8 +517,11 @@ class _AdminScreenState extends State<AdminScreen> {
               Text(
                 subtitle,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: isDark ? Colors.grey[400] : Colors.grey[600],
+                  color: isOffline
+                      ? Colors.orange
+                      : (isDark ? Colors.grey[400] : Colors.grey[600]),
                   fontSize: screenWidth >= 1200 ? 14 : 12,
+                  fontWeight: isOffline ? FontWeight.w500 : FontWeight.normal,
                 ),
               ),
             ],
@@ -491,5 +623,90 @@ class _AdminScreenState extends State<AdminScreen> {
     Navigator.of(
       context,
     ).push(MaterialPageRoute(builder: (context) => const PengumumanScreen()));
+  }
+
+  Widget _buildOfflineBanner(AdminState state) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.orange.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.orange.withOpacity(0.3)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.orange.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(Icons.wifi_off, color: Colors.orange, size: 20),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Offline Mode',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: Colors.orange,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Showing cached data. CRUD operations are disabled.',
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodySmall?.copyWith(color: Colors.orange[700]),
+                  ),
+                  if (state.lastSync != null) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      'Last sync: ${_formatDateTime(state.lastSync)}',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Colors.orange[600],
+                        fontSize: 11,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _formatDateTime(DateTime? dateTime) {
+    if (dateTime == null) return 'Never';
+    return '${dateTime.day}/${dateTime.month}/${dateTime.year} ${dateTime.hour}:${dateTime.minute.toString().padLeft(2, '0')}';
+  }
+
+  void _showOfflineMessage() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Row(
+          children: [
+            Icon(Icons.wifi_off, color: Colors.white),
+            SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'CRUD operations are disabled in offline mode. Please connect to internet.',
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: Colors.red,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        duration: const Duration(seconds: 3),
+      ),
+    );
   }
 }
