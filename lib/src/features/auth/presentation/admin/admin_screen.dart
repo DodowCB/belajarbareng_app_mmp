@@ -9,7 +9,7 @@ import '../siswa/students_screen.dart';
 import '../mapel/subjects_screen.dart';
 import '../kelas/classes_screen.dart';
 import '../pengumuman/pengumuman_screen.dart';
-import '../../../admin/presentation/screens/jadwal_mengajar_screen.dart';
+import '../jadwal_mengajar/jadwal_mengajar_screen.dart';
 import 'admin_bloc.dart';
 
 class AdminScreen extends StatefulWidget {
