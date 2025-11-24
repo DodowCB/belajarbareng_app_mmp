@@ -9,6 +9,7 @@ import '../siswa/students_screen.dart';
 import '../mapel/subjects_screen.dart';
 import '../kelas/classes_screen.dart';
 import '../pengumuman/pengumuman_screen.dart';
+import '../../../admin/presentation/screens/jadwal_mengajar_screen.dart';
 import 'admin_bloc.dart';
 
 class AdminScreen extends StatefulWidget {
@@ -398,6 +399,17 @@ class _AdminScreenState extends State<AdminScreen> {
                   : () => _showOfflineMessage(),
               isOffline: !state.isOnline,
             ),
+            _buildStatCard(
+              title: 'Jadwal Mengajar',
+              value: state.totalJadwalMengajar.toString(),
+              subtitle: state.isOnline ? 'Kelas Ngajar' : 'Cached data',
+              icon: Icons.schedule,
+              color: AppTheme.primaryPurple.withOpacity(0.8),
+              onTap: state.isOnline
+                  ? () => _navigateToJadwalMengajar()
+                  : () => _showOfflineMessage(),
+              isOffline: !state.isOnline,
+            ),
           ];
 
           return Column(
@@ -623,6 +635,12 @@ class _AdminScreenState extends State<AdminScreen> {
     Navigator.of(
       context,
     ).push(MaterialPageRoute(builder: (context) => const PengumumanScreen()));
+  }
+
+  void _navigateToJadwalMengajar() {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (context) => const JadwalMengajarScreen()),
+    );
   }
 
   Widget _buildOfflineBanner(AdminState state) {

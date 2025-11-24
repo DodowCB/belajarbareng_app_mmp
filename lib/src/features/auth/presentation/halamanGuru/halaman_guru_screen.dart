@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:table_calendar/table_calendar.dart';
 import '../../../../core/config/theme.dart';
+import '../../../../core/services/connectivity_service.dart';
 import '../profile_menu/profile_menu_widget.dart';
 import '../../data/models/pengumuman_model.dart';
 import '../kelas/siswa_kelas_screen.dart';
@@ -25,6 +27,10 @@ class HalamanGuruState {
   final List<PengumumanModel> recentAnnouncements;
   final List<Map<String, dynamic>> recentMaterials;
   final Map<String, int> teachingStats;
+  final bool isOnline;
+  final DateTime selectedDay;
+  final DateTime focusedDay;
+  final Map<DateTime, List<String>> calendarEvents;
   final String? error;
 
   HalamanGuruState({
@@ -33,8 +39,13 @@ class HalamanGuruState {
     this.recentAnnouncements = const [],
     this.recentMaterials = const [],
     this.teachingStats = const {},
+    this.isOnline = true,
+    DateTime? selectedDay,
+    DateTime? focusedDay,
+    this.calendarEvents = const {},
     this.error,
-  });
+  }) : selectedDay = selectedDay ?? DateTime.now(),
+       focusedDay = focusedDay ?? DateTime.now();
 
   HalamanGuruState copyWith({
     bool? isLoading,
@@ -42,6 +53,10 @@ class HalamanGuruState {
     List<PengumumanModel>? recentAnnouncements,
     List<Map<String, dynamic>>? recentMaterials,
     Map<String, int>? teachingStats,
+    bool? isOnline,
+    DateTime? selectedDay,
+    DateTime? focusedDay,
+    Map<DateTime, List<String>>? calendarEvents,
     String? error,
   }) {
     return HalamanGuruState(
@@ -50,19 +65,82 @@ class HalamanGuruState {
       recentAnnouncements: recentAnnouncements ?? this.recentAnnouncements,
       recentMaterials: recentMaterials ?? this.recentMaterials,
       teachingStats: teachingStats ?? this.teachingStats,
+      isOnline: isOnline ?? this.isOnline,
+      selectedDay: selectedDay ?? this.selectedDay,
+      focusedDay: focusedDay ?? this.focusedDay,
+      calendarEvents: calendarEvents ?? this.calendarEvents,
       error: error,
     );
   }
 }
 
+// Calendar Events
+class SelectDayEvent extends HalamanGuruEvent {
+  final DateTime selectedDay;
+  final DateTime focusedDay;
+  SelectDayEvent(this.selectedDay, this.focusedDay);
+}
+
+class LoadCalendarEvents extends HalamanGuruEvent {}
+
 // Guru Bloc
 class HalamanGuruBloc extends Bloc<HalamanGuruEvent, HalamanGuruState> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final ConnectivityService _connectivityService = ConnectivityService();
 
   HalamanGuruBloc() : super(HalamanGuruState()) {
     on<LoadGuruData>(_onLoadGuruData);
     on<RefreshGuruData>(_onRefreshGuruData);
     on<LoadGuruClasses>(_onLoadGuruClasses);
+    on<SelectDayEvent>(_onSelectDay);
+    on<LoadCalendarEvents>(_onLoadCalendarEvents);
+
+    // Initialize connectivity service
+    _initializeServices();
+  }
+
+  void _initializeServices() {
+    // Initialize connectivity monitoring
+    _connectivityService.initialize();
+    _connectivityService.addListener(() {
+      add(LoadGuruData());
+    });
+  }
+
+  void _onSelectDay(SelectDayEvent event, Emitter<HalamanGuruState> emit) {
+    emit(
+      state.copyWith(
+        selectedDay: event.selectedDay,
+        focusedDay: event.focusedDay,
+      ),
+    );
+    // Load events for selected day
+    add(LoadCalendarEvents());
+  }
+
+  Future<void> _onLoadCalendarEvents(
+    LoadCalendarEvents event,
+    Emitter<HalamanGuruState> emit,
+  ) async {
+    try {
+      final isOnline = _connectivityService.isOnline;
+
+      // Create sample events for today
+      final today = DateTime.now();
+      final todayKey = DateTime(today.year, today.month, today.day);
+
+      Map<DateTime, List<String>> events = {
+        todayKey: [
+          'Matematika Kelas 10A - 08:00',
+          'IPA Kelas 9B - 10:00',
+          'Rapat Guru - 13:00',
+        ],
+      };
+
+      emit(state.copyWith(isOnline: isOnline, calendarEvents: events));
+    } catch (e) {
+      emit(state.copyWith(error: 'Failed to load calendar events: $e'));
+    }
   }
 
   Future<void> _onLoadGuruData(
@@ -211,6 +289,8 @@ class _HalamanGuruScreenState extends State<HalamanGuruScreen> {
                   _buildAppBar(context),
                   const SliverToBoxAdapter(child: SizedBox(height: 20)),
                   SliverToBoxAdapter(child: _buildWelcomeCard()),
+                  const SliverToBoxAdapter(child: SizedBox(height: 24)),
+                  SliverToBoxAdapter(child: _buildCalendarSection(state)),
                   const SliverToBoxAdapter(child: SizedBox(height: 24)),
                   SliverToBoxAdapter(child: _buildStatsSection(state)),
                   const SliverToBoxAdapter(child: SizedBox(height: 24)),
@@ -376,6 +456,181 @@ class _HalamanGuruScreenState extends State<HalamanGuruScreen> {
               ),
               child: const Icon(Icons.school, color: Colors.white, size: 32),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCalendarSection(HalamanGuruState state) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Card(
+        elevation: 4,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppTheme.primaryPurple,
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(16),
+                  topRight: Radius.circular(16),
+                ),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.calendar_today, color: Colors.white),
+                  const SizedBox(width: 12),
+                  Text(
+                    'Jadwal Mengajar',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const Spacer(),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: state.isOnline ? Colors.green : Colors.red,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          state.isOnline ? Icons.wifi : Icons.wifi_off,
+                          color: Colors.white,
+                          size: 12,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          state.isOnline ? 'Online' : 'Offline',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: TableCalendar<String>(
+                firstDay: DateTime.utc(2020, 1, 1),
+                lastDay: DateTime.utc(2030, 12, 31),
+                focusedDay: state.focusedDay,
+                calendarFormat: CalendarFormat.month,
+                eventLoader: (day) {
+                  final dayKey = DateTime(day.year, day.month, day.day);
+                  return state.calendarEvents[dayKey] ?? [];
+                },
+                startingDayOfWeek: StartingDayOfWeek.monday,
+                calendarStyle: CalendarStyle(
+                  outsideDaysVisible: false,
+                  weekendTextStyle: TextStyle(color: Colors.red[400]),
+                  holidayTextStyle: TextStyle(color: Colors.red[800]),
+                  selectedDecoration: BoxDecoration(
+                    color: AppTheme.primaryPurple,
+                    shape: BoxShape.circle,
+                  ),
+                  todayDecoration: BoxDecoration(
+                    color: AppTheme.secondaryTeal,
+                    shape: BoxShape.circle,
+                  ),
+                  markerDecoration: BoxDecoration(
+                    color: AppTheme.accentOrange,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                selectedDayPredicate: (day) {
+                  return isSameDay(state.selectedDay, day);
+                },
+                onDaySelected: (selectedDay, focusedDay) {
+                  context.read<HalamanGuruBloc>().add(
+                    SelectDayEvent(selectedDay, focusedDay),
+                  );
+                },
+                onPageChanged: (focusedDay) {
+                  context.read<HalamanGuruBloc>().add(
+                    SelectDayEvent(state.selectedDay, focusedDay),
+                  );
+                },
+              ),
+            ),
+            if (state
+                    .calendarEvents[DateTime(
+                      state.selectedDay.year,
+                      state.selectedDay.month,
+                      state.selectedDay.day,
+                    )]
+                    ?.isNotEmpty ==
+                true)
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.grey[50],
+                  borderRadius: const BorderRadius.only(
+                    bottomLeft: Radius.circular(16),
+                    bottomRight: Radius.circular(16),
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Jadwal Hari Ini',
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    ...state
+                        .calendarEvents[DateTime(
+                          state.selectedDay.year,
+                          state.selectedDay.month,
+                          state.selectedDay.day,
+                        )]!
+                        .map(
+                          (event) => Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 4),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 8,
+                                  height: 8,
+                                  decoration: BoxDecoration(
+                                    color: AppTheme.primaryPurple,
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Text(
+                                    event,
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.bodyMedium,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        )
+                        .toList(),
+                  ],
+                ),
+              ),
           ],
         ),
       ),

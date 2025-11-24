@@ -30,6 +30,7 @@ class AdminState {
   final int totalMapels;
   final int totalClasses;
   final int totalPengumuman;
+  final int totalJadwalMengajar;
   final List<Map<String, dynamic>> recentActivities;
   final String? error;
   final bool isOnline;
@@ -43,6 +44,7 @@ class AdminState {
     this.totalMapels = 0,
     this.totalClasses = 0,
     this.totalPengumuman = 0,
+    this.totalJadwalMengajar = 0,
     this.recentActivities = const [],
     this.error,
     this.isOnline = true,
@@ -57,6 +59,7 @@ class AdminState {
     int? totalMapels,
     int? totalClasses,
     int? totalPengumuman,
+    int? totalJadwalMengajar,
     List<Map<String, dynamic>>? recentActivities,
     String? error,
     bool? isOnline,
@@ -70,6 +73,7 @@ class AdminState {
       totalMapels: totalMapels ?? this.totalMapels,
       totalClasses: totalClasses ?? this.totalClasses,
       totalPengumuman: totalPengumuman ?? this.totalPengumuman,
+      totalJadwalMengajar: totalJadwalMengajar ?? this.totalJadwalMengajar,
       recentActivities: recentActivities ?? this.recentActivities,
       error: error,
       isOnline: isOnline ?? this.isOnline,
@@ -126,6 +130,7 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
           _firestore.collection('mapel').get(),
           _firestore.collection('kelas').get(),
           _firestore.collection('pengumuman').get(),
+          _firestore.collection('kelas_ngajar').get(),
         ]);
 
         final guruSnapshot = futures[0];
@@ -133,6 +138,7 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
         final mapelSnapshot = futures[2];
         final classesSnapshot = futures[3];
         final pengumumanSnapshot = futures[4];
+        final kelasNgajarSnapshot = futures[5];
 
         final totalTeachers = guruSnapshot.docs.length;
         final totalStudents = siswaSnapshot.docs.length;
@@ -140,6 +146,7 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
         final totalMapels = mapelSnapshot.docs.length;
         final totalClasses = classesSnapshot.docs.length;
         final totalPengumuman = pengumumanSnapshot.docs.length;
+        final totalJadwalMengajar = kelasNgajarSnapshot.docs.length;
 
         final recentActivities = [
           {
@@ -177,6 +184,7 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
           totalMapels: totalMapels,
           totalClasses: totalClasses,
           totalPengumuman: totalPengumuman,
+          totalJadwalMengajar: totalJadwalMengajar,
           recentActivities: recentActivities,
         );
       } catch (e) {
@@ -246,6 +254,7 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
         _firestore.collection('mapel').get(),
         _firestore.collection('kelas').get(),
         _firestore.collection('pengumuman').get(),
+        _firestore.collection('kelas_ngajar').get(),
       ]);
 
       final guruSnapshot = futures[0];
@@ -253,6 +262,7 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
       final mapelSnapshot = futures[2];
       final kelasSnapshot = futures[3];
       final pengumumanSnapshot = futures[4];
+      final kelasNgajarSnapshot = futures[5];
 
       final totalTeachers = guruSnapshot.docs.length;
       final totalStudents = siswaSnapshot.docs.length;
@@ -260,6 +270,7 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
       final totalMapels = mapelSnapshot.docs.length;
       final totalClasses = kelasSnapshot.docs.length;
       final totalPengumuman = pengumumanSnapshot.docs.length;
+      final totalJadwalMengajar = kelasNgajarSnapshot.docs.length;
 
       debugPrint('🔥 Firebase data loaded successfully:');
       debugPrint(
@@ -321,6 +332,7 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
           totalMapels: totalMapels,
           totalClasses: totalClasses,
           totalPengumuman: totalPengumuman,
+          totalJadwalMengajar: totalJadwalMengajar,
           recentActivities: recentActivities,
           isOnline: _connectivityService.isOnline,
           lastSync: DateTime.now(),
