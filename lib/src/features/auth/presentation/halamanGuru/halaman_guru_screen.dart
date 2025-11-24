@@ -6,7 +6,6 @@ import '../../../../core/config/theme.dart';
 import '../../../../core/services/connectivity_service.dart';
 import '../profile_menu/profile_menu_widget.dart';
 import '../../data/models/pengumuman_model.dart';
-import '../kelas/siswa_kelas_screen.dart';
 
 // Guru Events
 abstract class HalamanGuruEvent {}
@@ -24,52 +23,60 @@ class LoadGuruClasses extends HalamanGuruEvent {
 class HalamanGuruState {
   final bool isLoading;
   final List<Map<String, dynamic>> myClasses;
+  final List<Map<String, dynamic>> kelasWali;
+  final List<Map<String, dynamic>> jadwalMengajar;
   final List<PengumumanModel> recentAnnouncements;
-  final List<Map<String, dynamic>> recentMaterials;
   final Map<String, int> teachingStats;
   final bool isOnline;
   final DateTime selectedDay;
   final DateTime focusedDay;
-  final Map<DateTime, List<String>> calendarEvents;
+  final Map<DateTime, List<Map<String, dynamic>>> calendarEvents;
   final String? error;
+  final String? currentGuruId;
 
   HalamanGuruState({
     this.isLoading = false,
     this.myClasses = const [],
+    this.kelasWali = const [],
+    this.jadwalMengajar = const [],
     this.recentAnnouncements = const [],
-    this.recentMaterials = const [],
     this.teachingStats = const {},
     this.isOnline = true,
     DateTime? selectedDay,
     DateTime? focusedDay,
     this.calendarEvents = const {},
     this.error,
+    this.currentGuruId,
   }) : selectedDay = selectedDay ?? DateTime.now(),
        focusedDay = focusedDay ?? DateTime.now();
 
   HalamanGuruState copyWith({
     bool? isLoading,
     List<Map<String, dynamic>>? myClasses,
+    List<Map<String, dynamic>>? kelasWali,
+    List<Map<String, dynamic>>? jadwalMengajar,
     List<PengumumanModel>? recentAnnouncements,
-    List<Map<String, dynamic>>? recentMaterials,
     Map<String, int>? teachingStats,
     bool? isOnline,
     DateTime? selectedDay,
     DateTime? focusedDay,
-    Map<DateTime, List<String>>? calendarEvents,
+    Map<DateTime, List<Map<String, dynamic>>>? calendarEvents,
     String? error,
+    String? currentGuruId,
   }) {
     return HalamanGuruState(
       isLoading: isLoading ?? this.isLoading,
       myClasses: myClasses ?? this.myClasses,
+      kelasWali: kelasWali ?? this.kelasWali,
+      jadwalMengajar: jadwalMengajar ?? this.jadwalMengajar,
       recentAnnouncements: recentAnnouncements ?? this.recentAnnouncements,
-      recentMaterials: recentMaterials ?? this.recentMaterials,
       teachingStats: teachingStats ?? this.teachingStats,
       isOnline: isOnline ?? this.isOnline,
       selectedDay: selectedDay ?? this.selectedDay,
       focusedDay: focusedDay ?? this.focusedDay,
       calendarEvents: calendarEvents ?? this.calendarEvents,
       error: error,
+      currentGuruId: currentGuruId ?? this.currentGuruId,
     );
   }
 }
@@ -125,17 +132,35 @@ class HalamanGuruBloc extends Bloc<HalamanGuruEvent, HalamanGuruState> {
     try {
       final isOnline = _connectivityService.isOnline;
 
-      // Create sample events for today
-      final today = DateTime.now();
-      final todayKey = DateTime(today.year, today.month, today.day);
+      if (state.currentGuruId == null) {
+        emit(state.copyWith(isOnline: isOnline));
+        return;
+      }
 
-      Map<DateTime, List<String>> events = {
-        todayKey: [
-          'Matematika Kelas 10A - 08:00',
-          'IPA Kelas 9B - 10:00',
-          'Rapat Guru - 13:00',
-        ],
-      };
+      // Load real schedule data from kelas_ngajar collection
+      final jadwalSnapshot = await _firestore
+          .collection('kelas_ngajar')
+          .where('id_guru', isEqualTo: state.currentGuruId)
+          .get();
+
+      Map<DateTime, List<Map<String, dynamic>>> events = {};
+
+      for (var doc in jadwalSnapshot.docs) {
+        final data = doc.data();
+        final tanggal = (data['tanggal'] as Timestamp?)?.toDate();
+        if (tanggal != null) {
+          final dayKey = DateTime(tanggal.year, tanggal.month, tanggal.day);
+
+          if (events[dayKey] == null) events[dayKey] = [];
+
+          events[dayKey]!.add({
+            'jam': data['jam'] ?? '',
+            'hari': data['hari'] ?? '',
+            'id_kelas': data['id_kelas'] ?? '',
+            'id_mapel': data['id_mapel'] ?? '',
+          });
+        }
+      }
 
       emit(state.copyWith(isOnline: isOnline, calendarEvents: events));
     } catch (e) {
@@ -150,6 +175,9 @@ class HalamanGuruBloc extends Bloc<HalamanGuruEvent, HalamanGuruState> {
     emit(state.copyWith(isLoading: true, error: null));
 
     try {
+      // For demo, use hardcoded guru ID. In real app, get from auth
+      const currentGuruId = '1'; // You should get this from authentication
+
       // Load recent announcements
       final pengumumanSnapshot = await _firestore
           .collection('pengumuman')
@@ -161,45 +189,60 @@ class HalamanGuruBloc extends Bloc<HalamanGuruEvent, HalamanGuruState> {
           .map((doc) => PengumumanModel.fromFirestore(doc))
           .toList();
 
-      // Load teaching stats (dummy data for now)
-      final teachingStats = {
-        'totalClasses': 3,
-        'totalStudents': 45,
-        'totalMaterials': 12,
-        'totalAssignments': 8,
-      };
+      // Load kelas wali (classes where this guru is homeroom teacher)
+      final kelasWaliSnapshot = await _firestore
+          .collection('kelas')
+          .where('id_wali', isEqualTo: currentGuruId)
+          .get();
 
-      // Load recent materials (dummy data)
-      final recentMaterials = [
-        {
-          'title': 'Matematika - Aljabar Linear',
-          'subject': 'Matematika',
-          'uploadDate': 'Kemarin',
-          'downloads': 23,
-          'type': 'PDF',
-        },
-        {
-          'title': 'Fisika - Mekanika Fluida',
-          'subject': 'Fisika',
-          'uploadDate': '2 hari lalu',
-          'downloads': 15,
-          'type': 'Video',
-        },
-        {
-          'title': 'Kimia - Ikatan Kimia',
-          'subject': 'Kimia',
-          'uploadDate': '3 hari lalu',
-          'downloads': 31,
-          'type': 'PPT',
-        },
-      ];
+      final kelasWali = kelasWaliSnapshot.docs.map((doc) {
+        final data = doc.data();
+        return {
+          'id': doc.id,
+          'namaKelas': data['namaKelas'] ?? '',
+          'jumlahSiswa': data['jumlahSiswa'] ?? 0,
+        };
+      }).toList();
+
+      // Load jadwal mengajar
+      final jadwalSnapshot = await _firestore
+          .collection('kelas_ngajar')
+          .where('id_guru', isEqualTo: currentGuruId)
+          .get();
+
+      final jadwalMengajar = jadwalSnapshot.docs.map((doc) {
+        final data = doc.data();
+        return {
+          'id': doc.id,
+          'id_kelas': data['id_kelas'] ?? '',
+          'id_mapel': data['id_mapel'] ?? '',
+          'jam': data['jam'] ?? '',
+          'hari': data['hari'] ?? '',
+          'tanggal': data['tanggal'],
+        };
+      }).toList();
+
+      // Calculate teaching stats
+      final uniqueClasses = jadwalMengajar
+          .map((j) => j['id_kelas'])
+          .toSet()
+          .length;
+      final teachingStats = {
+        'kelasWali': kelasWali.length,
+        'jadwalMengajar': jadwalMengajar.length,
+        'totalKelas': uniqueClasses,
+        'materi': 8, // Static for now
+        'tugas': 12, // Static for now
+      };
 
       emit(
         state.copyWith(
           isLoading: false,
+          currentGuruId: currentGuruId,
+          kelasWali: kelasWali,
+          jadwalMengajar: jadwalMengajar,
           recentAnnouncements: recentAnnouncements,
           teachingStats: teachingStats,
-          recentMaterials: recentMaterials,
         ),
       );
     } catch (e) {
@@ -300,9 +343,6 @@ class _HalamanGuruScreenState extends State<HalamanGuruScreen> {
                   const SliverToBoxAdapter(child: SizedBox(height: 24)),
                   SliverToBoxAdapter(child: _buildMyClasses(state)),
                   const SliverToBoxAdapter(child: SizedBox(height: 24)),
-                  SliverToBoxAdapter(child: _buildScheduleSection()),
-                  const SliverToBoxAdapter(child: SizedBox(height: 24)),
-                  SliverToBoxAdapter(child: _buildRecentMaterials(state)),
                   const SliverToBoxAdapter(child: SizedBox(height: 100)),
                 ],
               ),
@@ -533,7 +573,10 @@ class _HalamanGuruScreenState extends State<HalamanGuruScreen> {
                 calendarFormat: CalendarFormat.month,
                 eventLoader: (day) {
                   final dayKey = DateTime(day.year, day.month, day.day);
-                  return state.calendarEvents[dayKey] ?? [];
+                  final events = state.calendarEvents[dayKey] ?? [];
+                  return events
+                      .map<String>((e) => '${e['jam']} - ${e['hari']}')
+                      .toList();
                 },
                 startingDayOfWeek: StartingDayOfWeek.monday,
                 calendarStyle: CalendarStyle(
@@ -617,7 +660,7 @@ class _HalamanGuruScreenState extends State<HalamanGuruScreen> {
                                 const SizedBox(width: 12),
                                 Expanded(
                                   child: Text(
-                                    event,
+                                    '${event['jam']} - ${event['hari']}',
                                     style: Theme.of(
                                       context,
                                     ).textTheme.bodyMedium,
@@ -659,27 +702,26 @@ class _HalamanGuruScreenState extends State<HalamanGuruScreen> {
             childAspectRatio: 1.2,
             children: [
               _buildStatCard(
-                title: 'Kelas Saya',
-                value: state.teachingStats['totalClasses']?.toString() ?? '0',
-                icon: Icons.class_,
+                title: 'Kelas Wali',
+                value: state.teachingStats['kelasWali']?.toString() ?? '0',
+                icon: Icons.home_work,
                 color: AppTheme.primaryPurple,
               ),
               _buildStatCard(
-                title: 'Total Siswa',
-                value: state.teachingStats['totalStudents']?.toString() ?? '0',
-                icon: Icons.people,
+                title: 'Jadwal Mengajar',
+                value: state.teachingStats['jadwalMengajar']?.toString() ?? '0',
+                icon: Icons.schedule,
                 color: AppTheme.secondaryTeal,
               ),
               _buildStatCard(
                 title: 'Materi',
-                value: state.teachingStats['totalMaterials']?.toString() ?? '0',
+                value: state.teachingStats['materi']?.toString() ?? '0',
                 icon: Icons.library_books,
                 color: AppTheme.accentOrange,
               ),
               _buildStatCard(
                 title: 'Tugas',
-                value:
-                    state.teachingStats['totalAssignments']?.toString() ?? '0',
+                value: state.teachingStats['tugas']?.toString() ?? '0',
                 icon: Icons.assignment,
                 color: AppTheme.accentGreen,
               ),
@@ -961,139 +1003,6 @@ class _HalamanGuruScreenState extends State<HalamanGuruScreen> {
     );
   }
 
-  Widget _buildMyClasses(HalamanGuruState state) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Kelas Wali',
-            style: Theme.of(
-              context,
-            ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 16),
-          if (state.myClasses.isEmpty)
-            Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: Theme.of(context).cardColor,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Center(
-                child: Column(
-                  children: [
-                    Icon(
-                      Icons.class_outlined,
-                      size: 48,
-                      color: Colors.grey[400],
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Belum ada kelas wali',
-                      style: TextStyle(color: Colors.grey[600]),
-                    ),
-                  ],
-                ),
-              ),
-            )
-          else
-            ...state.myClasses.map((kelas) {
-              return GestureDetector(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => SiswaKelasScreen(
-                        kelasId: kelas['id'],
-                        namaKelas: kelas['nama_kelas'],
-                      ),
-                    ),
-                  );
-                },
-                child: Container(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).cardColor,
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
-                        blurRadius: 10,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: AppTheme.primaryPurple.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Icon(
-                          Icons.class_,
-                          color: AppTheme.primaryPurple,
-                          size: 24,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              kelas['nama_kelas'] ?? '',
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              '${kelas['tingkat']} ${kelas['jurusan']} • ${kelas['tahun_ajaran']}',
-                              style: TextStyle(
-                                color: Colors.grey[600],
-                                fontSize: 14,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Column(
-                        children: [
-                          Text(
-                            kelas['student_count'].toString(),
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 18,
-                              color: AppTheme.primaryPurple,
-                            ),
-                          ),
-                          Text(
-                            'Siswa',
-                            style: TextStyle(
-                              color: Colors.grey[600],
-                              fontSize: 12,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(width: 8),
-                      const Icon(Icons.chevron_right, color: Colors.grey),
-                    ],
-                  ),
-                ),
-              );
-            }),
-        ],
-      ),
-    );
-  }
-
   Widget _buildScheduleSection() {
     final schedule = [
       {
@@ -1218,29 +1127,270 @@ class _HalamanGuruScreenState extends State<HalamanGuruScreen> {
     );
   }
 
-  Widget _buildRecentMaterials(HalamanGuruState state) {
+  Widget _buildClassCard({
+    required String namaKelas,
+    required int jumlahSiswa,
+    bool isWaliKelas = false,
+  }) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(12),
+        border: isWaliKelas
+            ? Border.all(
+                color: AppTheme.primaryPurple.withOpacity(0.3),
+                width: 2,
+              )
+            : null,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: isWaliKelas
+                  ? AppTheme.primaryPurple.withOpacity(0.1)
+                  : AppTheme.secondaryTeal.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              isWaliKelas ? Icons.home_work : Icons.class_,
+              color: isWaliKelas
+                  ? AppTheme.primaryPurple
+                  : AppTheme.secondaryTeal,
+              size: 24,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      namaKelas,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                    if (isWaliKelas) ...[
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppTheme.primaryPurple.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          'Wali Kelas',
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: AppTheme.primaryPurple,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    Icon(Icons.people, size: 16, color: Colors.grey[600]),
+                    const SizedBox(width: 4),
+                    Text(
+                      '$jumlahSiswa siswa',
+                      style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          InkWell(
+            onTap: () {
+              // Navigate to class details if needed
+              _showComingSoon('Detail Kelas');
+            },
+            child: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppTheme.accentOrange.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Icon(
+                Icons.arrow_forward_ios,
+                size: 16,
+                color: AppTheme.accentOrange,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTeachingScheduleCard({
+    required String kelasId,
+    required List<Map<String, dynamic>> jadwalList,
+  }) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppTheme.accentGreen.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Icon(
+                  Icons.schedule,
+                  color: AppTheme.accentGreen,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'Kelas $kelasId',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+              ),
+              Text(
+                '${jadwalList.length} jadwal',
+                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          ...jadwalList
+              .map(
+                (jadwal) => Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 4,
+                        height: 20,
+                        decoration: BoxDecoration(
+                          color: AppTheme.accentGreen,
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          '${jadwal['hari']} • ${jadwal['jam']}',
+                          style: const TextStyle(fontSize: 14),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              )
+              .toList(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMyClasses(HalamanGuruState state) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Materi Terbaru',
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              TextButton(
-                onPressed: () => _showComingSoon('Semua Materi'),
-                child: const Text('Lihat Semua'),
-              ),
-            ],
+          Text(
+            'Kelas Saya',
+            style: Theme.of(
+              context,
+            ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
-          if (state.recentMaterials.isEmpty)
+
+          // Kelas Wali Section
+          if (state.kelasWali.isNotEmpty) ...[
+            Text(
+              'Wali Kelas',
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 12),
+            ...state.kelasWali.map(
+              (kelas) => _buildClassCard(
+                namaKelas: kelas['namaKelas'] ?? '',
+                jumlahSiswa: kelas['jumlahSiswa'] ?? 0,
+                isWaliKelas: true,
+              ),
+            ),
+            const SizedBox(height: 20),
+          ],
+
+          // Jadwal Mengajar Section
+          if (state.jadwalMengajar.isNotEmpty) ...[
+            Text(
+              'Jadwal Mengajar',
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 12),
+            // Group by kelas
+            ...state.jadwalMengajar
+                .fold<Map<String, List<Map<String, dynamic>>>>({}, (
+                  map,
+                  jadwal,
+                ) {
+                  final kelasId = jadwal['id_kelas'] as String;
+                  if (!map.containsKey(kelasId)) map[kelasId] = [];
+                  map[kelasId]!.add(jadwal);
+                  return map;
+                })
+                .entries
+                .map(
+                  (entry) => _buildTeachingScheduleCard(
+                    kelasId: entry.key,
+                    jadwalList: entry.value,
+                  ),
+                )
+                .toList(),
+          ],
+
+          if (state.kelasWali.isEmpty && state.jadwalMengajar.isEmpty)
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
@@ -1251,120 +1401,22 @@ class _HalamanGuruScreenState extends State<HalamanGuruScreen> {
                 child: Column(
                   children: [
                     Icon(
-                      Icons.library_books_outlined,
+                      Icons.class_outlined,
                       size: 48,
                       color: Colors.grey[400],
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Belum ada materi',
+                      'Belum ada kelas',
                       style: TextStyle(color: Colors.grey[600]),
                     ),
                   ],
                 ),
               ),
-            )
-          else
-            ...state.recentMaterials.map((material) {
-              return Container(
-                margin: const EdgeInsets.only(bottom: 12),
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).cardColor,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 10,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: _getFileTypeColor(
-                          material['type'],
-                        ).withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Icon(
-                        _getFileTypeIcon(material['type']),
-                        color: _getFileTypeColor(material['type']),
-                        size: 24,
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            material['title'],
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            '${material['subject']} • ${material['uploadDate']}',
-                            style: TextStyle(
-                              color: Colors.grey[600],
-                              fontSize: 14,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Column(
-                      children: [
-                        Icon(Icons.download, size: 16, color: Colors.grey[600]),
-                        const SizedBox(height: 2),
-                        Text(
-                          material['downloads'].toString(),
-                          style: TextStyle(
-                            color: Colors.grey[600],
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              );
-            }),
+            ),
         ],
       ),
     );
-  }
-
-  Color _getFileTypeColor(String type) {
-    switch (type.toLowerCase()) {
-      case 'pdf':
-        return Colors.red;
-      case 'video':
-        return Colors.blue;
-      case 'ppt':
-        return Colors.orange;
-      default:
-        return Colors.grey;
-    }
-  }
-
-  IconData _getFileTypeIcon(String type) {
-    switch (type.toLowerCase()) {
-      case 'pdf':
-        return Icons.picture_as_pdf;
-      case 'video':
-        return Icons.play_circle;
-      case 'ppt':
-        return Icons.slideshow;
-      default:
-        return Icons.file_present;
-    }
   }
 
   void _showComingSoon(String feature) {
