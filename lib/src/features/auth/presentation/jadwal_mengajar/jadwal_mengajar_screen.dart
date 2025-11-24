@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:excel/excel.dart';
+
 import '../widgets/admin_header.dart';
 import 'jadwal_mengajar_bloc.dart';
 import 'jadwal_mengajar_event.dart';
@@ -226,9 +230,9 @@ class _JadwalMengajarScreenState extends State<JadwalMengajarScreen> {
       print(state.guruList);
       final guru = state.guruList.firstWhere(
         (g) => g['id'] == guruId,
-        orElse: () => {'nama': 'Unknown Teacher'},
+        orElse: () => {'nama_lengkap': 'Unknown Teacher'},
       );
-      return guru['nama'] ?? 'Unknown Teacher';
+      return guru['nama_lengkap'] ?? 'Unknown Teacher';
     }
 
     String getKelasName(String? kelasId) {
@@ -237,16 +241,16 @@ class _JadwalMengajarScreenState extends State<JadwalMengajarScreen> {
         (k) => k['id'] == kelasId,
         orElse: () => {'nama': 'Unknown Class'},
       );
-      return kelas['nama'] ?? 'Unknown Class';
+      return kelas['namaKelas'] ?? 'Unknown Class';
     }
 
     String getMapelName(String? mapelId) {
       if (mapelId == null) return 'Unknown Subject';
       final mapel = state.mapelList.firstWhere(
         (m) => m['id'] == mapelId,
-        orElse: () => {'nama': 'Unknown Subject'},
+        orElse: () => {'namaMapel': 'Unknown Subject'},
       );
-      return mapel['nama'] ?? 'Unknown Subject';
+      return mapel['namaMapel'] ?? 'Unknown Subject';
     }
 
     return Card(
@@ -370,7 +374,7 @@ class _JadwalMengajarScreenState extends State<JadwalMengajarScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Import teaching schedules from Excel file (.xlsx or .xls)'),
+            Text('Import teaching schedules from Excel file (.xlsx only)'),
             SizedBox(height: 16),
             Text(
               'Excel format should have columns:',
@@ -382,7 +386,7 @@ class _JadwalMengajarScreenState extends State<JadwalMengajarScreen> {
             Text('• Mapel (Subject Name)'),
             Text('• Hari (Day)'),
             Text('• Jam (Time)'),
-            Text('• Tanggal (Date: YYYY-MM-DD)'),
+            Text('• Tanggal (Date: DD/MM/YYYY)'),
           ],
         ),
         actions: [
@@ -393,14 +397,7 @@ class _JadwalMengajarScreenState extends State<JadwalMengajarScreen> {
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text(
-                    'Excel import feature will be implemented soon',
-                  ),
-                  backgroundColor: Colors.orange,
-                ),
-              );
+              _importFromExcel();
             },
             child: const Text('Select Excel File'),
           ),
@@ -443,6 +440,263 @@ class _JadwalMengajarScreenState extends State<JadwalMengajarScreen> {
       ),
     );
   }
+
+  Future<void> _importFromExcel() async {
+    try {
+      print('🔄 Starting Excel import process...');
+
+      // Pick Excel file - only .xlsx files
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['xlsx'],
+        allowMultiple: false,
+      );
+      print(
+        '📁 File picker result: ${result?.files.length ?? 0} files selected',
+      );
+
+      if (result != null && result.files.single.bytes != null) {
+        final bytes = result.files.single.bytes!;
+        final excel = Excel.decodeBytes(bytes);
+
+        // Get the first sheet
+        String? sheetName = excel.tables.keys.first;
+        var table = excel.tables[sheetName];
+
+        if (table != null && table.rows.isNotEmpty) {
+          print('📊 Processing Excel file with ${table.rows.length} rows...');
+          _showSnackBar('Processing Excel file...');
+
+          int successCount = 0;
+          int errorCount = 0;
+
+          // Skip header row (index 0)
+          for (int i = 1; i < table.rows.length; i++) {
+            var row = table.rows[i];
+
+            // Skip empty rows
+            if (row.isEmpty || row.every((cell) => cell?.value == null)) {
+              continue;
+            }
+
+            try {
+              // Expected columns: Guru, Kelas, Mapel, Hari, Jam, Tanggal
+              String guruName = row[0]?.value?.toString().trim() ?? '';
+              String kelasName = row[1]?.value?.toString().trim() ?? '';
+              String mapelName = row[2]?.value?.toString().trim() ?? '';
+              String hari = row[3]?.value?.toString().trim() ?? '';
+              String jam = row[4]?.value?.toString().trim() ?? '';
+              String tanggalStr = row[5]?.value?.toString().trim() ?? '';
+
+              if (guruName.isEmpty ||
+                  kelasName.isEmpty ||
+                  mapelName.isEmpty ||
+                  hari.isEmpty ||
+                  jam.isEmpty ||
+                  tanggalStr.isEmpty) {
+                print(
+                  '❌ Row $i: Missing required fields - Guru: "$guruName", Kelas: "$kelasName", Mapel: "$mapelName", Hari: "$hari", Jam: "$jam", Tanggal: "$tanggalStr"',
+                );
+                errorCount++;
+                continue;
+              }
+
+              // Find IDs from names
+              final guruId = await _findGuruIdByName(guruName);
+              final kelasId = await _findKelasIdByName(kelasName);
+              final mapelId = await _findMapelIdByName(mapelName);
+
+              if (guruId == null || kelasId == null || mapelId == null) {
+                print(
+                  '❌ Row $i: ID lookup failed - GuruId: $guruId ("$guruName"), KelasId: $kelasId ("$kelasName"), MapelId: $mapelId ("$mapelName")',
+                );
+                errorCount++;
+                continue;
+              }
+
+              // Parse date
+              DateTime? tanggal = _parseDate(tanggalStr);
+              if (tanggal == null) {
+                print('❌ Row $i: Date parsing failed for "$tanggalStr"');
+                errorCount++;
+                continue;
+              }
+
+              // Generate next integer ID and save
+              await _saveJadwalWithIntegerId(
+                guruId: guruId,
+                kelasId: kelasId,
+                mapelId: mapelId,
+                jam: jam,
+                hari: hari,
+                tanggal: tanggal,
+              );
+
+              print(
+                '✅ Row $i: Successfully imported - $guruName, $kelasName, $mapelName, $hari, $jam',
+              );
+              successCount++;
+            } catch (e) {
+              errorCount++;
+              debugPrint('Error processing row $i: $e');
+            }
+          }
+
+          // Reload data after import
+          _jadwalBloc.add(LoadJadwalMengajar());
+
+          print(
+            '🏁 Import completed - Success: $successCount, Errors: $errorCount',
+          );
+          if (mounted) {
+            _showSnackBar(
+              'Import selesai! Berhasil: $successCount, Error: $errorCount',
+              isError: errorCount > successCount,
+            );
+          }
+        } else {
+          print('❌ File Excel kosong atau tidak valid');
+          _showSnackBar('File Excel kosong atau tidak valid', isError: true);
+        }
+      } else {
+        print('❌ Tidak ada file yang dipilih');
+        _showSnackBar('Tidak ada file yang dipilih', isError: true);
+      }
+    } catch (e, stackTrace) {
+      print('💥 Excel import error: $e');
+      print('📍 Stack trace: $stackTrace');
+      _showSnackBar('Error importing Excel: $e', isError: true);
+    }
+  }
+
+  Future<String?> _findGuruIdByName(String name) async {
+    try {
+      print('🔍 Searching for Guru: "$name"');
+
+      final snapshot = await FirebaseFirestore.instance
+          .collection('guru')
+          .where('nama_lengkap', isEqualTo: name)
+          .limit(1)
+          .get();
+
+      if (snapshot.docs.isNotEmpty) {
+        print('✅ Found Guru: ${snapshot.docs.first.id}');
+        return snapshot.docs.first.id;
+      }
+
+      print('❌ Guru not found: "$name"');
+      return null;
+    } catch (e) {
+      print('💥 Error searching Guru: $e');
+      return null;
+    }
+  }
+
+  Future<String?> _findKelasIdByName(String name) async {
+    try {
+      print('🔍 Searching for Kelas: "$name"');
+
+      final snapshot = await FirebaseFirestore.instance
+          .collection('kelas')
+          .where('namaKelas', isEqualTo: name)
+          .limit(1)
+          .get();
+
+      if (snapshot.docs.isNotEmpty) {
+        print('✅ Found Kelas: ${snapshot.docs.first.id}');
+        return snapshot.docs.first.id;
+      }
+
+      print('❌ Kelas not found: "$name"');
+      return null;
+    } catch (e) {
+      print('💥 Error searching Kelas: $e');
+      return null;
+    }
+  }
+
+  Future<String?> _findMapelIdByName(String name) async {
+    try {
+      print('🔍 Searching for Mapel: "$name"');
+
+      final snapshot = await FirebaseFirestore.instance
+          .collection('mapel')
+          .where('namaMapel', isEqualTo: name)
+          .limit(1)
+          .get();
+
+      if (snapshot.docs.isNotEmpty) {
+        print('✅ Found Mapel: ${snapshot.docs.first.id}');
+        return snapshot.docs.first.id;
+      }
+
+      print('❌ Mapel not found: "$name"');
+      return null;
+    } catch (e) {
+      print('💥 Error searching Mapel: $e');
+      return null;
+    }
+  }
+
+  DateTime? _parseDate(String dateStr) {
+    try {
+      // Try DD/MM/YYYY format
+      final parts = dateStr.split('/');
+      if (parts.length == 3) {
+        final day = int.parse(parts[0]);
+        final month = int.parse(parts[1]);
+        final year = int.parse(parts[2]);
+        return DateTime(year, month, day);
+      }
+      // Try other formats if needed
+      return DateTime.tryParse(dateStr);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  Future<void> _saveJadwalWithIntegerId({
+    required String guruId,
+    required String kelasId,
+    required String mapelId,
+    required String jam,
+    required String hari,
+    required DateTime tanggal,
+  }) async {
+    try {
+      // Generate next integer ID
+      final querySnapshot = await FirebaseFirestore.instance
+          .collection('kelas_ngajar')
+          .orderBy('id', descending: true)
+          .limit(1)
+          .get();
+
+      String nextId = '1';
+      if (querySnapshot.docs.isNotEmpty) {
+        final lastDoc = querySnapshot.docs.first;
+        final lastId = int.tryParse(lastDoc.id) ?? 0;
+        nextId = (lastId + 1).toString();
+      }
+
+      // Create document with specific integer ID
+      await FirebaseFirestore.instance
+          .collection('kelas_ngajar')
+          .doc(nextId)
+          .set({
+            'id': int.parse(nextId),
+            'id_guru': guruId,
+            'id_kelas': kelasId,
+            'id_mapel': mapelId,
+            'jam': jam,
+            'hari': hari,
+            'tanggal': Timestamp.fromDate(tanggal),
+            'createdAt': FieldValue.serverTimestamp(),
+            'updatedAt': FieldValue.serverTimestamp(),
+          });
+    } catch (e) {
+      rethrow;
+    }
+  }
 }
 
 // Form Dialog Widget
@@ -458,12 +712,154 @@ class JadwalFormDialog extends StatefulWidget {
 
 class _JadwalFormDialogState extends State<JadwalFormDialog> {
   final _formKey = GlobalKey<FormState>();
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   String? _selectedGuruId;
   String? _selectedKelasId;
   String? _selectedMapelId;
   String? _selectedHari;
   final _jamController = TextEditingController();
   DateTime _selectedDate = DateTime.now();
+
+  // Method untuk mendapatkan nama hari dari DateTime
+  String _getDayNameFromDate(DateTime date) {
+    final days = [
+      'Minggu',
+      'Senin',
+      'Selasa',
+      'Rabu',
+      'Kamis',
+      'Jumat',
+      'Sabtu',
+    ];
+    return days[date.weekday % 7];
+  }
+
+  // Method untuk parse waktu dari format HH:MM-HH:MM
+  List<DateTime> _parseTimeRange(String timeRange, DateTime date) {
+    try {
+      final parts = timeRange.split('-');
+      if (parts.length != 2) return [];
+
+      final startParts = parts[0].split(':');
+      final endParts = parts[1].split(':');
+
+      if (startParts.length != 2 || endParts.length != 2) return [];
+
+      final startTime = DateTime(
+        date.year,
+        date.month,
+        date.day,
+        int.parse(startParts[0]),
+        int.parse(startParts[1]),
+      );
+
+      final endTime = DateTime(
+        date.year,
+        date.month,
+        date.day,
+        int.parse(endParts[0]),
+        int.parse(endParts[1]),
+      );
+
+      return [startTime, endTime];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  // Method untuk cek overlap waktu
+  bool _isTimeOverlapping(String time1, String time2, DateTime date) {
+    final range1 = _parseTimeRange(time1, date);
+    final range2 = _parseTimeRange(time2, date);
+
+    if (range1.length != 2 || range2.length != 2) return false;
+
+    final start1 = range1[0];
+    final end1 = range1[1];
+    final start2 = range2[0];
+    final end2 = range2[1];
+
+    // Check if there's any overlap
+    return start1.isBefore(end2) && start2.isBefore(end1);
+  }
+
+  // Method untuk validasi bentrok jadwal dari database
+  Future<Map<String, dynamic>?> _checkScheduleConflict() async {
+    if (_selectedKelasId == null ||
+        _jamController.text.isEmpty ||
+        _selectedHari == null) {
+      return null;
+    }
+
+    try {
+      // Query database untuk jadwal di kelas, hari, dan tanggal yang sama
+      final querySnapshot = await _firestore
+          .collection('kelas_ngajar')
+          .where('id_kelas', isEqualTo: _selectedKelasId)
+          .where('hari', isEqualTo: _selectedHari)
+          .get();
+
+      final dateStr =
+          '${_selectedDate.year}-${_selectedDate.month.toString().padLeft(2, '0')}-${_selectedDate.day.toString().padLeft(2, '0')}';
+
+      for (final doc in querySnapshot.docs) {
+        final data = doc.data();
+
+        // Skip current jadwal if editing
+        if (widget.jadwal != null) {
+          final currentId = widget.jadwal!['id'];
+          if (doc.id == currentId ||
+              data['id'].toString() == currentId.toString()) {
+            continue;
+          }
+        }
+
+        // Cek apakah tanggal sama
+        final jadwalDate = data['tanggal'];
+        String jadwalDateStr = '';
+
+        if (jadwalDate is Timestamp) {
+          final date = jadwalDate.toDate();
+          jadwalDateStr =
+              '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+        } else if (jadwalDate is String) {
+          jadwalDateStr = jadwalDate;
+        }
+
+        if (jadwalDateStr == dateStr) {
+          // Cek overlap waktu
+          final existingTime = data['jam'] ?? '';
+          if (_isTimeOverlapping(
+            _jamController.text,
+            existingTime,
+            _selectedDate,
+          )) {
+            // Get teacher name
+            final teacherDoc = await _firestore
+                .collection('guru')
+                .doc(data['id_guru'])
+                .get();
+
+            final teacherName = teacherDoc.exists
+                ? (teacherDoc.data()?['nama'] ?? 'Unknown Teacher')
+                : 'Unknown Teacher';
+
+            return {
+              'hasConflict': true,
+              'teacherName': teacherName,
+              'existingTime': existingTime,
+              'conflictData': data,
+            };
+          }
+        }
+      }
+
+      return {'hasConflict': false};
+    } catch (e) {
+      debugPrint('Error checking schedule conflict: $e');
+      return null;
+    }
+  }
 
   final List<String> _hariList = [
     'Senin',
@@ -484,6 +880,9 @@ class _JadwalFormDialogState extends State<JadwalFormDialog> {
       _selectedMapelId = widget.jadwal!['id_mapel'];
       _selectedHari = widget.jadwal!['hari'];
       _jamController.text = widget.jadwal!['jam'] ?? '';
+    } else {
+      // Set initial day based on selected date
+      _selectedHari = _getDayNameFromDate(_selectedDate);
     }
   }
 
@@ -605,14 +1004,52 @@ class _JadwalFormDialogState extends State<JadwalFormDialog> {
                   decoration: const InputDecoration(
                     labelText: 'Time (e.g., 08:00-09:30)',
                     border: OutlineInputBorder(),
+                    helperText: 'Format: HH:MM-HH:MM',
                   ),
-                  validator: (value) =>
-                      value?.isEmpty == true ? 'Please enter time' : null,
+                  onChanged: (value) async {
+                    // Real-time validation untuk bentrok jadwal
+                    if (value.isNotEmpty &&
+                        value.contains('-') &&
+                        _selectedKelasId != null &&
+                        _selectedHari != null) {
+                      final conflictResult = await _checkScheduleConflict();
+                      if (conflictResult != null &&
+                          conflictResult['hasConflict'] == true &&
+                          mounted) {
+                        final teacherName =
+                            conflictResult['teacherName'] ?? 'Unknown Teacher';
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              '⚠️ Warning: Kelas lagi diajar oleh $teacherName!',
+                            ),
+                            backgroundColor: Colors.orange,
+                            duration: const Duration(seconds: 3),
+                          ),
+                        );
+                      }
+                    }
+                  },
+                  validator: (value) {
+                    if (value?.isEmpty == true) {
+                      return 'Please enter time';
+                    }
+                    // Basic time format validation
+                    final timeRegex = RegExp(r'^\d{2}:\d{2}-\d{2}:\d{2}$');
+                    if (!timeRegex.hasMatch(value!)) {
+                      return 'Format harus HH:MM-HH:MM (contoh: 08:00-09:30)';
+                    }
+                    return null;
+                  },
                 ),
                 const SizedBox(height: 16),
                 ListTile(
                   title: Text(
                     'Date: ${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}',
+                  ),
+                  subtitle: const Text(
+                    'Hari akan otomatis terisi sesuai tanggal yang dipilih',
+                    style: TextStyle(fontSize: 12, color: Colors.grey),
                   ),
                   trailing: const Icon(Icons.calendar_today),
                   onTap: () async {
@@ -625,7 +1062,11 @@ class _JadwalFormDialogState extends State<JadwalFormDialog> {
                       lastDate: DateTime.now().add(const Duration(days: 365)),
                     );
                     if (date != null) {
-                      setState(() => _selectedDate = date);
+                      setState(() {
+                        _selectedDate = date;
+                        // Auto-select day based on selected date
+                        _selectedHari = _getDayNameFromDate(date);
+                      });
                     }
                   },
                 ),
@@ -647,7 +1088,7 @@ class _JadwalFormDialogState extends State<JadwalFormDialog> {
     );
   }
 
-  void _submitForm() {
+  void _submitForm() async {
     if (_formKey.currentState?.validate() == true) {
       // Double-check that all required fields are not null
       if (_selectedGuruId == null ||
@@ -658,6 +1099,30 @@ class _JadwalFormDialogState extends State<JadwalFormDialog> {
           const SnackBar(
             content: Text('Please fill all required fields'),
             backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      // Check for schedule conflict
+      final conflictResult = await _checkScheduleConflict();
+      if (conflictResult != null && conflictResult['hasConflict'] == true) {
+        final teacherName = conflictResult['teacherName'] ?? 'Unknown Teacher';
+        final existingTime = conflictResult['existingTime'] ?? 'Unknown Time';
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Kelas tersebut lagi diajar oleh $teacherName pada jam $existingTime!\n'
+              'Mohon pilih waktu yang berbeda.',
+            ),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
+            action: SnackBarAction(
+              label: 'OK',
+              textColor: Colors.white,
+              onPressed: () {},
+            ),
           ),
         );
         return;
@@ -678,19 +1143,75 @@ class _JadwalFormDialogState extends State<JadwalFormDialog> {
           ),
         );
       } else {
-        bloc.add(
-          AddJadwalMengajar(
-            idGuru: _selectedGuruId!,
-            idKelas: _selectedKelasId!,
-            idMapel: _selectedMapelId!,
-            jam: _jamController.text,
-            hari: _selectedHari!,
-            tanggal: _selectedDate,
-          ),
-        );
+        // Add jadwal with integer ID directly from form dialog
+        await _addJadwalDirectly();
       }
 
       Navigator.pop(context);
+    }
+  }
+
+  // Method untuk add jadwal langsung dari form dialog
+  Future<void> _addJadwalDirectly({
+    String? idGuru,
+    String? idKelas,
+    String? idMapel,
+    String? jam,
+    String? hari,
+    DateTime? tanggal,
+  }) async {
+    try {
+      // Generate next integer ID
+      final querySnapshot = await _firestore
+          .collection('kelas_ngajar')
+          .orderBy('id', descending: true)
+          .limit(1)
+          .get();
+
+      String nextId = '1';
+      if (querySnapshot.docs.isNotEmpty) {
+        final lastDoc = querySnapshot.docs.first;
+        final lastId = int.tryParse(lastDoc.id) ?? 0;
+        nextId = (lastId + 1).toString();
+      }
+
+      // Use parameters if provided (for Excel import), otherwise use form values
+      await _firestore.collection('kelas_ngajar').doc(nextId).set({
+        'id': int.parse(nextId),
+        'id_guru': idGuru ?? _selectedGuruId!,
+        'id_kelas': idKelas ?? _selectedKelasId!,
+        'id_mapel': idMapel ?? _selectedMapelId!,
+        'jam': jam ?? _jamController.text,
+        'hari': hari ?? _selectedHari!,
+        'tanggal': Timestamp.fromDate(tanggal ?? _selectedDate),
+        'createdAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+
+      // Only reload and show success for form dialog (when no parameters passed)
+      if (idGuru == null) {
+        // Reload data in the bloc
+        context.read<JadwalMengajarBloc>().add(LoadJadwalMengajar());
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Jadwal mengajar berhasil ditambahkan'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted && idGuru == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+      rethrow; // Rethrow for Excel import error handling
     }
   }
 }

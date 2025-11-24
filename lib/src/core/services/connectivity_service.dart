@@ -91,12 +91,12 @@ class ConnectivityService extends ChangeNotifier {
   /// Perform actual ping test to verify internet connectivity
   Future<void> _performPingTest() async {
     try {
-      // Try multiple endpoints for reliability - Firebase-compatible first
+      // Try multiple endpoints for reliability - Use CORS-friendly endpoints for web
       final List<String> testUrls = [
-        'https://firebaseapi.com',
-        'https://googleapis.com',
-        'https://www.gstatic.com',
-        'https://www.google.com',
+        'https://firestore.googleapis.com/',
+        'https://www.google.com/generate_204', // Google's connectivity check endpoint
+        'https://httpbin.org/status/200', // Always returns 200 OK
+        'https://jsonplaceholder.typicode.com/posts/1', // Free API endpoint
       ];
 
       bool hasInternet = false;
@@ -105,17 +105,27 @@ class ConnectivityService extends ChangeNotifier {
         try {
           // debugPrint('🔍 Testing connectivity to: $url');
           final response = await http
-              .get(Uri.parse(url), headers: {'User-Agent': 'ConnectivityCheck'})
-              .timeout(const Duration(seconds: 3));
+              .get(
+                Uri.parse(url),
+                headers: {
+                  'User-Agent': 'ConnectivityCheck',
+                  'Accept': '*/*',
+                  'Cache-Control': 'no-cache',
+                },
+              )
+              .timeout(const Duration(seconds: 5));
 
-          if (response.statusCode == 200) {
+          // Accept various success status codes
+          if (response.statusCode >= 200 && response.statusCode < 300) {
             hasInternet = true;
             _consecutiveFailures = 0; // Reset counter on success
-            debugPrint('✅ Successfully connected to: $url');
+            debugPrint(
+              '✅ Successfully connected to: $url (Status: ${response.statusCode})',
+            );
             break;
           }
         } catch (e) {
-          // debugPrint('❌ Failed to connect to $url: $e');
+          debugPrint('❌ Failed to connect to $url: ${e.toString()}');
           continue;
         }
       }

@@ -61,7 +61,23 @@ class JadwalMengajarBloc
     on<AddJadwalMengajar>((event, emit) async {
       emit(JadwalMengajarActionInProgress('Adding teaching schedule...'));
       try {
-        await _firestore.collection('kelas_ngajar').add({
+        // Generate next integer ID
+        final querySnapshot = await _firestore
+            .collection('kelas_ngajar')
+            .orderBy('id', descending: true)
+            .limit(1)
+            .get();
+
+        String nextId = '1';
+        if (querySnapshot.docs.isNotEmpty) {
+          final lastDoc = querySnapshot.docs.first;
+          final lastId = int.tryParse(lastDoc.id) ?? 0;
+          nextId = (lastId + 1).toString();
+        }
+
+        // Create document with specific integer ID
+        await _firestore.collection('kelas_ngajar').doc(nextId).set({
+          'id': int.parse(nextId),
           'id_guru': event.idGuru,
           'id_kelas': event.idKelas,
           'id_mapel': event.idMapel,
