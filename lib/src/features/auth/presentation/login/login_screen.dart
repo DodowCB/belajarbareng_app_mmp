@@ -18,12 +18,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     with SingleTickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController(
-    text: "administrator@gmail.com",
-    // text: "Castorice@gmail.com",
+    text: "admin@gmail.com",
   );
   final _passwordController = TextEditingController(
-    text: "starRailBestStoryEver123",
-    // text: "123",
+    text: "123",
   );
 
   bool _isPasswordVisible = false;

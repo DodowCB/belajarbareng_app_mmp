@@ -41,20 +41,51 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
       Map<String, dynamic>? authenticatedUser;
       String userType = '';
 
-      // Cek admin credentials terlebih dahulu
-      print('Checking for admin credentials: ${event.email}'); // Debug log
-      print('Checking for admin credentials: ${event.password}'); // Debug log
-      if (event.email.trim().toLowerCase() == 'administrator@gmail.com' &&
-          event.password == 'starRailBestStoryEver123') {
+      // Cek hardcoded dummy credentials terlebih dahulu
+      print('Checking credentials: ${event.email}'); // Debug log
+      print('Checking password: ${event.password}'); // Debug log
+      
+      // Admin dummy login
+      if (event.email.trim().toLowerCase() == 'admin@gmail.com' &&
+          event.password == '123') {
         authenticatedUser = {
           'uid': 'admin_001',
-          'email': 'administrator@gmail.com',
+          'email': 'admin@gmail.com',
           'namaLengkap': 'Administrator',
           'userType': 'admin',
           'role': 'admin',
         };
         userType = 'admin';
-      } else {
+      } 
+      // Guru dummy login
+      else if (event.email.trim().toLowerCase() == 'guru@gmail.com' &&
+          event.password == '123') {
+        authenticatedUser = {
+          'uid': 'guru_001',
+          'email': 'guru@gmail.com',
+          'namaLengkap': 'Guru Demo',
+          'userType': 'guru',
+          'nig': 'NIG001',
+          'mataPelajaran': 'Matematika',
+          'sekolah': 'SMA Negeri 1',
+        };
+        userType = 'guru';
+      }
+      // Siswa dummy login
+      else if (event.email.trim().toLowerCase() == 'siswa@gmail.com' &&
+          event.password == '123') {
+        authenticatedUser = {
+          'uid': 'siswa_001',
+          'email': 'siswa@gmail.com',
+          'namaLengkap': 'Siswa Demo',
+          'userType': 'siswa',
+          'nis': 'NIS001',
+          'kelas': '12 IPA 1',
+          'sekolah': 'SMA Negeri 1',
+        };
+        userType = 'siswa';
+      } 
+      else {
         // Cek user dari kedua collection: guru dan siswa
         // Cek di collection 'guru' dulu
         final guruQuerySnapshot = await FirebaseFirestore.instance
