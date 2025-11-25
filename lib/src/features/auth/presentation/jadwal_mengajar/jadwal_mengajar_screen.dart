@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:excel/excel.dart';
+import 'package:excel/excel.dart' as excel_lib;
 
 import '../widgets/admin_header.dart';
 import 'jadwal_mengajar_bloc.dart';
@@ -92,7 +92,7 @@ class _JadwalMengajarScreenState extends State<JadwalMengajarScreen> {
               _jadwalBloc.add(SearchJadwal(value));
             },
             decoration: InputDecoration(
-              hintText: 'Search by time, day, or other details...',
+              hintText: 'Search by teacher name, class, subject, day, or time...',
               prefixIcon: const Icon(Icons.search),
               filled: true,
               fillColor: Theme.of(context).brightness == Brightness.dark
@@ -253,100 +253,107 @@ class _JadwalMengajarScreenState extends State<JadwalMengajarScreen> {
       return mapel['namaMapel'] ?? 'Unknown Subject';
     }
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 16),
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: Card(
+        margin: const EdgeInsets.only(bottom: 16),
+        elevation: 2,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        child: InkWell(
+          onTap: () => _showJadwalDetail(jadwal, state),
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.purple.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(Icons.schedule, color: Colors.purple),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            getGuruName(jadwal['id_guru']),
+                            style: Theme.of(context).textTheme.titleMedium
+                                ?.copyWith(fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '${getKelasName(jadwal['id_kelas'])} - ${getMapelName(jadwal['id_mapel'])}',
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    PopupMenuButton<String>(
+                      onSelected: (value) {
+                        if (value == 'edit') {
+                          _showJadwalForm(jadwal: jadwal, state: state);
+                        } else if (value == 'delete') {
+                          _deleteJadwal(jadwal['id']);
+                        }
+                      },
+                      itemBuilder: (context) => [
+                        const PopupMenuItem(
+                          value: 'edit',
+                          child: Row(
+                            children: [
+                              Icon(Icons.edit, size: 16),
+                              SizedBox(width: 8),
+                              Text('Edit'),
+                            ],
+                          ),
+                        ),
+                        const PopupMenuItem(
+                          value: 'delete',
+                          child: Row(
+                            children: [
+                              Icon(Icons.delete, size: 16, color: Colors.red),
+                              SizedBox(width: 8),
+                              Text('Delete', style: TextStyle(color: Colors.red)),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
                 Container(
-                  padding: const EdgeInsets.all(8),
+                  padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.purple.withOpacity(0.1),
+                    color: Colors.teal.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Icon(Icons.schedule, color: Colors.purple),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  child: Row(
                     children: [
+                      Icon(Icons.access_time, size: 16, color: Colors.teal),
+                      const SizedBox(width: 8),
                       Text(
-                        getGuruName(jadwal['id_guru']),
-                        style: Theme.of(context).textTheme.titleMedium
-                            ?.copyWith(fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '${getKelasName(jadwal['id_kelas'])} - ${getMapelName(jadwal['id_mapel'])}',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Colors.grey[600],
+                        '${jadwal['hari'] ?? 'No day'} - ${jadwal['jam'] ?? 'No time'}',
+                        style: TextStyle(
+                          color: Colors.teal,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
                     ],
                   ),
                 ),
-                PopupMenuButton<String>(
-                  onSelected: (value) {
-                    if (value == 'edit') {
-                      _showJadwalForm(jadwal: jadwal, state: state);
-                    } else if (value == 'delete') {
-                      _deleteJadwal(jadwal['id']);
-                    }
-                  },
-                  itemBuilder: (context) => [
-                    const PopupMenuItem(
-                      value: 'edit',
-                      child: Row(
-                        children: [
-                          Icon(Icons.edit, size: 16),
-                          SizedBox(width: 8),
-                          Text('Edit'),
-                        ],
-                      ),
-                    ),
-                    const PopupMenuItem(
-                      value: 'delete',
-                      child: Row(
-                        children: [
-                          Icon(Icons.delete, size: 16, color: Colors.red),
-                          SizedBox(width: 8),
-                          Text('Delete', style: TextStyle(color: Colors.red)),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
               ],
             ),
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.teal.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.access_time, size: 16, color: Colors.teal),
-                  const SizedBox(width: 8),
-                  Text(
-                    '${jadwal['hari'] ?? 'No day'} - ${jadwal['jam'] ?? 'No time'}',
-                    style: TextStyle(
-                      color: Colors.teal,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -432,6 +439,141 @@ class _JadwalMengajarScreenState extends State<JadwalMengajarScreen> {
     );
   }
 
+  void _showJadwalDetail(Map<String, dynamic> jadwal, JadwalMengajarLoaded state) {
+    // Helper functions to get names from IDs
+    String getGuruName(String? guruId) {
+      if (guruId == null) return 'Unknown Teacher';
+      final guru = state.guruList.firstWhere(
+        (g) => g['id'] == guruId,
+        orElse: () => {'nama_lengkap': 'Unknown Teacher'},
+      );
+      return guru['nama_lengkap'] ?? 'Unknown Teacher';
+    }
+
+    String getKelasName(String? kelasId) {
+      if (kelasId == null) return 'Unknown Class';
+      final kelas = state.kelasList.firstWhere(
+        (k) => k['id'] == kelasId,
+        orElse: () => {'namaKelas': 'Unknown Class'},
+      );
+      return kelas['namaKelas'] ?? 'Unknown Class';
+    }
+
+    String getMapelName(String? mapelId) {
+      if (mapelId == null) return 'Unknown Subject';
+      final mapel = state.mapelList.firstWhere(
+        (m) => m['id'] == mapelId,
+        orElse: () => {'namaMapel': 'Unknown Subject'},
+      );
+      return mapel['namaMapel'] ?? 'Unknown Subject';
+    }
+
+    String formatDate(dynamic tanggal) {
+      if (tanggal is Timestamp) {
+        final date = tanggal.toDate();
+        return '${date.day}/${date.month}/${date.year}';
+      }
+      return 'N/A';
+    }
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.purple.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(Icons.schedule, color: Colors.purple),
+            ),
+            const SizedBox(width: 12),
+            const Expanded(
+              child: Text('Teaching Schedule Details'),
+            ),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildDetailRow('Teacher', getGuruName(jadwal['id_guru']), Icons.person),
+              const SizedBox(height: 12),
+              _buildDetailRow('Class', getKelasName(jadwal['id_kelas']), Icons.class_),
+              const SizedBox(height: 12),
+              _buildDetailRow('Subject', getMapelName(jadwal['id_mapel']), Icons.book),
+              const SizedBox(height: 12),
+              _buildDetailRow('Day', jadwal['hari'] ?? 'N/A', Icons.calendar_today),
+              const SizedBox(height: 12),
+              _buildDetailRow('Time', jadwal['jam'] ?? 'N/A', Icons.access_time),
+              const SizedBox(height: 12),
+              _buildDetailRow('Date', formatDate(jadwal['tanggal']), Icons.event),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+          ElevatedButton.icon(
+            onPressed: () {
+              Navigator.pop(context);
+              _showJadwalForm(jadwal: jadwal, state: state);
+            },
+            icon: const Icon(Icons.edit, size: 18),
+            label: const Text('Edit'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.teal,
+              foregroundColor: Colors.white,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDetailRow(String label, String value, IconData icon) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.grey.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.grey.withOpacity(0.3)),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 20, color: Colors.teal),
+          const SizedBox(width: 12),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey[600],
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                value,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
   void _showSnackBar(String message, {bool isError = false}) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -457,7 +599,7 @@ class _JadwalMengajarScreenState extends State<JadwalMengajarScreen> {
 
       if (result != null && result.files.single.bytes != null) {
         final bytes = result.files.single.bytes!;
-        final excel = Excel.decodeBytes(bytes);
+        final excel = excel_lib.Excel.decodeBytes(bytes);
 
         // Get the first sheet
         String? sheetName = excel.tables.keys.first;
@@ -550,17 +692,17 @@ class _JadwalMengajarScreenState extends State<JadwalMengajarScreen> {
           );
           if (mounted) {
             _showSnackBar(
-              'Import selesai! Berhasil: $successCount, Error: $errorCount',
+              'Import completed! Success: $successCount, Errors: $errorCount',
               isError: errorCount > successCount,
             );
           }
         } else {
-          print('❌ File Excel kosong atau tidak valid');
-          _showSnackBar('File Excel kosong atau tidak valid', isError: true);
+          print('❌ Excel file is empty or invalid');
+          _showSnackBar('Excel file is empty or invalid', isError: true);
         }
       } else {
-        print('❌ Tidak ada file yang dipilih');
-        _showSnackBar('Tidak ada file yang dipilih', isError: true);
+        print('❌ No file selected');
+        _showSnackBar('No file selected', isError: true);
       }
     } catch (e, stackTrace) {
       print('💥 Excel import error: $e');
@@ -720,16 +862,16 @@ class _JadwalFormDialogState extends State<JadwalFormDialog> {
   final _jamController = TextEditingController();
   DateTime _selectedDate = DateTime.now();
 
-  // Method untuk mendapatkan nama hari dari DateTime
+  // Method to get day name from DateTime
   String _getDayNameFromDate(DateTime date) {
     final days = [
-      'Minggu',
-      'Senin',
-      'Selasa',
-      'Rabu',
-      'Kamis',
-      'Jumat',
-      'Sabtu',
+      'Sunday',
+      'Monday',
+      'Tuesday',
+      'Wednesday',
+      'Thursday',
+      'Friday',
+      'Saturday',
     ];
     return days[date.weekday % 7];
   }
@@ -862,14 +1004,44 @@ class _JadwalFormDialogState extends State<JadwalFormDialog> {
   }
 
   final List<String> _hariList = [
-    'Senin',
-    'Selasa',
-    'Rabu',
-    'Kamis',
-    'Jumat',
-    'Sabtu',
-    'Minggu',
+    'Monday',
+    'Tuesday',
+    'Wednesday',
+    'Thursday',
+    'Friday',
+    'Saturday',
+    'Sunday',
   ];
+
+  // Helper method to convert Indonesian day names to English
+  String _convertDayToEnglish(String? day) {
+    if (day == null) return 'Monday';
+    final Map<String, String> dayMap = {
+      'Senin': 'Monday',
+      'Selasa': 'Tuesday',
+      'Rabu': 'Wednesday',
+      'Kamis': 'Thursday',
+      'Jumat': 'Friday',
+      'Sabtu': 'Saturday',
+      'Minggu': 'Sunday',
+    };
+    return dayMap[day] ?? day; // Return original if already in English
+  }
+
+  // Helper method to convert English day names to Indonesian for saving
+  String _convertDayToIndonesian(String? day) {
+    if (day == null) return 'Senin';
+    final Map<String, String> dayMap = {
+      'Monday': 'Senin',
+      'Tuesday': 'Selasa',
+      'Wednesday': 'Rabu',
+      'Thursday': 'Kamis',
+      'Friday': 'Jumat',
+      'Saturday': 'Sabtu',
+      'Sunday': 'Minggu',
+    };
+    return dayMap[day] ?? day; // Return original if already in Indonesian
+  }
 
   @override
   void initState() {
@@ -878,7 +1050,8 @@ class _JadwalFormDialogState extends State<JadwalFormDialog> {
       _selectedGuruId = widget.jadwal!['id_guru'];
       _selectedKelasId = widget.jadwal!['id_kelas'];
       _selectedMapelId = widget.jadwal!['id_mapel'];
-      _selectedHari = widget.jadwal!['hari'];
+      // Convert Indonesian day name to English for dropdown
+      _selectedHari = _convertDayToEnglish(widget.jadwal!['hari']);
       _jamController.text = widget.jadwal!['jam'] ?? '';
     } else {
       // Set initial day based on selected date
@@ -1007,7 +1180,7 @@ class _JadwalFormDialogState extends State<JadwalFormDialog> {
                     helperText: 'Format: HH:MM-HH:MM',
                   ),
                   onChanged: (value) async {
-                    // Real-time validation untuk bentrok jadwal
+                    // Real-time validation for schedule conflict
                     if (value.isNotEmpty &&
                         value.contains('-') &&
                         _selectedKelasId != null &&
@@ -1021,7 +1194,7 @@ class _JadwalFormDialogState extends State<JadwalFormDialog> {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Text(
-                              '⚠️ Warning: Kelas lagi diajar oleh $teacherName!',
+                              '⚠️ Warning: Class is being taught by $teacherName!',
                             ),
                             backgroundColor: Colors.orange,
                             duration: const Duration(seconds: 3),
@@ -1037,7 +1210,7 @@ class _JadwalFormDialogState extends State<JadwalFormDialog> {
                     // Basic time format validation
                     final timeRegex = RegExp(r'^\d{2}:\d{2}-\d{2}:\d{2}$');
                     if (!timeRegex.hasMatch(value!)) {
-                      return 'Format harus HH:MM-HH:MM (contoh: 08:00-09:30)';
+                      return 'Format must be HH:MM-HH:MM (e.g., 08:00-09:30)';
                     }
                     return null;
                   },
@@ -1048,7 +1221,7 @@ class _JadwalFormDialogState extends State<JadwalFormDialog> {
                     'Date: ${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}',
                   ),
                   subtitle: const Text(
-                    'Hari akan otomatis terisi sesuai tanggal yang dipilih',
+                    'Day will be automatically set based on selected date',
                     style: TextStyle(fontSize: 12, color: Colors.grey),
                   ),
                   trailing: const Icon(Icons.calendar_today),
@@ -1113,8 +1286,8 @@ class _JadwalFormDialogState extends State<JadwalFormDialog> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Kelas tersebut lagi diajar oleh $teacherName pada jam $existingTime!\n'
-              'Mohon pilih waktu yang berbeda.',
+              'This class is already being taught by $teacherName at $existingTime!\n'
+              'Please select a different time.',
             ),
             backgroundColor: Colors.red,
             duration: const Duration(seconds: 5),
@@ -1138,7 +1311,8 @@ class _JadwalFormDialogState extends State<JadwalFormDialog> {
             idKelas: _selectedKelasId!,
             idMapel: _selectedMapelId!,
             jam: _jamController.text,
-            hari: _selectedHari!,
+            // Convert back to Indonesian for database
+            hari: _convertDayToIndonesian(_selectedHari),
             tanggal: _selectedDate,
           ),
         );
@@ -1182,7 +1356,8 @@ class _JadwalFormDialogState extends State<JadwalFormDialog> {
         'id_kelas': idKelas ?? _selectedKelasId!,
         'id_mapel': idMapel ?? _selectedMapelId!,
         'jam': jam ?? _jamController.text,
-        'hari': hari ?? _selectedHari!,
+        // Convert back to Indonesian for database
+        'hari': hari ?? _convertDayToIndonesian(_selectedHari),
         'tanggal': Timestamp.fromDate(tanggal ?? _selectedDate),
         'createdAt': FieldValue.serverTimestamp(),
         'updatedAt': FieldValue.serverTimestamp(),
@@ -1196,7 +1371,7 @@ class _JadwalFormDialogState extends State<JadwalFormDialog> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Jadwal mengajar berhasil ditambahkan'),
+              content: Text('Teaching schedule added successfully'),
               backgroundColor: Colors.green,
             ),
           );

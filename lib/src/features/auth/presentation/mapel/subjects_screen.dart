@@ -139,7 +139,7 @@ class _SubjectsScreenState extends State<SubjectsScreen> {
           builder: (context, constraints) {
             final isDesktop = constraints.maxWidth >= 1200;
             final isTablet = constraints.maxWidth >= 768;
-            final crossAxisCount = isDesktop ? 4 : isTablet ? 3 : 2;
+            final crossAxisCount = isDesktop ? 3 : isTablet ? 2 : 1;
 
             return GridView.builder(
               padding: const EdgeInsets.all(20),
@@ -147,7 +147,7 @@ class _SubjectsScreenState extends State<SubjectsScreen> {
                 crossAxisCount: crossAxisCount,
                 crossAxisSpacing: 16,
                 mainAxisSpacing: 16,
-                childAspectRatio: isDesktop ? 1.6 : isTablet ? 1.4 : 1.2,
+                childAspectRatio: 1.5,
               ),
               itemCount: filteredDocs.length,
               itemBuilder: (context, index) {
@@ -169,20 +169,18 @@ class _SubjectsScreenState extends State<SubjectsScreen> {
     
     return MouseRegion(
       cursor: SystemMouseCursors.click,
-      child: GestureDetector(
-        onTap: () => _showSubjectDetail(docId, data),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          decoration: BoxDecoration(
-            color: isDark
-                ? AppTheme.accentOrange.withOpacity(0.15)
-                : AppTheme.accentOrange.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: AppTheme.accentOrange.withOpacity(0.3),
-              width: 1.5,
-            ),
+      child: Card(
+        elevation: 2,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: BorderSide(
+            color: isDark ? Colors.grey[800]! : Colors.grey[200]!,
+            width: 1,
           ),
+        ),
+        child: InkWell(
+          onTap: () => _showSubjectDetail(docId, data),
+          borderRadius: BorderRadius.circular(12),
           child: Padding(
             padding: const EdgeInsets.all(20),
             child: Column(

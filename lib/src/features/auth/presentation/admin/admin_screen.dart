@@ -378,7 +378,7 @@ class _AdminScreenState extends State<AdminScreen> {
               isOffline: !state.isOnline,
             ),
             _buildStatCard(
-              title: 'Kelas',
+              title: 'Classes',
               value: state.totalClasses.toString(),
               subtitle: state.isOnline ? 'Available' : 'Cached data',
               icon: Icons.class_,
@@ -389,9 +389,9 @@ class _AdminScreenState extends State<AdminScreen> {
               isOffline: !state.isOnline,
             ),
             _buildStatCard(
-              title: 'Pengumuman',
+              title: 'Announcements',
               value: state.totalPengumuman.toString(),
-              subtitle: state.isOnline ? 'Announcements' : 'Cached data',
+              subtitle: state.isOnline ? 'Posts Available' : 'Cached data',
               icon: Icons.announcement,
               color: Colors.orange,
               onTap: state.isOnline
@@ -400,9 +400,9 @@ class _AdminScreenState extends State<AdminScreen> {
               isOffline: !state.isOnline,
             ),
             _buildStatCard(
-              title: 'Jadwal Mengajar',
+              title: 'Teaching Schedule',
               value: state.totalJadwalMengajar.toString(),
-              subtitle: state.isOnline ? 'Kelas Ngajar' : 'Cached data',
+              subtitle: state.isOnline ? 'Teaching Classes' : 'Cached data',
               icon: Icons.schedule,
               color: AppTheme.primaryPurple.withOpacity(0.8),
               onTap: state.isOnline
@@ -577,21 +577,32 @@ class _AdminScreenState extends State<AdminScreen> {
               separatorBuilder: (context, index) => const Divider(height: 1),
               itemBuilder: (context, index) {
                 final activity = state.recentActivities[index];
-                return ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor: AppTheme.primaryPurple.withOpacity(0.1),
-                    child: Icon(
-                      activity['icon'] as IconData,
-                      color: AppTheme.primaryPurple,
-                      size: 20,
+                return MouseRegion(
+                  cursor: SystemMouseCursors.click,
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    child: InkWell(
+                      onTap: () => _showActivityDetail(activity),
+                      hoverColor: AppTheme.primaryPurple.withOpacity(0.05),
+                      splashColor: AppTheme.primaryPurple.withOpacity(0.1),
+                      child: ListTile(
+                        leading: CircleAvatar(
+                          backgroundColor: AppTheme.primaryPurple.withOpacity(0.1),
+                          child: Icon(
+                            activity['icon'] as IconData,
+                            color: AppTheme.primaryPurple,
+                            size: 20,
+                          ),
+                        ),
+                        title: Text(
+                          activity['title'] as String,
+                          style: const TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                        subtitle: Text(activity['time'] as String),
+                        trailing: const Icon(Icons.chevron_right),
+                      ),
                     ),
                   ),
-                  title: Text(
-                    activity['title'] as String,
-                    style: const TextStyle(fontWeight: FontWeight.w600),
-                  ),
-                  subtitle: Text(activity['time'] as String),
-                  trailing: const Icon(Icons.chevron_right),
                 );
               },
             ),
@@ -599,6 +610,237 @@ class _AdminScreenState extends State<AdminScreen> {
         ],
       ),
     );
+  }
+
+  void _showActivityDetail(Map<String, dynamic> activity) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Container(
+            width: 500,
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 30,
+                      backgroundColor: AppTheme.primaryPurple.withOpacity(0.1),
+                      child: Icon(
+                        activity['icon'] as IconData,
+                        color: AppTheme.primaryPurple,
+                        size: 32,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Activity Detail',
+                            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                          ),
+                          Text(
+                            activity['time'] as String,
+                            style: TextStyle(
+                              color: Colors.grey[600],
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () => Navigator.pop(context),
+                      icon: const Icon(Icons.close),
+                      tooltip: 'Close',
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                const Divider(),
+                const SizedBox(height: 16),
+                _buildInfoRow(
+                  Icons.title,
+                  'Activity',
+                  activity['title'] as String,
+                  isDark,
+                ),
+                const SizedBox(height: 12),
+                _buildInfoRow(
+                  Icons.access_time,
+                  'Time',
+                  activity['time'] as String,
+                  isDark,
+                ),
+                const SizedBox(height: 12),
+                _buildInfoRow(
+                  Icons.info_outline,
+                  'Status',
+                  'Completed',
+                  isDark,
+                ),
+                const SizedBox(height: 12),
+                _buildInfoRow(
+                  Icons.category,
+                  'Category',
+                  _getActivityCategory(activity['title'] as String),
+                  isDark,
+                ),
+                const SizedBox(height: 24),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? Colors.grey[800]
+                        : AppTheme.primaryPurple.withOpacity(0.05),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: AppTheme.primaryPurple.withOpacity(0.2),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.lightbulb_outline,
+                        color: AppTheme.primaryPurple,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          _getActivityDescription(activity['title'] as String),
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: isDark ? Colors.grey[300] : Colors.grey[700],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: Text(
+                        'Close',
+                        style: TextStyle(color: Colors.grey[600]),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        // Navigate to related screen based on activity type
+                        _navigateBasedOnActivity(activity['title'] as String);
+                      },
+                      icon: const Icon(Icons.arrow_forward, size: 18),
+                      label: const Text('View More'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.primaryPurple,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildInfoRow(IconData icon, String label, String value, bool isDark) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: isDark ? Colors.grey[800] : Colors.grey[100],
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, size: 20, color: AppTheme.primaryPurple),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey[600],
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                value,
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  String _getActivityCategory(String title) {
+    if (title.contains('user') || title.contains('registered')) {
+      return 'User Management';
+    } else if (title.contains('Teacher') || title.contains('material')) {
+      return 'Teaching & Learning';
+    } else if (title.contains('backup') || title.contains('Database')) {
+      return 'System Maintenance';
+    } else if (title.contains('Security')) {
+      return 'Security & Protection';
+    }
+    return 'General';
+  }
+
+  String _getActivityDescription(String title) {
+    if (title.contains('user') || title.contains('registered')) {
+      return 'A new user has successfully registered to the system. The account is now active and accessible.';
+    } else if (title.contains('Teacher') || title.contains('material')) {
+      return 'A teacher has uploaded new learning material for students. The material is now available in the system.';
+    } else if (title.contains('backup')) {
+      return 'System backup has been completed successfully. All data is safely stored and can be restored if needed.';
+    } else if (title.contains('Database')) {
+      return 'Database optimization process has been completed. The system performance should be improved.';
+    } else if (title.contains('Security')) {
+      return 'Security scan has been completed. The system has been checked for vulnerabilities and potential threats.';
+    }
+    return 'This is a system activity that has been recorded for monitoring purposes.';
+  }
+
+  void _navigateBasedOnActivity(String title) {
+    if (title.contains('user') || title.contains('registered')) {
+      _navigateToAllUsers();
+    } else if (title.contains('Teacher')) {
+      _navigateToGuruData();
+    }
+    // Add more navigation logic based on activity type
   }
 
   void _navigateToAllUsers() {

@@ -212,20 +212,18 @@ class _ClassesScreenState extends State<ClassesScreen> {
     
     return MouseRegion(
       cursor: SystemMouseCursors.click,
-      child: GestureDetector(
-        onTap: () => _showClassDetail(docId, data, namaKelas),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          decoration: BoxDecoration(
-            color: isDark
-                ? AppTheme.accentPink.withOpacity(0.15)
-                : AppTheme.accentPink.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: AppTheme.accentPink.withOpacity(0.3),
-              width: 1.5,
-            ),
+      child: Card(
+        elevation: 2,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: BorderSide(
+            color: isDark ? Colors.grey[800]! : Colors.grey[200]!,
+            width: 1,
           ),
+        ),
+        child: InkWell(
+          onTap: () => _showClassDetail(docId, data, namaKelas),
+          borderRadius: BorderRadius.circular(12),
           child: Padding(
             padding: const EdgeInsets.all(20),
             child: Column(

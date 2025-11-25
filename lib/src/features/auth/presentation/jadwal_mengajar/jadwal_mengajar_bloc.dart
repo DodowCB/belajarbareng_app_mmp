@@ -138,9 +138,42 @@ class JadwalMengajarBloc
         final currentState = state as JadwalMengajarLoaded;
         final filteredList = currentState.jadwalList.where((jadwal) {
           final query = event.query.toLowerCase();
-          return jadwal['jam']?.toString().toLowerCase().contains(query) ==
-                  true ||
-              jadwal['hari']?.toString().toLowerCase().contains(query) == true;
+          
+          // Get teacher name from ID
+          String getGuruName(String? guruId) {
+            if (guruId == null) return '';
+            final guru = currentState.guruList.firstWhere(
+              (g) => g['id'] == guruId,
+              orElse: () => {'nama_lengkap': ''},
+            );
+            return guru['nama_lengkap']?.toString().toLowerCase() ?? '';
+          }
+          
+          // Get class name from ID
+          String getKelasName(String? kelasId) {
+            if (kelasId == null) return '';
+            final kelas = currentState.kelasList.firstWhere(
+              (k) => k['id'] == kelasId,
+              orElse: () => {'namaKelas': ''},
+            );
+            return kelas['namaKelas']?.toString().toLowerCase() ?? '';
+          }
+          
+          // Get subject name from ID
+          String getMapelName(String? mapelId) {
+            if (mapelId == null) return '';
+            final mapel = currentState.mapelList.firstWhere(
+              (m) => m['id'] == mapelId,
+              orElse: () => {'namaMapel': ''},
+            );
+            return mapel['namaMapel']?.toString().toLowerCase() ?? '';
+          }
+          
+          return jadwal['jam']?.toString().toLowerCase().contains(query) == true ||
+              jadwal['hari']?.toString().toLowerCase().contains(query) == true ||
+              getGuruName(jadwal['id_guru']).contains(query) ||
+              getKelasName(jadwal['id_kelas']).contains(query) ||
+              getMapelName(jadwal['id_mapel']).contains(query);
         }).toList();
 
         emit(
