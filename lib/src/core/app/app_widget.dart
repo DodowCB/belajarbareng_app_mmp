@@ -9,6 +9,7 @@ import '../../features/auth/presentation/profile/profile_screen.dart';
 import '../../features/auth/presentation/materials/create_material_screen.dart';
 import '../../features/auth/presentation/admin/admin_screen.dart';
 import '../../features/auth/presentation/halamanGuru/halaman_guru_screen.dart';
+import '../../features/auth/presentation/halamanSiswa/halaman_siswa_screen.dart';
 import '../../features/auth/presentation/login/login_bloc.dart';
 import '../../features/auth/presentation/login/login_screen.dart';
 import '../../features/auth/presentation/guru_data/guru_data_bloc.dart';
@@ -39,11 +40,12 @@ class AppWidget extends ConsumerWidget {
         debugShowCheckedModeBanner: false,
         routes: {
           '/login': (context) => const LoginScreen(),
-          '/dashboard': (context) => const DashboardScreen(),
+          '/dashboard': (context) => const HalamanSiswaScreen(),
           '/profile': (context) => const ProfileScreen(),
           '/create-material': (context) => const CreateMaterialScreen(),
           '/admin': (context) => const AdminScreen(),
           '/halaman-guru': (context) => const HalamanGuruScreen(),
+          '/halaman-siswa': (context) => const HalamanSiswaScreen(),
         },
       ),
     );

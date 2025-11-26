@@ -94,7 +94,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
               break;
             case 'siswa':
             default:
-              Navigator.of(context).pushReplacementNamed('/dashboard');
+              Navigator.of(context).pushReplacementNamed('/halaman-siswa');
               break;
           }
         }
