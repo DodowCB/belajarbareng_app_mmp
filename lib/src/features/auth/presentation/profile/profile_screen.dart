@@ -1,4 +1,9 @@
+import 'dart:io';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../../core/config/theme.dart';
 import '../../../../core/providers/app_user.dart';
 import '../widgets/admin_header.dart';
@@ -15,6 +20,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   late TextEditingController _nameController;
   late TextEditingController _emailController;
   late TextEditingController _phoneController;
+  final ImagePicker _picker = ImagePicker();
+  XFile? _imageFile;
+  String? _uploadedImageUrl;
 
   @override
   void initState() {
@@ -22,6 +30,40 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _nameController = TextEditingController(text: AppUser.displayName);
     _emailController = TextEditingController(text: AppUser.email ?? '');
     _phoneController = TextEditingController(text: '');
+    _loadUserProfile();
+  }
+
+  Future<void> _loadUserProfile() async {
+    try {
+      if (AppUser.id != null) {
+        final userDoc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(AppUser.id)
+            .get();
+
+        if (userDoc.exists) {
+          final data = userDoc.data();
+          if (data != null) {
+            setState(() {
+              if (data['photoUrl'] != null) {
+                _uploadedImageUrl = data['photoUrl'] as String;
+              }
+              if (data['nama_lengkap'] != null) {
+                _nameController.text = data['nama_lengkap'] as String;
+              }
+              if (data['email'] != null) {
+                _emailController.text = data['email'] as String;
+              }
+              if (data['phone'] != null) {
+                _phoneController.text = data['phone'] as String;
+              }
+            });
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('Error loading profile: $e');
+    }
   }
 
   @override
@@ -30,6 +72,182 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _emailController.dispose();
     _phoneController.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickImage() async {
+    try {
+      final XFile? pickedFile = await _picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 1000,
+        maxHeight: 1000,
+        imageQuality: 85,
+      );
+      
+      if (pickedFile != null) {
+        setState(() {
+          _imageFile = pickedFile;
+        });
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Row(
+              children: [
+                Icon(Icons.check_circle, color: Colors.white),
+                SizedBox(width: 12),
+                Expanded(child: Text('Photo selected! Click Save to update')),
+              ],
+            ),
+            backgroundColor: AppTheme.accentGreen,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.error_outline, color: Colors.white),
+              const SizedBox(width: 12),
+              Expanded(child: Text('Error picking image: $e')),
+            ],
+          ),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      );
+    }
+  }
+
+  ImageProvider? _getProfileImage() {
+    if (_imageFile != null) {
+      if (kIsWeb) {
+        return NetworkImage(_imageFile!.path);
+      } else {
+        return FileImage(File(_imageFile!.path));
+      }
+    } else if (_uploadedImageUrl != null) {
+      return NetworkImage(_uploadedImageUrl!);
+    }
+    return null;
+  }
+
+  Future<void> _saveProfile() async {
+    try {
+      // Show loading indicator
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+
+      String? photoUrl = _uploadedImageUrl;
+
+      // Upload image to Firebase Storage if new image selected
+      if (_imageFile != null) {
+        final storageRef = FirebaseStorage.instance.ref();
+        final fileName = 'profile_${AppUser.id}_${DateTime.now().millisecondsSinceEpoch}.jpg';
+        final photoRef = storageRef.child('profile_photos/$fileName');
+
+        // Upload file
+        if (kIsWeb) {
+          // For web, use putData with bytes
+          final bytes = await _imageFile!.readAsBytes();
+          await photoRef.putData(
+            bytes,
+            SettableMetadata(contentType: 'image/jpeg'),
+          );
+        } else {
+          // For mobile, use putFile
+          await photoRef.putFile(File(_imageFile!.path));
+        }
+
+        // Get download URL
+        photoUrl = await photoRef.getDownloadURL();
+      }
+
+      // Save profile data to Firestore
+      if (AppUser.id != null) {
+        final userDoc = FirebaseFirestore.instance
+            .collection('users')
+            .doc(AppUser.id);
+
+        final updateData = {
+          'nama_lengkap': _nameController.text,
+          'email': _emailController.text,
+          'phone': _phoneController.text,
+          'updated_at': FieldValue.serverTimestamp(),
+        };
+
+        if (photoUrl != null) {
+          updateData['photoUrl'] = photoUrl;
+        }
+
+        await userDoc.update(updateData);
+      }
+
+      // Close loading dialog
+      if (mounted) Navigator.pop(context);
+
+      setState(() {
+        _isEditing = false;
+        if (photoUrl != null) {
+          _uploadedImageUrl = photoUrl;
+        }
+        _imageFile = null; // Clear selected image after save
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Row(
+              children: [
+                Icon(Icons.check_circle, color: Colors.white),
+                SizedBox(width: 12),
+                Text('Profile updated successfully!'),
+              ],
+            ),
+            backgroundColor: AppTheme.accentGreen,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      // Close loading dialog if open
+      if (mounted) Navigator.pop(context);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.error_outline, color: Colors.white),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text('Failed to update profile: ${e.toString()}'),
+                ),
+              ],
+            ),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        );
+      }
+    }
   }
 
   @override
@@ -82,11 +300,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         CircleAvatar(
                           radius: 60,
                           backgroundColor: Colors.white.withOpacity(0.3),
-                          child: const Icon(
-                            Icons.person,
-                            size: 60,
-                            color: Colors.white,
-                          ),
+                          backgroundImage: _getProfileImage(),
+                          child: _imageFile == null && _uploadedImageUrl == null
+                              ? const Icon(
+                                  Icons.person,
+                                  size: 60,
+                                  color: Colors.white,
+                                )
+                              : null,
                         ),
                         if (_isEditing)
                           Positioned(
@@ -95,24 +316,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             child: MouseRegion(
                               cursor: SystemMouseCursors.click,
                               child: GestureDetector(
-                                onTap: () {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: const Row(
-                                        children: [
-                                          Icon(Icons.info_outline, color: Colors.white),
-                                          SizedBox(width: 12),
-                                          Text('Photo upload coming soon!'),
-                                        ],
-                                      ),
-                                      backgroundColor: AppTheme.primaryPurple,
-                                      behavior: SnackBarBehavior.floating,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                    ),
-                                  );
-                                },
+                                onTap: _pickImage,
                                 child: Container(
                                   padding: const EdgeInsets.all(8),
                                   decoration: const BoxDecoration(
@@ -236,7 +440,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         children: [
                           Expanded(
                             child: OutlinedButton(
-                              onPressed: () => setState(() => _isEditing = false),
+                              onPressed: () => setState(() {
+                                _isEditing = false;
+                                _imageFile = null; // Reset image selection
+                              }),
                               style: OutlinedButton.styleFrom(
                                 padding: const EdgeInsets.symmetric(vertical: 14),
                                 shape: RoundedRectangleBorder(
@@ -249,25 +456,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           const SizedBox(width: 12),
                           Expanded(
                             child: ElevatedButton(
-                              onPressed: () {
-                                setState(() => _isEditing = false);
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: const Row(
-                                      children: [
-                                        Icon(Icons.check_circle, color: Colors.white),
-                                        SizedBox(width: 12),
-                                        Text('Profile updated successfully!'),
-                                      ],
-                                    ),
-                                    backgroundColor: AppTheme.accentGreen,
-                                    behavior: SnackBarBehavior.floating,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                  ),
-                                );
-                              },
+                              onPressed: _saveProfile,
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: AppTheme.primaryPurple,
                                 foregroundColor: Colors.white,

@@ -9,6 +9,14 @@ import 'kelas_guru_screen.dart';
 import 'nilai_siswa_screen.dart';
 import 'tugas_guru_screen.dart';
 import 'materi_guru_screen.dart';
+import '../profile/profile_screen.dart';
+import '../settings/settings_screen.dart';
+import '../notifications/notifications_screen.dart';
+import '../help/help_support_screen.dart';
+import '../profile/profile_screen.dart';
+import '../settings/settings_screen.dart';
+import '../notifications/notifications_screen.dart';
+import '../help/help_support_screen.dart';
 
 class HalamanGuruScreen extends ConsumerStatefulWidget {
   const HalamanGuruScreen({super.key});
@@ -300,6 +308,74 @@ class _HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
             child: ListView(
               padding: EdgeInsets.zero,
               children: [
+                // Profile Section at Top
+                _buildDrawerProfileSection(context),
+                const Divider(),
+                _buildDrawerItem(
+                  icon: Icons.person,
+                  title: 'Profile',
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const ProfileScreen(),
+                      ),
+                    );
+                  },
+                ),
+                _buildDrawerItem(
+                  icon: Icons.settings,
+                  title: 'Settings',
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const SettingsScreen(),
+                      ),
+                    );
+                  },
+                ),
+                _buildDrawerItem(
+                  icon: Icons.light_mode,
+                  title: 'Light Mode',
+                  trailing: Switch(
+                    value: Theme.of(context).brightness == Brightness.light,
+                    onChanged: (value) {
+                      ref.read(themeModeProvider.notifier).toggleTheme();
+                    },
+                    activeColor: AppTheme.primaryPurple,
+                  ),
+                ),
+                _buildDrawerItem(
+                  icon: Icons.notifications,
+                  title: 'Notifications',
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const NotificationsScreen(),
+                      ),
+                    );
+                  },
+                ),
+                _buildDrawerItem(
+                  icon: Icons.help,
+                  title: 'Help & Support',
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const HelpSupportScreen(),
+                      ),
+                    );
+                  },
+                ),
+                const Divider(),
+                // Navigation Menu
                 _buildDrawerItem(
                   icon: Icons.dashboard,
                   title: 'Dashboard',
@@ -360,20 +436,6 @@ class _HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
                     );
                   },
                 ),
-                const Divider(),
-                _buildDrawerProfileSection(context),
-                const Divider(),
-                _buildDrawerItem(icon: Icons.person, title: 'Profile'),
-                _buildDrawerItem(icon: Icons.settings, title: 'Settings'),
-                _buildDrawerItem(icon: Icons.light_mode, title: 'Light Mode', trailing: Switch(
-                  value: Theme.of(context).brightness == Brightness.light,
-                  onChanged: (value) {
-                    ref.read(themeModeProvider.notifier).toggleTheme();
-                  },
-                  activeColor: AppTheme.primaryPurple,
-                )),
-                _buildDrawerItem(icon: Icons.notifications, title: 'Notifications'),
-                _buildDrawerItem(icon: Icons.help, title: 'Help & Support'),
                 const Divider(),
                 _buildDrawerItem(
                   icon: Icons.logout,
@@ -627,12 +689,26 @@ class _HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
               _buildSidebarItem(
                 icon: Icons.person,
                 title: 'Profile',
-                onTap: () {},
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const ProfileScreen(),
+                    ),
+                  );
+                },
               ),
               _buildSidebarItem(
                 icon: Icons.settings,
                 title: 'Settings',
-                onTap: () {},
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const SettingsScreen(),
+                    ),
+                  );
+                },
               ),
               _buildSidebarItem(
                 icon: Icons.light_mode,
@@ -648,12 +724,26 @@ class _HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
               _buildSidebarItem(
                 icon: Icons.notifications,
                 title: 'Notifications',
-                onTap: () {},
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const NotificationsScreen(),
+                    ),
+                  );
+                },
               ),
               _buildSidebarItem(
                 icon: Icons.help,
                 title: 'Help & Support',
-                onTap: () {},
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const HelpSupportScreen(),
+                    ),
+                  );
+                },
               ),
               const Divider(height: 1),
               _buildSidebarItem(

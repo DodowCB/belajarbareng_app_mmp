@@ -39,8 +39,8 @@ class AppUser {
   static T? getField<T>(String fieldName) => _provider.getField<T>(fieldName);
 
   /// Shorthand untuk fields yang sering digunakan
-  static int? get nig => getField<int>('nig'); // Untuk guru
-  static int? get nis => getField<int>('nis'); // Untuk siswa
+  static dynamic get nig => getField('nig'); // Untuk guru (bisa String atau int)
+  static dynamic get nis => getField('nis'); // Untuk siswa (bisa String atau int)
   static String? get mataPelajaran =>
       getField<String>('mataPelajaran'); // Untuk guru
   static String? get kelas => getField<String>('kelas'); // Untuk siswa

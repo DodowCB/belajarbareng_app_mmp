@@ -7,6 +7,11 @@ import '../halamanGuru/kelas_guru_screen.dart';
 import '../halamanGuru/nilai_siswa_screen.dart';
 import '../halamanGuru/tugas_guru_screen.dart';
 import '../halamanGuru/materi_guru_screen.dart';
+import '../profile/profile_screen.dart';
+import '../settings/settings_screen.dart';
+import '../notifications/notifications_screen.dart';
+import '../help/help_support_screen.dart';
+import '../login/login_screen.dart';
 
 class GuruAppScaffold extends ConsumerStatefulWidget {
   final String title;
@@ -389,13 +394,27 @@ class _GuruAppScaffoldState extends ConsumerState<GuruAppScaffold> {
             icon: Icons.person,
             title: 'Profile',
             isActive: false,
-            onTap: () {},
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const ProfileScreen(),
+                ),
+              );
+            },
           ),
           _buildSidebarItem(
             icon: Icons.settings,
             title: 'Settings',
             isActive: false,
-            onTap: () {},
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const SettingsScreen(),
+                ),
+              );
+            },
           ),
           _buildSidebarItem(
             icon: Icons.light_mode,
@@ -413,13 +432,27 @@ class _GuruAppScaffoldState extends ConsumerState<GuruAppScaffold> {
             icon: Icons.notifications,
             title: 'Notifications',
             isActive: false,
-            onTap: () {},
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const NotificationsScreen(),
+                ),
+              );
+            },
           ),
           _buildSidebarItem(
             icon: Icons.help,
             title: 'Help & Support',
             isActive: false,
-            onTap: () {},
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const HelpSupportScreen(),
+                ),
+              );
+            },
           ),
           const Divider(height: 1),
           _buildSidebarItem(
@@ -427,7 +460,7 @@ class _GuruAppScaffoldState extends ConsumerState<GuruAppScaffold> {
             title: 'Logout',
             isActive: false,
             onTap: () {
-              Navigator.pushReplacementNamed(context, '/login');
+              _showLogoutDialog(context);
             },
           ),
         ],
@@ -528,6 +561,80 @@ class _GuruAppScaffoldState extends ConsumerState<GuruAppScaffold> {
             child: ListView(
               padding: EdgeInsets.zero,
               children: [
+                // Profile Section at Top
+                _buildDrawerProfileSection(),
+                const Divider(),
+                _buildDrawerItem(
+                  icon: Icons.person,
+                  title: 'Profile',
+                  isActive: false,
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const ProfileScreen(),
+                      ),
+                    );
+                  },
+                ),
+                _buildDrawerItem(
+                  icon: Icons.settings,
+                  title: 'Settings',
+                  isActive: false,
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const SettingsScreen(),
+                      ),
+                    );
+                  },
+                ),
+                _buildDrawerItem(
+                  icon: Icons.light_mode,
+                  title: 'Light Mode',
+                  isActive: false,
+                  trailing: Switch(
+                    value: Theme.of(context).brightness == Brightness.light,
+                    onChanged: (value) {
+                      ref.read(themeModeProvider.notifier).toggleTheme();
+                    },
+                    activeColor: AppTheme.primaryPurple,
+                  ),
+                  onTap: null,
+                ),
+                _buildDrawerItem(
+                  icon: Icons.notifications,
+                  title: 'Notifications',
+                  isActive: false,
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const NotificationsScreen(),
+                      ),
+                    );
+                  },
+                ),
+                _buildDrawerItem(
+                  icon: Icons.help,
+                  title: 'Help & Support',
+                  isActive: false,
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const HelpSupportScreen(),
+                      ),
+                    );
+                  },
+                ),
+                const Divider(),
+                // Navigation Menu
                 _buildDrawerItem(
                   icon: Icons.dashboard,
                   title: 'Dashboard',
@@ -609,54 +716,6 @@ class _GuruAppScaffoldState extends ConsumerState<GuruAppScaffold> {
                   },
                 ),
                 const Divider(),
-                _buildDrawerProfileSection(),
-                const Divider(),
-                _buildDrawerItem(
-                  icon: Icons.person,
-                  title: 'Profile',
-                  isActive: false,
-                  onTap: () {
-                    Navigator.pop(context);
-                  },
-                ),
-                _buildDrawerItem(
-                  icon: Icons.settings,
-                  title: 'Settings',
-                  isActive: false,
-                  onTap: () {
-                    Navigator.pop(context);
-                  },
-                ),
-                _buildDrawerItem(
-                  icon: Icons.light_mode,
-                  title: 'Light Mode',
-                  isActive: false,
-                  trailing: Switch(
-                    value: Theme.of(context).brightness == Brightness.light,
-                    onChanged: (value) {
-                      ref.read(themeModeProvider.notifier).toggleTheme();
-                    },
-                    activeColor: AppTheme.primaryPurple,
-                  ),
-                  onTap: null,
-                ),
-                _buildDrawerItem(
-                  icon: Icons.notifications,
-                  title: 'Notifications',
-                  isActive: false,
-                  onTap: () {
-                    Navigator.pop(context);
-                  },
-                ),
-                _buildDrawerItem(
-                  icon: Icons.help,
-                  title: 'Help & Support',
-                  isActive: false,
-                  onTap: () {
-                    Navigator.pop(context);
-                  },
-                ),
-                const Divider(),
                 _buildDrawerItem(
                   icon: Icons.logout,
                   title: 'Logout',
@@ -664,7 +723,7 @@ class _GuruAppScaffoldState extends ConsumerState<GuruAppScaffold> {
                   textColor: Colors.red,
                   isActive: false,
                   onTap: () {
-                    Navigator.pushReplacementNamed(context, '/login');
+                    _showLogoutDialog(context);
                   },
                 ),
               ],
@@ -768,6 +827,44 @@ class _GuruAppScaffoldState extends ConsumerState<GuruAppScaffold> {
         onTap: onTap ?? () {
           Navigator.pop(context); // Close drawer
         },
+      ),
+    );
+  }
+
+  void _showLogoutDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Row(
+          children: [
+            Icon(Icons.logout_rounded, color: Colors.red),
+            SizedBox(width: 12),
+            Text('Logout'),
+          ],
+        ),
+        content: const Text('Apakah Anda yakin ingin keluar?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Batal'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(dialogContext);
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(builder: (context) => const LoginScreen()),
+                (route) => false,
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Logout'),
+          ),
+        ],
       ),
     );
   }
