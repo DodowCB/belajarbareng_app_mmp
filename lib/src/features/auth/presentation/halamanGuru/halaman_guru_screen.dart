@@ -3,16 +3,13 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/config/theme.dart';
 import '../../../../core/providers/theme_provider.dart';
+import '../../../../core/providers/user_provider.dart';
 import '../../data/models/pengumuman_model.dart';
 import 'blocs/blocs.dart';
 import 'kelas_guru_screen.dart';
 import 'nilai_siswa_screen.dart';
 import 'tugas_guru_screen.dart';
 import 'materi_guru_screen.dart';
-import '../profile/profile_screen.dart';
-import '../settings/settings_screen.dart';
-import '../notifications/notifications_screen.dart';
-import '../help/help_support_screen.dart';
 import '../profile/profile_screen.dart';
 import '../settings/settings_screen.dart';
 import '../notifications/notifications_screen.dart';
@@ -32,10 +29,18 @@ class _HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
 
   @override
   Widget build(BuildContext context) {
+    print('🏗️ Building HalamanGuruScreen...');
+
     return MultiBlocProvider(
       providers: [
         BlocProvider<GuruProfileBloc>(
-          create: (context) => GuruProfileBloc()..add(const LoadGuruProfile()),
+          create: (context) {
+            print('🔨 Creating GuruProfileBloc...');
+            final bloc = GuruProfileBloc();
+            print('📤 Dispatching LoadGuruProfile event...');
+            bloc.add(const LoadGuruProfile());
+            return bloc;
+          },
         ),
         BlocProvider<GuruStatsBloc>(create: (context) => GuruStatsBloc()),
         BlocProvider<AnnouncementsBloc>(
@@ -46,19 +51,29 @@ class _HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
       child: Scaffold(
         body: BlocListener<GuruProfileBloc, GuruProfileState>(
           listener: (context, profileState) {
+            print(
+              '👂 [BlocListener] State changed: ${profileState.runtimeType}',
+            );
+
             if (profileState is GuruProfileLoaded && !_statsLoaded) {
+              print('✅ [BlocListener] GuruProfileLoaded detected!');
+              print('📋 [BlocListener] guruId: ${profileState.guruId}');
               // Load stats only once when we have the guru ID
               context.read<GuruStatsBloc>().add(
                 LoadGuruStats(profileState.guruId),
               );
               _statsLoaded = true;
+            } else if (profileState is GuruProfileLoading) {
+              print('⏳ [BlocListener] Loading...');
+            } else if (profileState is GuruProfileError) {
+              print('❌ [BlocListener] Error: ${profileState.message}');
             }
           },
           child: LayoutBuilder(
             builder: (context, constraints) {
               final isDesktop = constraints.maxWidth >= 1024;
               final isTablet = constraints.maxWidth >= 768;
-              
+
               if (!isDesktop) {
                 // Mobile/Tablet: Use drawer instead of sidebar
                 return Scaffold(
@@ -73,15 +88,25 @@ class _HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
                     title: const Text('Dashboard Guru'),
                   ),
                   drawer: _buildDrawer(context),
-                  body: _buildMainContent(context, isDesktop: false, isTablet: isTablet),
+                  body: _buildMainContent(
+                    context,
+                    isDesktop: false,
+                    isTablet: isTablet,
+                  ),
                 );
               }
-              
+
               // Desktop: Use sidebar
               return Row(
                 children: [
                   _buildSidebar(context),
-                  Expanded(child: _buildMainContent(context, isDesktop: true, isTablet: isTablet)),
+                  Expanded(
+                    child: _buildMainContent(
+                      context,
+                      isDesktop: true,
+                      isTablet: isTablet,
+                    ),
+                  ),
                 ],
               );
             },
@@ -93,7 +118,7 @@ class _HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
 
   Widget _buildSidebar(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
       width: _isSidebarCollapsed ? 70 : 250,
@@ -156,15 +181,17 @@ class _HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
                             children: [
                               Text(
                                 'EduManage',
-                                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                ),
+                                style: Theme.of(context).textTheme.titleMedium
+                                    ?.copyWith(fontWeight: FontWeight.bold),
                               ),
                               Text(
                                 'Platform Guru',
-                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  color: isDark ? Colors.grey[400] : Colors.grey[600],
-                                ),
+                                style: Theme.of(context).textTheme.bodySmall
+                                    ?.copyWith(
+                                      color: isDark
+                                          ? Colors.grey[400]
+                                          : Colors.grey[600],
+                                    ),
                               ),
                             ],
                           ),
@@ -174,8 +201,7 @@ class _HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
             ),
           ),
           // Profile Menu Section (Expandable) - Moved to top
-          if (!_isSidebarCollapsed)
-            _buildExpandableProfileMenu(context),
+          if (!_isSidebarCollapsed) _buildExpandableProfileMenu(context),
           if (_isSidebarCollapsed)
             _buildSidebarItem(
               icon: Icons.account_circle,
@@ -187,10 +213,8 @@ class _HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
                 });
               },
             ),
-          if (!_isSidebarCollapsed)
-            const Divider(height: 1),
-          if (_isSidebarCollapsed)
-            const Divider(height: 1),
+          if (!_isSidebarCollapsed) const Divider(height: 1),
+          if (_isSidebarCollapsed) const Divider(height: 1),
           // Navigation Menu
           Expanded(
             child: ListView(
@@ -260,14 +284,12 @@ class _HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
 
   Widget _buildDrawer(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return Drawer(
       child: Column(
         children: [
           DrawerHeader(
-            decoration: BoxDecoration(
-              color: AppTheme.primaryPurple,
-            ),
+            decoration: BoxDecoration(color: AppTheme.primaryPurple),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.end,
@@ -296,10 +318,7 @@ class _HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
                 ),
                 const Text(
                   'Platform Guru',
-                  style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: 14,
-                  ),
+                  style: TextStyle(color: Colors.white70, fontSize: 14),
                 ),
               ],
             ),
@@ -464,7 +483,7 @@ class _HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
     VoidCallback? onTap,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
@@ -476,7 +495,11 @@ class _HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
       child: ListTile(
         leading: Icon(
           icon,
-          color: iconColor ?? (isActive ? AppTheme.primaryPurple : (isDark ? Colors.grey[400] : Colors.grey[600])),
+          color:
+              iconColor ??
+              (isActive
+                  ? AppTheme.primaryPurple
+                  : (isDark ? Colors.grey[400] : Colors.grey[600])),
           size: 22,
         ),
         title: Text(
@@ -487,10 +510,12 @@ class _HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
           ),
         ),
         trailing: trailing,
-        onTap: onTap ?? () {
-          Navigator.pop(context); // Close drawer
-          // Handle navigation
-        },
+        onTap:
+            onTap ??
+            () {
+              Navigator.pop(context); // Close drawer
+              // Handle navigation
+            },
       ),
     );
   }
@@ -505,7 +530,7 @@ class _HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
     VoidCallback? onTap,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return Tooltip(
       message: _isSidebarCollapsed ? title : '',
       child: Container(
@@ -519,40 +544,53 @@ class _HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
         child: ListTile(
           leading: Icon(
             icon,
-            color: iconColor ?? (isActive ? AppTheme.primaryPurple : (isDark ? Colors.grey[400] : Colors.grey[600])),
+            color:
+                iconColor ??
+                (isActive
+                    ? AppTheme.primaryPurple
+                    : (isDark ? Colors.grey[400] : Colors.grey[600])),
             size: 22,
           ),
-          title: _isSidebarCollapsed ? null : Text(
-            title,
-            style: TextStyle(
-              color: textColor ?? (isActive ? AppTheme.primaryPurple : null),
-              fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
-              fontSize: 14,
-            ),
-          ),
+          title: _isSidebarCollapsed
+              ? null
+              : Text(
+                  title,
+                  style: TextStyle(
+                    color:
+                        textColor ?? (isActive ? AppTheme.primaryPurple : null),
+                    fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
+                    fontSize: 14,
+                  ),
+                ),
           trailing: _isSidebarCollapsed ? null : trailing,
           dense: true,
           contentPadding: EdgeInsets.symmetric(
             horizontal: _isSidebarCollapsed ? 20 : 16,
             vertical: 4,
           ),
-          onTap: onTap ?? () {
-            // Handle navigation
-          },
+          onTap:
+              onTap ??
+              () {
+                // Handle navigation
+              },
         ),
       ),
     );
   }
 
-  Widget _buildMainContent(BuildContext context, {required bool isDesktop, required bool isTablet}) {
+  Widget _buildMainContent(
+    BuildContext context, {
+    required bool isDesktop,
+    required bool isTablet,
+  }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return Container(
       color: isDark ? AppTheme.backgroundDark : AppTheme.backgroundLight,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (isDesktop) 
+          if (isDesktop)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
               child: _buildTopBar(context),
@@ -574,9 +612,15 @@ class _HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
                       ? Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Expanded(flex: 2, child: _buildImportantNotifications()),
+                            Expanded(
+                              flex: 2,
+                              child: _buildImportantNotifications(),
+                            ),
                             const SizedBox(width: 24),
-                            Expanded(flex: 3, child: _buildUpcomingTasks(isDesktop: true)),
+                            Expanded(
+                              flex: 3,
+                              child: _buildUpcomingTasks(isDesktop: true),
+                            ),
                           ],
                         )
                       : Column(
@@ -599,309 +643,225 @@ class _HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
 
   Widget _buildExpandableProfileMenu(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
-    return BlocBuilder<GuruProfileBloc, GuruProfileState>(
-      builder: (context, state) {
-        String userName = 'Guru';
-        String userEmail = 'email@example.com';
 
-        if (state is GuruProfileLoaded) {
-          userName = state.guruData['nama_lengkap'] ?? 'Guru';
-          userEmail = state.guruData['email'] ?? 'email@example.com';
-        }
+    // Ambil data langsung dari userProvider yang sudah di-set saat login
+    final userName = userProvider.namaLengkap ?? 'Guru';
+    final userEmail = userProvider.email ?? 'email@example.com';
 
-        return Column(
-          children: [
-            // Profile Header - Clickable to expand/collapse
-            InkWell(
-              onTap: () {
-                setState(() {
-                  _isProfileMenuExpanded = !_isProfileMenuExpanded;
-                });
-              },
-              child: Container(
-                margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: _isProfileMenuExpanded 
-                      ? AppTheme.primaryPurple.withOpacity(0.1)
-                      : (isDark ? Colors.grey[850] : Colors.grey[100]),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: _isProfileMenuExpanded
-                        ? AppTheme.primaryPurple.withOpacity(0.3)
-                        : (isDark ? Colors.grey[800]! : Colors.grey[300]!),
+    print('👤 [ExpandableMenu] Using data from userProvider');
+    print('👤 [ExpandableMenu] userName: $userName');
+    print('📧 [ExpandableMenu] userEmail: $userEmail');
+
+    return Column(
+      children: [
+        // Profile Header - Clickable to expand/collapse
+        InkWell(
+          onTap: () {
+            setState(() {
+              _isProfileMenuExpanded = !_isProfileMenuExpanded;
+            });
+          },
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: _isProfileMenuExpanded
+                  ? AppTheme.primaryPurple.withOpacity(0.1)
+                  : (isDark ? Colors.grey[850] : Colors.grey[100]),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: _isProfileMenuExpanded
+                    ? AppTheme.primaryPurple.withOpacity(0.3)
+                    : (isDark ? Colors.grey[800]! : Colors.grey[300]!),
+              ),
+            ),
+            child: Row(
+              children: [
+                CircleAvatar(
+                  backgroundColor: AppTheme.primaryPurple,
+                  radius: 20,
+                  child: Text(
+                    userName.isNotEmpty ? userName[0].toUpperCase() : 'G',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                    ),
                   ),
                 ),
-                child: Row(
-                  children: [
-                    CircleAvatar(
-                      backgroundColor: AppTheme.primaryPurple,
-                      radius: 20,
-                      child: Text(
-                        userName.isNotEmpty ? userName[0].toUpperCase() : 'G',
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        userName,
                         style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
                         ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            userName,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 14,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          Text(
-                            userEmail,
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: isDark ? Colors.grey[400] : Colors.grey[600],
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
+                      Text(
+                        userEmail,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: isDark ? Colors.grey[400] : Colors.grey[600],
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                    ),
-                    Icon(
-                      _isProfileMenuExpanded 
-                          ? Icons.keyboard_arrow_up 
-                          : Icons.keyboard_arrow_down,
-                      color: isDark ? Colors.grey[400] : Colors.grey[600],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            // Expanded Menu Items
-            if (_isProfileMenuExpanded) ...[
-              _buildSidebarItem(
-                icon: Icons.person,
-                title: 'Profile',
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const ProfileScreen(),
-                    ),
-                  );
-                },
-              ),
-              _buildSidebarItem(
-                icon: Icons.settings,
-                title: 'Settings',
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const SettingsScreen(),
-                    ),
-                  );
-                },
-              ),
-              _buildSidebarItem(
-                icon: Icons.light_mode,
-                title: 'Light Mode',
-                trailing: Switch(
-                  value: !isDark,
-                  onChanged: (value) {
-                    ref.read(themeModeProvider.notifier).toggleTheme();
-                  },
-                  activeColor: AppTheme.primaryPurple,
-                ),
-              ),
-              _buildSidebarItem(
-                icon: Icons.notifications,
-                title: 'Notifications',
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const NotificationsScreen(),
-                    ),
-                  );
-                },
-              ),
-              _buildSidebarItem(
-                icon: Icons.help,
-                title: 'Help & Support',
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const HelpSupportScreen(),
-                    ),
-                  );
-                },
-              ),
-              const Divider(height: 1),
-              _buildSidebarItem(
-                icon: Icons.logout,
-                title: 'Logout',
-                iconColor: Colors.red,
-                textColor: Colors.red,
-                onTap: () {
-                  Navigator.pushReplacementNamed(context, '/login');
-                },
-              ),
-            ],
-          ],
-        );
-      },
-    );
-  }
-
-  Widget _buildSidebarProfileSection(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    
-    return BlocBuilder<GuruProfileBloc, GuruProfileState>(
-      builder: (context, state) {
-        String userName = 'Guru';
-        String userEmail = 'email@example.com';
-
-        if (state is GuruProfileLoaded) {
-          userName = state.guruData['nama_lengkap'] ?? 'Guru';
-          userEmail = state.guruData['email'] ?? 'email@example.com';
-        }
-
-        return Container(
-          margin: const EdgeInsets.all(12),
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: isDark ? Colors.grey[850] : Colors.grey[100],
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: isDark ? Colors.grey[800]! : Colors.grey[300]!,
-            ),
-          ),
-          child: Row(
-            children: [
-              CircleAvatar(
-                backgroundColor: AppTheme.primaryPurple,
-                radius: 20,
-                child: Text(
-                  userName.isNotEmpty ? userName[0].toUpperCase() : 'G',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 18,
+                    ],
                   ),
                 ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      userName,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    Text(
-                      userEmail,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: isDark ? Colors.grey[400] : Colors.grey[600],
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
+                Icon(
+                  _isProfileMenuExpanded
+                      ? Icons.keyboard_arrow_up
+                      : Icons.keyboard_arrow_down,
+                  color: isDark ? Colors.grey[400] : Colors.grey[600],
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        );
-      },
+        ),
+        // Expanded Menu Items
+        if (_isProfileMenuExpanded) ...[
+          _buildSidebarItem(
+            icon: Icons.person,
+            title: 'Profile',
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const ProfileScreen()),
+              );
+            },
+          ),
+          _buildSidebarItem(
+            icon: Icons.settings,
+            title: 'Settings',
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const SettingsScreen()),
+              );
+            },
+          ),
+          _buildSidebarItem(
+            icon: Icons.light_mode,
+            title: 'Light Mode',
+            trailing: Switch(
+              value: !isDark,
+              onChanged: (value) {
+                ref.read(themeModeProvider.notifier).toggleTheme();
+              },
+              activeColor: AppTheme.primaryPurple,
+            ),
+          ),
+          _buildSidebarItem(
+            icon: Icons.notifications,
+            title: 'Notifications',
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const NotificationsScreen(),
+                ),
+              );
+            },
+          ),
+          _buildSidebarItem(
+            icon: Icons.help,
+            title: 'Help & Support',
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const HelpSupportScreen(),
+                ),
+              );
+            },
+          ),
+          const Divider(height: 1),
+          _buildSidebarItem(
+            icon: Icons.logout,
+            title: 'Logout',
+            iconColor: Colors.red,
+            textColor: Colors.red,
+            onTap: () {
+              Navigator.pushReplacementNamed(context, '/login');
+            },
+          ),
+        ],
+      ],
     );
   }
 
   Widget _buildDrawerProfileSection(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
-    return BlocBuilder<GuruProfileBloc, GuruProfileState>(
-      builder: (context, state) {
-        String userName = 'Guru';
-        String userEmail = 'email@example.com';
 
-        if (state is GuruProfileLoaded) {
-          userName = state.guruData['nama_lengkap'] ?? 'Guru';
-          userEmail = state.guruData['email'] ?? 'email@example.com';
-        }
+    // Ambil data langsung dari userProvider
+    final userName = userProvider.namaLengkap ?? 'Guru';
+    final userEmail = userProvider.email ?? 'email@example.com';
 
-        return Container(
-          margin: const EdgeInsets.all(12),
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: isDark ? Colors.grey[850] : Colors.grey[100],
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: isDark ? Colors.grey[800]! : Colors.grey[300]!,
+    print('👤 [DrawerProfile] userName from userProvider: $userName');
+    print('📧 [DrawerProfile] userEmail from userProvider: $userEmail');
+
+    return Container(
+      margin: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDark ? Colors.grey[850] : Colors.grey[100],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isDark ? Colors.grey[800]! : Colors.grey[300]!,
+        ),
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            backgroundColor: AppTheme.primaryPurple,
+            radius: 24,
+            child: Text(
+              userName.isNotEmpty ? userName[0].toUpperCase() : 'G',
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 20,
+              ),
             ),
           ),
-          child: Row(
-            children: [
-              CircleAvatar(
-                backgroundColor: AppTheme.primaryPurple,
-                radius: 24,
-                child: Text(
-                  userName.isNotEmpty ? userName[0].toUpperCase() : 'G',
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  userName,
                   style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 20,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 15,
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      userName,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 15,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      userEmail,
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: isDark ? Colors.grey[400] : Colors.grey[600],
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
+                const SizedBox(height: 2),
+                Text(
+                  userEmail,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: isDark ? Colors.grey[400] : Colors.grey[600],
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        );
-      },
+        ],
+      ),
     );
   }
 
@@ -910,9 +870,9 @@ class _HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
       children: [
         Text(
           'Dashboard',
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-            fontWeight: FontWeight.bold,
-          ),
+          style: Theme.of(
+            context,
+          ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
         ),
         const Spacer(),
       ],
@@ -921,145 +881,251 @@ class _HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
 
   Widget _buildWelcomeSection({required bool isDesktop}) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
-    return BlocBuilder<GuruProfileBloc, GuruProfileState>(
-      builder: (context, state) {
-        String guruName = 'Guru';
 
-        if (state is GuruProfileLoaded) {
-          guruName = state.guruData['nama_lengkap'] ?? 'Guru';
-        }
+    // Ambil data langsung dari userProvider
+    final guruName = userProvider.namaLengkap ?? 'Guru';
 
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Selamat Datang, $guruName!',
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-                fontSize: isDesktop ? 28 : 22,
-              ),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Berikut adalah ringkasan aktivitas Anda hari ini.',
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                color: isDark ? Colors.grey[400] : Colors.grey[600],
-                fontSize: isDesktop ? 16 : 14,
-              ),
-            ),
-            const SizedBox(height: 20),
-            LayoutBuilder(
-              builder: (context, constraints) {
-                if (constraints.maxWidth < 600) {
-                  // Mobile: Stack buttons vertically
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      _buildActionButton(
-                        'Input Nilai Baru',
-                        AppTheme.primaryPurple,
-                        Icons.add,
-                        isDesktop: isDesktop,
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const NilaiSiswaScreen(),
-                            ),
-                          );
-                        },
+    print('👤 [WelcomeSection] guruName from userProvider: $guruName');
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Selamat Datang, $guruName!',
+          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+            fontWeight: FontWeight.bold,
+            fontSize: isDesktop ? 28 : 22,
+          ),
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+        ),
+        const SizedBox(height: 8),
+        // Tambahkan info wali kelas dari GuruStatsBloc
+        BlocBuilder<GuruStatsBloc, GuruStatsState>(
+          builder: (context, state) {
+            print(
+              '🔍 [WelcomeSection BlocBuilder] Current state: ${state.runtimeType}',
+            );
+
+            if (state is GuruStatsLoading) {
+              print('⏳ [WelcomeSection BlocBuilder] State is GuruStatsLoading');
+              return const SizedBox.shrink();
+            }
+
+            if (state is GuruStatsError) {
+              print(
+                '❌ [WelcomeSection BlocBuilder] State is GuruStatsError: ${state.message}',
+              );
+              return const SizedBox.shrink();
+            }
+
+            if (state is GuruStatsLoaded) {
+              print('✅ [WelcomeSection BlocBuilder] State is GuruStatsLoaded!');
+              print(
+                '📋 [WelcomeSection BlocBuilder] kelasWali: ${state.kelasWali}',
+              );
+              print(
+                '📋 [WelcomeSection BlocBuilder] kelasWali.isNotEmpty: ${state.kelasWali.isNotEmpty}',
+              );
+
+              if (state.kelasWali.isNotEmpty) {
+                final kelasWali = state.kelasWali.first;
+                final namaKelas = kelasWali['namaKelas'] ?? 'Kelas';
+                final jumlahSiswa = kelasWali['jumlahSiswa'] ?? 0;
+
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
                       ),
-                      const SizedBox(height: 12),
-                      _buildActionButton(
-                        'Buat Tugas Baru',
-                        AppTheme.secondaryTeal,
-                        Icons.assignment_add,
-                        isDesktop: isDesktop,
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const TugasGuruScreen(),
-                            ),
-                          );
-                        },
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            AppTheme.primaryPurple.withOpacity(0.1),
+                            AppTheme.secondaryTeal.withOpacity(0.1),
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: AppTheme.primaryPurple.withOpacity(0.3),
+                          width: 1.5,
+                        ),
                       ),
-                      const SizedBox(height: 12),
-                      _buildActionButton(
-                        'Unggah Materi Baru',
-                        AppTheme.accentGreen,
-                        Icons.upload_file,
-                        isDesktop: isDesktop,
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const MateriGuruScreen(),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.school,
+                            color: AppTheme.primaryPurple,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Anda Wali Kelas ',
+                            style: TextStyle(
+                              fontSize: isDesktop ? 15 : 14,
+                              fontWeight: FontWeight.w500,
+                              color: isDark
+                                  ? Colors.grey[300]
+                                  : Colors.grey[700],
                             ),
-                          );
-                        },
-                      ),
-                    ],
-                  );
-                } else {
-                  // Tablet/Desktop: Wrap buttons
-                  return Wrap(
-                    spacing: 12,
-                    runSpacing: 12,
-                    children: [
-                      _buildActionButton(
-                        'Input Nilai Baru',
-                        AppTheme.primaryPurple,
-                        Icons.add,
-                        isDesktop: isDesktop,
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const NilaiSiswaScreen(),
+                          ),
+                          Text(
+                            namaKelas,
+                            style: TextStyle(
+                              fontSize: isDesktop ? 15 : 14,
+                              fontWeight: FontWeight.bold,
+                              color: AppTheme.primaryPurple,
                             ),
-                          );
-                        },
-                      ),
-                      _buildActionButton(
-                        'Buat Tugas Baru',
-                        AppTheme.secondaryTeal,
-                        Icons.assignment_add,
-                        isDesktop: isDesktop,
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const TugasGuruScreen(),
+                          ),
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 2,
                             ),
-                          );
-                        },
-                      ),
-                      _buildActionButton(
-                        'Unggah Materi Baru',
-                        AppTheme.accentGreen,
-                        Icons.upload_file,
-                        isDesktop: isDesktop,
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const MateriGuruScreen(),
+                            decoration: BoxDecoration(
+                              color: AppTheme.secondaryTeal.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(12),
                             ),
-                          );
-                        },
+                            child: Text(
+                              '$jumlahSiswa Siswa',
+                              style: TextStyle(
+                                fontSize: isDesktop ? 13 : 12,
+                                fontWeight: FontWeight.w600,
+                                color: AppTheme.secondaryTeal,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
-                  );
-                }
-              },
-            ),
-          ],
-        );
-      },
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+                );
+              }
+            }
+            return const SizedBox.shrink();
+          },
+        ),
+        Text(
+          'Berikut adalah ringkasan aktivitas Anda hari ini.',
+          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+            color: isDark ? Colors.grey[400] : Colors.grey[600],
+            fontSize: isDesktop ? 16 : 14,
+          ),
+        ),
+        const SizedBox(height: 20),
+        LayoutBuilder(
+          builder: (context, constraints) {
+            if (constraints.maxWidth < 600) {
+              // Mobile: Stack buttons vertically
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _buildActionButton(
+                    'Input Nilai Baru',
+                    AppTheme.primaryPurple,
+                    Icons.add,
+                    isDesktop: isDesktop,
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const NilaiSiswaScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  _buildActionButton(
+                    'Buat Tugas Baru',
+                    AppTheme.secondaryTeal,
+                    Icons.assignment_add,
+                    isDesktop: isDesktop,
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const TugasGuruScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  _buildActionButton(
+                    'Unggah Materi Baru',
+                    AppTheme.accentGreen,
+                    Icons.upload_file,
+                    isDesktop: isDesktop,
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const MateriGuruScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              );
+            } else {
+              // Tablet/Desktop: Wrap buttons
+              return Wrap(
+                spacing: 12,
+                runSpacing: 12,
+                children: [
+                  _buildActionButton(
+                    'Input Nilai Baru',
+                    AppTheme.primaryPurple,
+                    Icons.add,
+                    isDesktop: isDesktop,
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const NilaiSiswaScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                  _buildActionButton(
+                    'Buat Tugas Baru',
+                    AppTheme.secondaryTeal,
+                    Icons.assignment_add,
+                    isDesktop: isDesktop,
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const TugasGuruScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                  _buildActionButton(
+                    'Unggah Materi Baru',
+                    AppTheme.accentGreen,
+                    Icons.upload_file,
+                    isDesktop: isDesktop,
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const MateriGuruScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              );
+            }
+          },
+        ),
+      ],
     );
   }
 
@@ -1101,7 +1167,7 @@ class _HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
 
   Widget _buildStatsCards({required bool isDesktop, required bool isTablet}) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return BlocBuilder<GuruStatsBloc, GuruStatsState>(
       builder: (context, state) {
         int totalClasses = 0;
@@ -1116,20 +1182,18 @@ class _HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
           return Center(
             child: Container(
               padding: const EdgeInsets.all(40),
-              child: CircularProgressIndicator(
-                color: AppTheme.primaryPurple,
-              ),
+              child: CircularProgressIndicator(color: AppTheme.primaryPurple),
             ),
           );
         } else if (state is GuruStatsError) {
           return Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: isDark ? Colors.red[900]?.withOpacity(0.2) : Colors.red[50],
+              color: isDark
+                  ? Colors.red[900]?.withOpacity(0.2)
+                  : Colors.red[50],
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: Colors.red.withOpacity(0.3),
-              ),
+              border: Border.all(color: Colors.red.withOpacity(0.3)),
             ),
             child: Row(
               children: [
@@ -1168,9 +1232,9 @@ class _HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
           children: [
             Text(
               'Ringkasan',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
             LayoutBuilder(
@@ -1290,7 +1354,7 @@ class _HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
     required bool isDesktop,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       child: InkWell(
@@ -1299,23 +1363,17 @@ class _HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
           if (title == 'Total Kelas') {
             Navigator.push(
               context,
-              MaterialPageRoute(
-                builder: (context) => const KelasGuruScreen(),
-              ),
+              MaterialPageRoute(builder: (context) => const KelasGuruScreen()),
             );
           } else if (title == 'Total Siswa') {
             Navigator.push(
               context,
-              MaterialPageRoute(
-                builder: (context) => const NilaiSiswaScreen(),
-              ),
+              MaterialPageRoute(builder: (context) => const NilaiSiswaScreen()),
             );
           } else if (title == 'Tugas Perlu Dinilai') {
             Navigator.push(
               context,
-              MaterialPageRoute(
-                builder: (context) => const TugasGuruScreen(),
-              ),
+              MaterialPageRoute(builder: (context) => const TugasGuruScreen()),
             );
           }
         },
@@ -1339,49 +1397,52 @@ class _HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
             ],
           ),
           child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: EdgeInsets.all(isDesktop ? 12 : 10),
-                  decoration: BoxDecoration(
-                    color: color.withOpacity(isDark ? 0.2 : 0.1),
-                    borderRadius: BorderRadius.circular(12),
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: EdgeInsets.all(isDesktop ? 12 : 10),
+                    decoration: BoxDecoration(
+                      color: color.withOpacity(isDark ? 0.2 : 0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(icon, color: color, size: isDesktop ? 24 : 22),
                   ),
-                  child: Icon(icon, color: color, size: isDesktop ? 24 : 22),
-                ),
-                const Spacer(),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: color.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(6),
+                  const Spacer(),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: color.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Icon(Icons.trending_up, color: color, size: 16),
                   ),
-                  child: Icon(Icons.trending_up, color: color, size: 16),
+                ],
+              ),
+              SizedBox(height: isDesktop ? 20 : 16),
+              Text(
+                value,
+                style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  fontSize: isDesktop ? 32 : 28,
+                  color: color,
                 ),
-              ],
-            ),
-            SizedBox(height: isDesktop ? 20 : 16),
-            Text(
-              value,
-              style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-                fontSize: isDesktop ? 32 : 28,
-                color: color,
               ),
-            ),
-            SizedBox(height: isDesktop ? 4 : 2),
-            Text(
-              title,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: isDark ? Colors.grey[400] : Colors.grey[600],
-                fontWeight: FontWeight.w500,
+              SizedBox(height: isDesktop ? 4 : 2),
+              Text(
+                title,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: isDark ? Colors.grey[400] : Colors.grey[600],
+                  fontWeight: FontWeight.w500,
+                ),
               ),
-            ),
-          ],
-        ),
+            ],
+          ),
         ),
       ),
     );
@@ -1389,7 +1450,7 @@ class _HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
 
   Widget _buildImportantNotifications() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return BlocBuilder<AnnouncementsBloc, AnnouncementsState>(
       builder: (context, state) {
         List<PengumumanModel> announcements = [];
@@ -1448,7 +1509,9 @@ class _HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
                 const SizedBox(height: 8),
                 Text(
                   state.message,
-                  style: TextStyle(color: isDark ? Colors.red[400] : Colors.red[600]),
+                  style: TextStyle(
+                    color: isDark ? Colors.red[400] : Colors.red[600],
+                  ),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 16),
@@ -1490,11 +1553,7 @@ class _HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
             children: [
               Row(
                 children: [
-                  Icon(
-                    Icons.campaign,
-                    color: AppTheme.accentOrange,
-                    size: 24,
-                  ),
+                  Icon(Icons.campaign, color: AppTheme.accentOrange, size: 24),
                   const SizedBox(width: 12),
                   Text(
                     'Pemberitahuan Penting',
@@ -1537,7 +1596,7 @@ class _HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
     IconData icon,
   ) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       child: InkWell(
@@ -1563,11 +1622,7 @@ class _HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
                   color: AppTheme.accentOrange.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(
-                  icon,
-                  size: 18,
-                  color: AppTheme.accentOrange,
-                ),
+                child: Icon(icon, size: 18, color: AppTheme.accentOrange),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -1606,7 +1661,7 @@ class _HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
 
   Widget _buildUpcomingTasks({required bool isDesktop}) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -1628,17 +1683,13 @@ class _HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
         children: [
           Row(
             children: [
-              Icon(
-                Icons.assignment,
-                color: AppTheme.secondaryTeal,
-                size: 24,
-              ),
+              Icon(Icons.assignment, color: AppTheme.secondaryTeal, size: 24),
               const SizedBox(width: 12),
               Text(
                 'Tugas Mendatang',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
               ),
               const Spacer(),
               TextButton.icon(
@@ -1739,23 +1790,11 @@ class _HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
               '28 Nov 2023',
             ),
             const SizedBox(height: 12),
-            _buildTaskCard(
-              'Ujian Praktik Biologi',
-              '12 IPA 1',
-              '30 Nov 2023',
-            ),
+            _buildTaskCard('Ujian Praktik Biologi', '12 IPA 1', '30 Nov 2023'),
             const SizedBox(height: 12),
-            _buildTaskCard(
-              'Esai Sastra Indonesia',
-              '10 IPS 3',
-              '02 Des 2023',
-            ),
+            _buildTaskCard('Esai Sastra Indonesia', '10 IPS 3', '02 Des 2023'),
             const SizedBox(height: 12),
-            _buildTaskCard(
-              'Laporan Kimia',
-              '11 IPA 1',
-              '05 Des 2023',
-            ),
+            _buildTaskCard('Laporan Kimia', '11 IPA 1', '05 Des 2023'),
           ],
         ],
       ),
@@ -1769,7 +1808,7 @@ class _HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
     required bool isDesktop,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       child: InkWell(
@@ -1805,15 +1844,18 @@ class _HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
                 flex: 3,
                 child: Text(
                   taskName,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w500,
-                  ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
                 ),
               ),
               Expanded(
                 flex: 2,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: AppTheme.accentGreen.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(6),
@@ -1857,7 +1899,7 @@ class _HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
 
   Widget _buildTaskCard(String taskName, String className, String dueDate) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       child: InkWell(
@@ -1906,7 +1948,10 @@ class _HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
               Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
                       color: AppTheme.accentGreen.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(6),
@@ -1921,10 +1966,11 @@ class _HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
                         const SizedBox(width: 6),
                         Text(
                           className,
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: AppTheme.accentGreen,
-                            fontWeight: FontWeight.w600,
-                          ),
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(
+                                color: AppTheme.accentGreen,
+                                fontWeight: FontWeight.w600,
+                              ),
                         ),
                       ],
                     ),
@@ -1951,9 +1997,14 @@ class _HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
     );
   }
 
-  void _showNotificationDetailDialog(BuildContext context, String title, String description, IconData icon) {
+  void _showNotificationDetailDialog(
+    BuildContext context,
+    String title,
+    String description,
+    IconData icon,
+  ) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     showDialog(
       context: context,
       builder: (context) => Dialog(
@@ -1981,9 +2032,8 @@ class _HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
                       children: [
                         Text(
                           'Detail Pemberitahuan',
-                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
+                          style: Theme.of(context).textTheme.titleLarge
+                              ?.copyWith(fontWeight: FontWeight.bold),
                         ),
                       ],
                     ),
@@ -2028,10 +2078,7 @@ class _HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
                       ),
                     ),
                     const SizedBox(height: 4),
-                    Text(
-                      description,
-                      style: const TextStyle(fontSize: 15),
-                    ),
+                    Text(description, style: const TextStyle(fontSize: 15)),
                   ],
                 ),
               ),
@@ -2043,7 +2090,9 @@ class _HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
                     onPressed: () => Navigator.pop(context),
                     child: Text(
                       'Tutup',
-                      style: TextStyle(color: isDark ? Colors.grey[400] : Colors.grey[600]),
+                      style: TextStyle(
+                        color: isDark ? Colors.grey[400] : Colors.grey[600],
+                      ),
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -2067,9 +2116,14 @@ class _HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
     );
   }
 
-  void _showTaskDetailDialog(BuildContext context, String taskName, String className, String dueDate) {
+  void _showTaskDetailDialog(
+    BuildContext context,
+    String taskName,
+    String className,
+    String dueDate,
+  ) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     showDialog(
       context: context,
       builder: (context) => Dialog(
@@ -2088,7 +2142,11 @@ class _HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
                       color: AppTheme.secondaryTeal.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Icon(Icons.assignment, color: AppTheme.secondaryTeal, size: 28),
+                    child: Icon(
+                      Icons.assignment,
+                      color: AppTheme.secondaryTeal,
+                      size: 28,
+                    ),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
@@ -2097,9 +2155,8 @@ class _HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
                       children: [
                         Text(
                           'Detail Tugas',
-                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
+                          style: Theme.of(context).textTheme.titleLarge
+                              ?.copyWith(fontWeight: FontWeight.bold),
                         ),
                       ],
                     ),
@@ -2113,11 +2170,21 @@ class _HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
               const SizedBox(height: 24),
               const Divider(),
               const SizedBox(height: 16),
-              _buildDetailRowInDialog(Icons.assignment, 'Nama Tugas', taskName, isDark),
+              _buildDetailRowInDialog(
+                Icons.assignment,
+                'Nama Tugas',
+                taskName,
+                isDark,
+              ),
               const SizedBox(height: 16),
               _buildDetailRowInDialog(Icons.class_, 'Kelas', className, isDark),
               const SizedBox(height: 16),
-              _buildDetailRowInDialog(Icons.calendar_today, 'Tanggal Tenggat', dueDate, isDark),
+              _buildDetailRowInDialog(
+                Icons.calendar_today,
+                'Tanggal Tenggat',
+                dueDate,
+                isDark,
+              ),
               const SizedBox(height: 24),
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
@@ -2126,7 +2193,9 @@ class _HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
                     onPressed: () => Navigator.pop(context),
                     child: Text(
                       'Tutup',
-                      style: TextStyle(color: isDark ? Colors.grey[400] : Colors.grey[600]),
+                      style: TextStyle(
+                        color: isDark ? Colors.grey[400] : Colors.grey[600],
+                      ),
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -2159,7 +2228,12 @@ class _HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
     );
   }
 
-  Widget _buildDetailRowInDialog(IconData icon, String label, String value, bool isDark) {
+  Widget _buildDetailRowInDialog(
+    IconData icon,
+    String label,
+    String value,
+    bool isDark,
+  ) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [

@@ -44,7 +44,7 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
       // Cek hardcoded dummy credentials terlebih dahulu
       print('Checking credentials: ${event.email}'); // Debug log
       print('Checking password: ${event.password}'); // Debug log
-      
+
       // Admin dummy login
       if (event.email.trim().toLowerCase() == 'admin@gmail.com' &&
           event.password == '123') {
@@ -56,7 +56,7 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
           'role': 'admin',
         };
         userType = 'admin';
-      } 
+      }
       // Guru dummy login
       else if (event.email.trim().toLowerCase() == 'guru@gmail.com' &&
           event.password == '123') {
@@ -84,8 +84,7 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
           'sekolah': 'SMA Negeri 1',
         };
         userType = 'siswa';
-      } 
-      else {
+      } else {
         // Cek user dari kedua collection: guru dan siswa
         // Cek di collection 'guru' dulu
         final guruQuerySnapshot = await FirebaseFirestore.instance

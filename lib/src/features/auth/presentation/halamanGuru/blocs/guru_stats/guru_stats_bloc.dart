@@ -23,44 +23,62 @@ class GuruStatsBloc extends Bloc<GuruStatsEvent, GuruStatsState> {
     Emitter<GuruStatsState> emit,
   ) async {
     try {
-      // Cache check untuk prevent repeated loading
-      final now = DateTime.now();
-      if (_cachedGuruId == event.guruId &&
-          _lastLoadTime != null &&
-          now.difference(_lastLoadTime!) < _cacheTimeout) {
-        print('📊 Using cached stats for guru ID: ${event.guruId}');
-        return; // Use existing loaded state
-      }
+      print('📊 [GuruStatsBloc] Loading stats for guru ID: ${event.guruId}');
 
       emit(const GuruStatsLoading());
-      _cachedGuruId = event.guruId;
-      _lastLoadTime = now;
+      print('📊 [GuruStatsBloc] Emitted GuruStatsLoading state');
 
-      print('📊 Loading stats for guru ID: ${event.guruId}');
-
-      // Simplified loading - hanya data essential untuk performance
-      print('🏫 Loading minimal stats for performance');
-
-      // Load basic kelas count only
+      // Load kelas where this guru is wali kelas (homeroom teacher)
       final kelasWaliSnapshot = await _firestore
           .collection('kelas')
           .where('guru_id', isEqualTo: event.guruId)
-          .limit(5) // Limit untuk performance
           .get();
 
-      final kelasWali = kelasWaliSnapshot.docs.map((doc) {
-        final data = doc.data();
-        return {
-          'id': doc.id,
-          'namaKelas': data['namaKelas'] ?? data['nama_kelas'] ?? '',
-          'jumlahSiswa': 25, // Default value untuk performance
-          'tingkat': data['tingkat'] ?? '',
-          'jurusan': data['jurusan'] ?? '',
-          'tahun_ajaran': data['tahun_ajaran'] ?? '2024/2025',
-        };
-      }).toList();
+      print(
+        '🏫 [GuruStatsBloc] Found ${kelasWaliSnapshot.docs.length} classes as wali kelas',
+      );
 
-      // Simple stats untuk performance
+      // Process each class to get real student count
+      final kelasWali = <Map<String, dynamic>>[];
+      int totalStudents = 0;
+
+      for (final kelasDoc in kelasWaliSnapshot.docs) {
+        final kelasData = kelasDoc.data();
+        final kelasId = kelasDoc.id;
+
+        // Count students in kelas_ngajar for this class
+        final kelasNgajarSnapshot = await _firestore
+            .collection('kelas_ngajar')
+            .where('id_kelas', isEqualTo: kelasId)
+            .get();
+
+        // Get unique siswa_id from kelas_ngajar
+        final siswaIds = <String>{};
+        for (final doc in kelasNgajarSnapshot.docs) {
+          final siswaId = doc.data()['siswa_id'];
+          if (siswaId != null) {
+            siswaIds.add(siswaId.toString());
+          }
+        }
+
+        final jumlahSiswa = siswaIds.length;
+        totalStudents += jumlahSiswa;
+
+        kelasWali.add({
+          'id': kelasId,
+          'namaKelas':
+              kelasData['namaKelas'] ??
+              '${kelasData['jenjang_kelas']} ${kelasData['nomor_kelas']}',
+          'jumlahSiswa': jumlahSiswa,
+          'jenjang_kelas': kelasData['jenjang_kelas'] ?? '',
+          'nomor_kelas': kelasData['nomor_kelas'] ?? '',
+          'tahun_ajaran': kelasData['tahun_ajaran'] ?? '2024/2025',
+        });
+
+        print('📚 Kelas ${kelasData['namaKelas']}: $jumlahSiswa siswa');
+      }
+
+      // Stats summary
       final teachingStats = {
         'kelasWali': kelasWali.length,
         'jadwalMengajar': kelasWali.length * 3, // Estimate
@@ -69,11 +87,10 @@ class GuruStatsBloc extends Bloc<GuruStatsEvent, GuruStatsState> {
         'tugas': 5, // Default untuk performance
       };
 
-      final totalStudents = kelasWali.length * 25; // Estimate untuk performance
-
       print(
-        '✅ Stats loaded quickly - Total Students: $totalStudents, Total Classes: ${kelasWali.length}',
+        '✅ [GuruStatsBloc] Stats loaded - Total Students: $totalStudents, Total Classes: ${kelasWali.length}',
       );
+      print('📦 [GuruStatsBloc] kelasWali data: $kelasWali');
 
       emit(
         GuruStatsLoaded(
@@ -85,6 +102,9 @@ class GuruStatsBloc extends Bloc<GuruStatsEvent, GuruStatsState> {
           tugasPerluDinilai: teachingStats['tugas'] as int,
         ),
       );
+
+      print('🎉 [GuruStatsBloc] GuruStatsLoaded state emitted successfully!');
+      print('📊 [GuruStatsBloc] Current state type: ${state.runtimeType}');
     } catch (e) {
       print('❌ Error loading guru stats: $e');
       emit(GuruStatsError('Error loading stats: ${e.toString()}'));
