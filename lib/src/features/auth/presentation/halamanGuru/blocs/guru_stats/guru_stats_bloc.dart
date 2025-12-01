@@ -38,57 +38,142 @@ class GuruStatsBloc extends Bloc<GuruStatsEvent, GuruStatsState> {
         '🏫 [GuruStatsBloc] Found ${kelasWaliSnapshot.docs.length} classes as wali kelas',
       );
 
-      // Process each class to get real student count
+      // Get all kelas IDs for this wali kelas
+      final kelasIds = <String>{};
+      for (final doc in kelasWaliSnapshot.docs) {
+        kelasIds.add(doc.id);
+      }
+
+      print('🏫 [GuruStatsBloc] Kelas IDs as wali kelas: $kelasIds');
+
+      // Get all students from siswa_kelas for these classes
+      final allSiswaIds = <String>{};
+      for (final kelasId in kelasIds) {
+        final siswaKelasSnapshot = await _firestore
+            .collection('siswa_kelas')
+            .where('kelas_id', isEqualTo: kelasId)
+            .get();
+
+        for (final doc in siswaKelasSnapshot.docs) {
+          final siswaId = doc.data()['siswa_id'];
+          if (siswaId != null) {
+            allSiswaIds.add(siswaId.toString());
+          }
+        }
+      }
+
+      final totalStudents = allSiswaIds.length;
+      print(
+        '👥 [GuruStatsBloc] Total unique students from siswa_kelas: $totalStudents',
+      );
+
+      // Process each wali kelas to get student count per class for the badge
       final kelasWali = <Map<String, dynamic>>[];
-      int totalStudents = 0;
 
       for (final kelasDoc in kelasWaliSnapshot.docs) {
         final kelasData = kelasDoc.data();
         final kelasId = kelasDoc.id;
 
-        // Count students in kelas_ngajar for this class
-        final kelasNgajarSnapshot = await _firestore
-            .collection('kelas_ngajar')
-            .where('id_kelas', isEqualTo: kelasId)
+        // Count students in siswa_kelas for this specific class
+        final siswaKelasForThisClass = await _firestore
+            .collection('siswa_kelas')
+            .where('kelas_id', isEqualTo: kelasId)
             .get();
 
-        // Get unique siswa_id from kelas_ngajar
-        final siswaIds = <String>{};
-        for (final doc in kelasNgajarSnapshot.docs) {
-          final siswaId = doc.data()['siswa_id'];
-          if (siswaId != null) {
-            siswaIds.add(siswaId.toString());
-          }
-        }
-
-        final jumlahSiswa = siswaIds.length;
-        totalStudents += jumlahSiswa;
+        final jumlahSiswaKelas = siswaKelasForThisClass.docs.length;
 
         kelasWali.add({
           'id': kelasId,
           'namaKelas':
               kelasData['namaKelas'] ??
               '${kelasData['jenjang_kelas']} ${kelasData['nomor_kelas']}',
-          'jumlahSiswa': jumlahSiswa,
+          'jumlahSiswa': jumlahSiswaKelas,
           'jenjang_kelas': kelasData['jenjang_kelas'] ?? '',
           'nomor_kelas': kelasData['nomor_kelas'] ?? '',
           'tahun_ajaran': kelasData['tahun_ajaran'] ?? '2024/2025',
         });
 
-        print('📚 Kelas ${kelasData['namaKelas']}: $jumlahSiswa siswa');
+        print('📚 Kelas ${kelasData['namaKelas']}: $jumlahSiswaKelas siswa');
+      }
+
+      // Get kelas_ngajar details for this guru
+      final kelasNgajarSnapshot = await _firestore
+          .collection('kelas_ngajar')
+          .where('id_guru', isEqualTo: event.guruId)
+          .get();
+
+      final kelasNgajarDetail = <Map<String, dynamic>>[];
+      final kelasNgajarIds = <String>{};
+
+      for (final doc in kelasNgajarSnapshot.docs) {
+        final data = doc.data();
+        final kelasId = data['id_kelas']?.toString() ?? '';
+        kelasNgajarIds.add(kelasId);
+
+        // Get kelas info
+        final kelasDoc = await _firestore
+            .collection('kelas')
+            .doc(kelasId)
+            .get();
+        final kelasData = kelasDoc.exists ? kelasDoc.data() : null;
+
+        // Get mapel info
+        final mapelId = data['id_mapel']?.toString() ?? '';
+        final mapelDoc = await _firestore
+            .collection('mapel')
+            .doc(mapelId)
+            .get();
+        final mapelData = mapelDoc.exists ? mapelDoc.data() : null;
+
+        kelasNgajarDetail.add({
+          'id': doc.id,
+          'kelasId': kelasId,
+          'namaKelas': kelasData?['namaKelas'] ?? 'Kelas Tidak Ditemukan',
+          'mapelId': mapelId,
+          'namaMapel': mapelData?['namaMapel'] ?? 'Mapel Tidak Ditemukan',
+          'hari': data['hari'] ?? '',
+          'jam': data['jam'] ?? '',
+        });
+      }
+
+      // Get siswa details per kelas
+      final siswaPerKelas = <String, List<Map<String, dynamic>>>{};
+      for (final kelasId in kelasIds) {
+        final siswaKelasSnapshot = await _firestore
+            .collection('siswa_kelas')
+            .where('kelas_id', isEqualTo: kelasId)
+            .get();
+
+        final siswaList = <Map<String, dynamic>>[];
+        for (final doc in siswaKelasSnapshot.docs) {
+          final siswaId = doc.data()['siswa_id']?.toString() ?? '';
+          final siswaDoc = await _firestore
+              .collection('siswa')
+              .doc(siswaId)
+              .get();
+          if (siswaDoc.exists) {
+            final siswaData = siswaDoc.data()!;
+            siswaList.add({
+              'id': siswaId,
+              'nama': siswaData['nama'] ?? 'Siswa',
+              'nis': siswaData['nis'] ?? siswaData['nisn'] ?? '-',
+            });
+          }
+        }
+        siswaPerKelas[kelasId] = siswaList;
       }
 
       // Stats summary
       final teachingStats = {
         'kelasWali': kelasWali.length,
-        'jadwalMengajar': kelasWali.length * 3, // Estimate
-        'totalKelas': kelasWali.length,
+        'jadwalMengajar': kelasNgajarSnapshot.docs.length,
+        'totalKelas': kelasNgajarIds.length,
         'materi': 8,
         'tugas': 5, // Default untuk performance
       };
 
       print(
-        '✅ [GuruStatsBloc] Stats loaded - Total Students: $totalStudents, Total Classes: ${kelasWali.length}',
+        '✅ [GuruStatsBloc] Stats loaded - Total Students: $totalStudents, Total Classes: ${kelasNgajarIds.length}',
       );
       print('📦 [GuruStatsBloc] kelasWali data: $kelasWali');
 
@@ -98,8 +183,10 @@ class GuruStatsBloc extends Bloc<GuruStatsEvent, GuruStatsState> {
           jadwalMengajar: [], // Empty untuk performance
           teachingStats: teachingStats,
           totalStudents: totalStudents,
-          totalClasses: kelasWali.length,
+          totalClasses: kelasNgajarIds.length,
           tugasPerluDinilai: teachingStats['tugas'] as int,
+          kelasNgajarDetail: kelasNgajarDetail,
+          siswaPerKelas: siswaPerKelas,
         ),
       );
 

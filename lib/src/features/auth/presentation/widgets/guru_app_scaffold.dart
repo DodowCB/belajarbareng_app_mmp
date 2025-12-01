@@ -3,10 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/config/theme.dart';
 import '../../../../core/providers/theme_provider.dart';
 import '../halamanGuru/halaman_guru_screen.dart';
-import '../halamanGuru/kelas_guru_screen.dart';
-import '../halamanGuru/nilai_siswa_screen.dart';
-import '../halamanGuru/tugas_guru_screen.dart';
-import '../halamanGuru/materi_guru_screen.dart';
+import '../halamanGuru/component/kelas_guru_screen.dart';
+import '../halamanGuru/component/nilai_siswa_screen.dart';
+import '../halamanGuru/component/tugas_guru_screen.dart';
+import '../halamanGuru/component/materi_guru_screen.dart';
 import '../profile/profile_screen.dart';
 import '../settings/settings_screen.dart';
 import '../notifications/notifications_screen.dart';
@@ -48,7 +48,9 @@ class _GuruAppScaffoldState extends ConsumerState<GuruAppScaffold> {
 
     if (isDesktop) {
       return Scaffold(
-        backgroundColor: isDark ? AppTheme.backgroundDark : AppTheme.backgroundLight,
+        backgroundColor: isDark
+            ? AppTheme.backgroundDark
+            : AppTheme.backgroundLight,
         body: Row(
           children: [
             _buildSidebar(isDark),
@@ -67,7 +69,9 @@ class _GuruAppScaffoldState extends ConsumerState<GuruAppScaffold> {
     }
 
     return Scaffold(
-      backgroundColor: isDark ? AppTheme.backgroundDark : AppTheme.backgroundLight,
+      backgroundColor: isDark
+          ? AppTheme.backgroundDark
+          : AppTheme.backgroundLight,
       appBar: _buildAppBar(context, isDark),
       drawer: _buildDrawer(context, isDark),
       body: widget.body,
@@ -92,8 +96,7 @@ class _GuruAppScaffoldState extends ConsumerState<GuruAppScaffold> {
         children: [
           _buildSidebarLogo(isDark),
           // Profile Menu Section (Expandable)
-          if (!_isSidebarCollapsed)
-            _buildExpandableProfileMenu(),
+          if (!_isSidebarCollapsed) _buildExpandableProfileMenu(),
           if (_isSidebarCollapsed)
             _buildSidebarItem(
               icon: Icons.account_circle,
@@ -215,11 +218,7 @@ class _GuruAppScaffoldState extends ConsumerState<GuruAppScaffold> {
                   color: AppTheme.primaryPurple,
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Icon(
-                  Icons.school,
-                  color: Colors.white,
-                  size: 24,
-                ),
+                child: const Icon(Icons.school, color: Colors.white, size: 24),
               )
             : Row(
                 children: [
@@ -243,15 +242,17 @@ class _GuruAppScaffoldState extends ConsumerState<GuruAppScaffold> {
                       children: [
                         Text(
                           'EduManage',
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(fontWeight: FontWeight.bold),
                         ),
                         Text(
                           'Platform Guru',
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: isDark ? Colors.grey[400] : Colors.grey[600],
-                          ),
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(
+                                color: isDark
+                                    ? Colors.grey[400]
+                                    : Colors.grey[600],
+                              ),
                         ),
                       ],
                     ),
@@ -313,7 +314,7 @@ class _GuruAppScaffoldState extends ConsumerState<GuruAppScaffold> {
 
   Widget _buildExpandableProfileMenu() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return Column(
       children: [
         // Profile Header - Clickable to expand/collapse
@@ -327,7 +328,7 @@ class _GuruAppScaffoldState extends ConsumerState<GuruAppScaffold> {
             margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: _isProfileMenuExpanded 
+              color: _isProfileMenuExpanded
                   ? AppTheme.primaryPurple.withOpacity(0.1)
                   : (isDark ? Colors.grey[850] : Colors.grey[100]),
               borderRadius: BorderRadius.circular(12),
@@ -379,8 +380,8 @@ class _GuruAppScaffoldState extends ConsumerState<GuruAppScaffold> {
                   ),
                 ),
                 Icon(
-                  _isProfileMenuExpanded 
-                      ? Icons.keyboard_arrow_up 
+                  _isProfileMenuExpanded
+                      ? Icons.keyboard_arrow_up
                       : Icons.keyboard_arrow_down,
                   color: isDark ? Colors.grey[400] : Colors.grey[600],
                 ),
@@ -397,9 +398,7 @@ class _GuruAppScaffoldState extends ConsumerState<GuruAppScaffold> {
             onTap: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(
-                  builder: (context) => const ProfileScreen(),
-                ),
+                MaterialPageRoute(builder: (context) => const ProfileScreen()),
               );
             },
           ),
@@ -410,9 +409,7 @@ class _GuruAppScaffoldState extends ConsumerState<GuruAppScaffold> {
             onTap: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(
-                  builder: (context) => const SettingsScreen(),
-                ),
+                MaterialPageRoute(builder: (context) => const SettingsScreen()),
               );
             },
           ),
@@ -485,9 +482,9 @@ class _GuruAppScaffoldState extends ConsumerState<GuruAppScaffold> {
           Expanded(
             child: Text(
               widget.title,
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
               overflow: TextOverflow.ellipsis,
             ),
           ),
@@ -518,9 +515,7 @@ class _GuruAppScaffoldState extends ConsumerState<GuruAppScaffold> {
       child: Column(
         children: [
           DrawerHeader(
-            decoration: BoxDecoration(
-              color: AppTheme.primaryPurple,
-            ),
+            decoration: BoxDecoration(color: AppTheme.primaryPurple),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.end,
@@ -549,10 +544,7 @@ class _GuruAppScaffoldState extends ConsumerState<GuruAppScaffold> {
                 ),
                 const Text(
                   'Platform Guru',
-                  style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: 14,
-                  ),
+                  style: TextStyle(color: Colors.white70, fontSize: 14),
                 ),
               ],
             ),
@@ -767,10 +759,7 @@ class _GuruAppScaffoldState extends ConsumerState<GuruAppScaffold> {
               children: [
                 const Text(
                   'Guru Matematika',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14,
-                  ),
+                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -813,7 +802,11 @@ class _GuruAppScaffoldState extends ConsumerState<GuruAppScaffold> {
       child: ListTile(
         leading: Icon(
           icon,
-          color: iconColor ?? (isActive ? AppTheme.primaryPurple : (isDark ? Colors.grey[400] : Colors.grey[600])),
+          color:
+              iconColor ??
+              (isActive
+                  ? AppTheme.primaryPurple
+                  : (isDark ? Colors.grey[400] : Colors.grey[600])),
           size: 22,
         ),
         title: Text(
@@ -824,9 +817,11 @@ class _GuruAppScaffoldState extends ConsumerState<GuruAppScaffold> {
           ),
         ),
         trailing: trailing,
-        onTap: onTap ?? () {
-          Navigator.pop(context); // Close drawer
-        },
+        onTap:
+            onTap ??
+            () {
+              Navigator.pop(context); // Close drawer
+            },
       ),
     );
   }

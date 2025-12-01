@@ -35,7 +35,7 @@ class GuruProfileBloc extends Bloc<GuruProfileEvent, GuruProfileState> {
 
       if (userId == null || userEmail == null) {
         print('❌ [GuruProfileBloc] No user data in userProvider');
-        
+
         // Try Firebase Auth as fallback
         final currentUser = _auth.currentUser;
         if (currentUser == null) {
@@ -45,7 +45,7 @@ class GuruProfileBloc extends Bloc<GuruProfileEvent, GuruProfileState> {
           );
           return;
         }
-        
+
         print('⚠️ [GuruProfileBloc] Using Firebase Auth fallback');
         // Use Firebase Auth data
         final fallbackData = {
@@ -53,7 +53,9 @@ class GuruProfileBloc extends Bloc<GuruProfileEvent, GuruProfileState> {
           'email': currentUser.email ?? 'email@example.com',
           'photo_url': currentUser.photoURL ?? '',
         };
-        emit(GuruProfileLoaded(guruData: fallbackData, guruId: currentUser.uid));
+        emit(
+          GuruProfileLoaded(guruData: fallbackData, guruId: currentUser.uid),
+        );
         return;
       }
 
@@ -66,31 +68,39 @@ class GuruProfileBloc extends Bloc<GuruProfileEvent, GuruProfileState> {
       if (guruDoc.exists) {
         final guruData = guruDoc.data()!;
         print('✅ [GuruProfileBloc] Guru document found in Firestore');
-        print('📋 [GuruProfileBloc] All guru data keys: ${guruData.keys.toList()}');
-        
+        print(
+          '📋 [GuruProfileBloc] All guru data keys: ${guruData.keys.toList()}',
+        );
+
         // Enrich with data from userProvider if missing
         final enrichedGuruData = Map<String, dynamic>.from(guruData);
-        
-        if (enrichedGuruData['nama_lengkap'] == null || enrichedGuruData['nama_lengkap'].toString().isEmpty) {
+
+        if (enrichedGuruData['nama_lengkap'] == null ||
+            enrichedGuruData['nama_lengkap'].toString().isEmpty) {
           enrichedGuruData['nama_lengkap'] = userName ?? 'Guru';
           print('✅ [GuruProfileBloc] Added nama_lengkap from userProvider');
         }
-        
-        if (enrichedGuruData['email'] == null || enrichedGuruData['email'].toString().isEmpty) {
+
+        if (enrichedGuruData['email'] == null ||
+            enrichedGuruData['email'].toString().isEmpty) {
           enrichedGuruData['email'] = userEmail;
           print('✅ [GuruProfileBloc] Added email from userProvider');
         }
 
         print('🎉 [GuruProfileBloc] Emitting GuruProfileLoaded state');
-        print('📦 [GuruProfileBloc] Final data - nama_lengkap: ${enrichedGuruData['nama_lengkap']}, email: ${enrichedGuruData['email']}');
-        
+        print(
+          '📦 [GuruProfileBloc] Final data - nama_lengkap: ${enrichedGuruData['nama_lengkap']}, email: ${enrichedGuruData['email']}',
+        );
+
         emit(GuruProfileLoaded(guruData: enrichedGuruData, guruId: userId));
         print('✅ [GuruProfileBloc] State emitted successfully');
         return;
       }
 
       // If no Firestore document, create minimal data from userProvider
-      print('⚠️ [GuruProfileBloc] No Firestore document, using userProvider data');
+      print(
+        '⚠️ [GuruProfileBloc] No Firestore document, using userProvider data',
+      );
       final minimalData = {
         'nama_lengkap': userName ?? 'Guru',
         'email': userEmail,
@@ -102,7 +112,6 @@ class GuruProfileBloc extends Bloc<GuruProfileEvent, GuruProfileState> {
       print('📦 [GuruProfileBloc] Using minimal data: $minimalData');
       emit(GuruProfileLoaded(guruData: minimalData, guruId: userId));
       print('✅ [GuruProfileBloc] State emitted successfully');
-      
     } catch (e) {
       print('❌ [GuruProfileBloc] Error loading guru profile: $e');
       print('📍 [GuruProfileBloc] Stack trace: ${StackTrace.current}');

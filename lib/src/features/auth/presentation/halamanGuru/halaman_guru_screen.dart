@@ -1,43 +1,49 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import '../../../../core/config/theme.dart';
-import '../../../../core/providers/theme_provider.dart';
 import '../../../../core/providers/user_provider.dart';
 import '../../data/models/pengumuman_model.dart';
 import 'blocs/blocs.dart';
-import 'kelas_guru_screen.dart';
-import 'nilai_siswa_screen.dart';
-import 'tugas_guru_screen.dart';
-import 'materi_guru_screen.dart';
-import '../profile/profile_screen.dart';
-import '../settings/settings_screen.dart';
-import '../notifications/notifications_screen.dart';
-import '../help/help_support_screen.dart';
+import 'component/nilai_siswa_screen.dart';
+import 'component/tugas_guru_screen.dart';
+import 'component/materi_guru_screen.dart';
+
+// Import extension files
+import 'component/guru_sidebar_widgets.dart';
 
 class HalamanGuruScreen extends ConsumerStatefulWidget {
   const HalamanGuruScreen({super.key});
 
   @override
-  ConsumerState<HalamanGuruScreen> createState() => _HalamanGuruScreenState();
+  ConsumerState<HalamanGuruScreen> createState() => HalamanGuruScreenState();
 }
 
-class _HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
+class HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
   bool _statsLoaded = false;
   bool _isSidebarCollapsed = false;
   bool _isProfileMenuExpanded = false;
 
+  // Getters untuk diakses dari extension
+  bool get isSidebarCollapsed => _isSidebarCollapsed;
+  set isSidebarCollapsed(bool value) => _isSidebarCollapsed = value;
+
+  bool get isProfileMenuExpanded => _isProfileMenuExpanded;
+  set isProfileMenuExpanded(bool value) => _isProfileMenuExpanded = value;
+
+  // Public wrapper untuk setState agar bisa diakses dari extension
+  void updateState(VoidCallback fn) => setState(fn);
+
   @override
   Widget build(BuildContext context) {
-    print('🏗️ Building HalamanGuruScreen...');
-
     return MultiBlocProvider(
       providers: [
         BlocProvider<GuruProfileBloc>(
           create: (context) {
-            print('🔨 Creating GuruProfileBloc...');
             final bloc = GuruProfileBloc();
-            print('📤 Dispatching LoadGuruProfile event...');
             bloc.add(const LoadGuruProfile());
             return bloc;
           },
@@ -87,7 +93,7 @@ class _HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
                     ),
                     title: const Text('Dashboard Guru'),
                   ),
-                  drawer: _buildDrawer(context),
+                  drawer: buildDrawer(context),
                   body: _buildMainContent(
                     context,
                     isDesktop: false,
@@ -99,7 +105,7 @@ class _HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
               // Desktop: Use sidebar
               return Row(
                 children: [
-                  _buildSidebar(context),
+                  buildSidebar(context),
                   Expanded(
                     child: _buildMainContent(
                       context,
@@ -111,468 +117,6 @@ class _HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
               );
             },
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSidebar(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
-      width: _isSidebarCollapsed ? 70 : 250,
-      decoration: BoxDecoration(
-        color: isDark ? AppTheme.backgroundDark : Colors.white,
-        border: Border(
-          right: BorderSide(
-            color: isDark ? Colors.grey[800]! : Colors.grey[200]!,
-            width: 1,
-          ),
-        ),
-      ),
-      child: Column(
-        children: [
-          // Header with logo and title - Clickable to toggle collapse
-          InkWell(
-            onTap: () {
-              setState(() {
-                _isSidebarCollapsed = !_isSidebarCollapsed;
-                if (_isSidebarCollapsed) {
-                  _isProfileMenuExpanded = false;
-                }
-              });
-            },
-            child: Container(
-              padding: const EdgeInsets.all(20),
-              child: _isSidebarCollapsed
-                  ? Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: AppTheme.primaryPurple,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Icon(
-                        Icons.school,
-                        color: Colors.white,
-                        size: 24,
-                      ),
-                    )
-                  : Row(
-                      children: [
-                        Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            color: AppTheme.primaryPurple,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: const Icon(
-                            Icons.school,
-                            color: Colors.white,
-                            size: 24,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'EduManage',
-                                style: Theme.of(context).textTheme.titleMedium
-                                    ?.copyWith(fontWeight: FontWeight.bold),
-                              ),
-                              Text(
-                                'Platform Guru',
-                                style: Theme.of(context).textTheme.bodySmall
-                                    ?.copyWith(
-                                      color: isDark
-                                          ? Colors.grey[400]
-                                          : Colors.grey[600],
-                                    ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-            ),
-          ),
-          // Profile Menu Section (Expandable) - Moved to top
-          if (!_isSidebarCollapsed) _buildExpandableProfileMenu(context),
-          if (_isSidebarCollapsed)
-            _buildSidebarItem(
-              icon: Icons.account_circle,
-              title: 'Profile',
-              onTap: () {
-                setState(() {
-                  _isSidebarCollapsed = false;
-                  _isProfileMenuExpanded = true;
-                });
-              },
-            ),
-          if (!_isSidebarCollapsed) const Divider(height: 1),
-          if (_isSidebarCollapsed) const Divider(height: 1),
-          // Navigation Menu
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              children: [
-                _buildSidebarItem(
-                  icon: Icons.dashboard,
-                  title: 'Dashboard',
-                  isActive: true,
-                  onTap: () {},
-                ),
-                _buildSidebarItem(
-                  icon: Icons.class_,
-                  title: 'Kelas',
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const KelasGuruScreen(),
-                      ),
-                    );
-                  },
-                ),
-                _buildSidebarItem(
-                  icon: Icons.star,
-                  title: 'Nilai Siswa',
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const NilaiSiswaScreen(),
-                      ),
-                    );
-                  },
-                ),
-                _buildSidebarItem(
-                  icon: Icons.assignment,
-                  title: 'Tugas',
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const TugasGuruScreen(),
-                      ),
-                    );
-                  },
-                ),
-                _buildSidebarItem(
-                  icon: Icons.book,
-                  title: 'Materi Pembelajaran',
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const MateriGuruScreen(),
-                      ),
-                    );
-                  },
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDrawer(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return Drawer(
-      child: Column(
-        children: [
-          DrawerHeader(
-            decoration: BoxDecoration(color: AppTheme.primaryPurple),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                Container(
-                  width: 50,
-                  height: 50,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(
-                    Icons.school,
-                    color: AppTheme.primaryPurple,
-                    size: 32,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                const Text(
-                  'EduManage',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const Text(
-                  'Platform Guru',
-                  style: TextStyle(color: Colors.white70, fontSize: 14),
-                ),
-              ],
-            ),
-          ),
-          Expanded(
-            child: ListView(
-              padding: EdgeInsets.zero,
-              children: [
-                // Profile Section at Top
-                _buildDrawerProfileSection(context),
-                const Divider(),
-                _buildDrawerItem(
-                  icon: Icons.person,
-                  title: 'Profile',
-                  onTap: () {
-                    Navigator.pop(context);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const ProfileScreen(),
-                      ),
-                    );
-                  },
-                ),
-                _buildDrawerItem(
-                  icon: Icons.settings,
-                  title: 'Settings',
-                  onTap: () {
-                    Navigator.pop(context);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const SettingsScreen(),
-                      ),
-                    );
-                  },
-                ),
-                _buildDrawerItem(
-                  icon: Icons.light_mode,
-                  title: 'Light Mode',
-                  trailing: Switch(
-                    value: Theme.of(context).brightness == Brightness.light,
-                    onChanged: (value) {
-                      ref.read(themeModeProvider.notifier).toggleTheme();
-                    },
-                    activeColor: AppTheme.primaryPurple,
-                  ),
-                ),
-                _buildDrawerItem(
-                  icon: Icons.notifications,
-                  title: 'Notifications',
-                  onTap: () {
-                    Navigator.pop(context);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const NotificationsScreen(),
-                      ),
-                    );
-                  },
-                ),
-                _buildDrawerItem(
-                  icon: Icons.help,
-                  title: 'Help & Support',
-                  onTap: () {
-                    Navigator.pop(context);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const HelpSupportScreen(),
-                      ),
-                    );
-                  },
-                ),
-                const Divider(),
-                // Navigation Menu
-                _buildDrawerItem(
-                  icon: Icons.dashboard,
-                  title: 'Dashboard',
-                  isActive: true,
-                  onTap: () {
-                    Navigator.pop(context);
-                  },
-                ),
-                _buildDrawerItem(
-                  icon: Icons.class_,
-                  title: 'Kelas',
-                  onTap: () {
-                    Navigator.pop(context);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const KelasGuruScreen(),
-                      ),
-                    );
-                  },
-                ),
-                _buildDrawerItem(
-                  icon: Icons.star,
-                  title: 'Nilai Siswa',
-                  onTap: () {
-                    Navigator.pop(context);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const NilaiSiswaScreen(),
-                      ),
-                    );
-                  },
-                ),
-                _buildDrawerItem(
-                  icon: Icons.assignment,
-                  title: 'Tugas',
-                  onTap: () {
-                    Navigator.pop(context);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const TugasGuruScreen(),
-                      ),
-                    );
-                  },
-                ),
-                _buildDrawerItem(
-                  icon: Icons.book,
-                  title: 'Materi Pembelajaran',
-                  onTap: () {
-                    Navigator.pop(context);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const MateriGuruScreen(),
-                      ),
-                    );
-                  },
-                ),
-                const Divider(),
-                _buildDrawerItem(
-                  icon: Icons.logout,
-                  title: 'Logout',
-                  iconColor: Colors.red,
-                  textColor: Colors.red,
-                  onTap: () {
-                    Navigator.pushReplacementNamed(context, '/login');
-                  },
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDrawerItem({
-    required IconData icon,
-    required String title,
-    bool isActive = false,
-    Widget? trailing,
-    Color? iconColor,
-    Color? textColor,
-    VoidCallback? onTap,
-  }) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-      decoration: BoxDecoration(
-        color: isActive
-            ? AppTheme.primaryPurple.withOpacity(0.1)
-            : Colors.transparent,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: ListTile(
-        leading: Icon(
-          icon,
-          color:
-              iconColor ??
-              (isActive
-                  ? AppTheme.primaryPurple
-                  : (isDark ? Colors.grey[400] : Colors.grey[600])),
-          size: 22,
-        ),
-        title: Text(
-          title,
-          style: TextStyle(
-            color: textColor ?? (isActive ? AppTheme.primaryPurple : null),
-            fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
-          ),
-        ),
-        trailing: trailing,
-        onTap:
-            onTap ??
-            () {
-              Navigator.pop(context); // Close drawer
-              // Handle navigation
-            },
-      ),
-    );
-  }
-
-  Widget _buildSidebarItem({
-    required IconData icon,
-    required String title,
-    bool isActive = false,
-    Widget? trailing,
-    Color? iconColor,
-    Color? textColor,
-    VoidCallback? onTap,
-  }) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return Tooltip(
-      message: _isSidebarCollapsed ? title : '',
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-        decoration: BoxDecoration(
-          color: isActive
-              ? AppTheme.primaryPurple.withOpacity(0.1)
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: ListTile(
-          leading: Icon(
-            icon,
-            color:
-                iconColor ??
-                (isActive
-                    ? AppTheme.primaryPurple
-                    : (isDark ? Colors.grey[400] : Colors.grey[600])),
-            size: 22,
-          ),
-          title: _isSidebarCollapsed
-              ? null
-              : Text(
-                  title,
-                  style: TextStyle(
-                    color:
-                        textColor ?? (isActive ? AppTheme.primaryPurple : null),
-                    fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
-                    fontSize: 14,
-                  ),
-                ),
-          trailing: _isSidebarCollapsed ? null : trailing,
-          dense: true,
-          contentPadding: EdgeInsets.symmetric(
-            horizontal: _isSidebarCollapsed ? 20 : 16,
-            vertical: 4,
-          ),
-          onTap:
-              onTap ??
-              () {
-                // Handle navigation
-              },
         ),
       ),
     );
@@ -641,230 +185,6 @@ class _HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
     );
   }
 
-  Widget _buildExpandableProfileMenu(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    // Ambil data langsung dari userProvider yang sudah di-set saat login
-    final userName = userProvider.namaLengkap ?? 'Guru';
-    final userEmail = userProvider.email ?? 'email@example.com';
-
-    print('👤 [ExpandableMenu] Using data from userProvider');
-    print('👤 [ExpandableMenu] userName: $userName');
-    print('📧 [ExpandableMenu] userEmail: $userEmail');
-
-    return Column(
-      children: [
-        // Profile Header - Clickable to expand/collapse
-        InkWell(
-          onTap: () {
-            setState(() {
-              _isProfileMenuExpanded = !_isProfileMenuExpanded;
-            });
-          },
-          child: Container(
-            margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: _isProfileMenuExpanded
-                  ? AppTheme.primaryPurple.withOpacity(0.1)
-                  : (isDark ? Colors.grey[850] : Colors.grey[100]),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: _isProfileMenuExpanded
-                    ? AppTheme.primaryPurple.withOpacity(0.3)
-                    : (isDark ? Colors.grey[800]! : Colors.grey[300]!),
-              ),
-            ),
-            child: Row(
-              children: [
-                CircleAvatar(
-                  backgroundColor: AppTheme.primaryPurple,
-                  radius: 20,
-                  child: Text(
-                    userName.isNotEmpty ? userName[0].toUpperCase() : 'G',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 18,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        userName,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 14,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      Text(
-                        userEmail,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: isDark ? Colors.grey[400] : Colors.grey[600],
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ),
-                ),
-                Icon(
-                  _isProfileMenuExpanded
-                      ? Icons.keyboard_arrow_up
-                      : Icons.keyboard_arrow_down,
-                  color: isDark ? Colors.grey[400] : Colors.grey[600],
-                ),
-              ],
-            ),
-          ),
-        ),
-        // Expanded Menu Items
-        if (_isProfileMenuExpanded) ...[
-          _buildSidebarItem(
-            icon: Icons.person,
-            title: 'Profile',
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const ProfileScreen()),
-              );
-            },
-          ),
-          _buildSidebarItem(
-            icon: Icons.settings,
-            title: 'Settings',
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const SettingsScreen()),
-              );
-            },
-          ),
-          _buildSidebarItem(
-            icon: Icons.light_mode,
-            title: 'Light Mode',
-            trailing: Switch(
-              value: !isDark,
-              onChanged: (value) {
-                ref.read(themeModeProvider.notifier).toggleTheme();
-              },
-              activeColor: AppTheme.primaryPurple,
-            ),
-          ),
-          _buildSidebarItem(
-            icon: Icons.notifications,
-            title: 'Notifications',
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const NotificationsScreen(),
-                ),
-              );
-            },
-          ),
-          _buildSidebarItem(
-            icon: Icons.help,
-            title: 'Help & Support',
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const HelpSupportScreen(),
-                ),
-              );
-            },
-          ),
-          const Divider(height: 1),
-          _buildSidebarItem(
-            icon: Icons.logout,
-            title: 'Logout',
-            iconColor: Colors.red,
-            textColor: Colors.red,
-            onTap: () {
-              Navigator.pushReplacementNamed(context, '/login');
-            },
-          ),
-        ],
-      ],
-    );
-  }
-
-  Widget _buildDrawerProfileSection(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    // Ambil data langsung dari userProvider
-    final userName = userProvider.namaLengkap ?? 'Guru';
-    final userEmail = userProvider.email ?? 'email@example.com';
-
-    print('👤 [DrawerProfile] userName from userProvider: $userName');
-    print('📧 [DrawerProfile] userEmail from userProvider: $userEmail');
-
-    return Container(
-      margin: const EdgeInsets.all(12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: isDark ? Colors.grey[850] : Colors.grey[100],
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isDark ? Colors.grey[800]! : Colors.grey[300]!,
-        ),
-      ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            backgroundColor: AppTheme.primaryPurple,
-            radius: 24,
-            child: Text(
-              userName.isNotEmpty ? userName[0].toUpperCase() : 'G',
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 20,
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  userName,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 15,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  userEmail,
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: isDark ? Colors.grey[400] : Colors.grey[600],
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildTopBar(BuildContext context) {
     return Row(
       children: [
@@ -885,8 +205,6 @@ class _HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
     // Ambil data langsung dari userProvider
     final guruName = userProvider.namaLengkap ?? 'Guru';
 
-    print('👤 [WelcomeSection] guruName from userProvider: $guruName');
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -903,31 +221,15 @@ class _HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
         // Tambahkan info wali kelas dari GuruStatsBloc
         BlocBuilder<GuruStatsBloc, GuruStatsState>(
           builder: (context, state) {
-            print(
-              '🔍 [WelcomeSection BlocBuilder] Current state: ${state.runtimeType}',
-            );
-
             if (state is GuruStatsLoading) {
-              print('⏳ [WelcomeSection BlocBuilder] State is GuruStatsLoading');
               return const SizedBox.shrink();
             }
 
             if (state is GuruStatsError) {
-              print(
-                '❌ [WelcomeSection BlocBuilder] State is GuruStatsError: ${state.message}',
-              );
               return const SizedBox.shrink();
             }
 
             if (state is GuruStatsLoaded) {
-              print('✅ [WelcomeSection BlocBuilder] State is GuruStatsLoaded!');
-              print(
-                '📋 [WelcomeSection BlocBuilder] kelasWali: ${state.kelasWali}',
-              );
-              print(
-                '📋 [WelcomeSection BlocBuilder] kelasWali.isNotEmpty: ${state.kelasWali.isNotEmpty}',
-              );
-
               if (state.kelasWali.isNotEmpty) {
                 final kelasWali = state.kelasWali.first;
                 final namaKelas = kelasWali['namaKelas'] ?? 'Kelas';
@@ -1355,96 +657,100 @@ class _HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      child: InkWell(
-        onTap: () {
-          // Navigate based on card type
-          if (title == 'Total Kelas') {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const KelasGuruScreen()),
-            );
-          } else if (title == 'Total Siswa') {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const NilaiSiswaScreen()),
-            );
-          } else if (title == 'Tugas Perlu Dinilai') {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const TugasGuruScreen()),
-            );
-          }
-        },
-        borderRadius: BorderRadius.circular(12),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: EdgeInsets.all(isDesktop ? 20 : 16),
-          decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: isDark ? Colors.grey[800]! : Colors.grey[200]!,
-              width: 1,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(isDark ? 0.3 : 0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    padding: EdgeInsets.all(isDesktop ? 12 : 10),
-                    decoration: BoxDecoration(
-                      color: color.withOpacity(isDark ? 0.2 : 0.1),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Icon(icon, color: color, size: isDesktop ? 24 : 22),
+    return BlocBuilder<GuruStatsBloc, GuruStatsState>(
+      builder: (context, state) {
+        return MouseRegion(
+          cursor: SystemMouseCursors.click,
+          child: InkWell(
+            onTap: () {
+              // Show detail dialog for Total Kelas and Total Siswa
+              if (title == 'Total Kelas' && state is GuruStatsLoaded) {
+                _showKelasDetailDialog(context, state);
+              } else if (title == 'Total Siswa' && state is GuruStatsLoaded) {
+                _showSiswaDetailDialog(context, state);
+              } else if (title == 'Tugas Perlu Dinilai') {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const TugasGuruScreen(),
                   ),
-                  const Spacer(),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: color.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Icon(Icons.trending_up, color: color, size: 16),
+                );
+              }
+            },
+            borderRadius: BorderRadius.circular(12),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding: EdgeInsets.all(isDesktop ? 20 : 16),
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: isDark ? Colors.grey[800]! : Colors.grey[200]!,
+                  width: 1,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(isDark ? 0.3 : 0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, 2),
                   ),
                 ],
               ),
-              SizedBox(height: isDesktop ? 20 : 16),
-              Text(
-                value,
-                style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  fontSize: isDesktop ? 32 : 28,
-                  color: color,
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: EdgeInsets.all(isDesktop ? 12 : 10),
+                        decoration: BoxDecoration(
+                          color: color.withOpacity(isDark ? 0.2 : 0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(
+                          icon,
+                          color: color,
+                          size: isDesktop ? 24 : 22,
+                        ),
+                      ),
+                      const Spacer(),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: color.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Icon(Icons.trending_up, color: color, size: 16),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: isDesktop ? 20 : 16),
+                  Text(
+                    value,
+                    style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      fontSize: isDesktop ? 32 : 28,
+                      color: color,
+                    ),
+                  ),
+                  SizedBox(height: isDesktop ? 4 : 2),
+                  Text(
+                    title,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: isDark ? Colors.grey[400] : Colors.grey[600],
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
               ),
-              SizedBox(height: isDesktop ? 4 : 2),
-              Text(
-                title,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: isDark ? Colors.grey[400] : Colors.grey[600],
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
@@ -2228,6 +1534,1139 @@ class _HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
     );
   }
 
+  void _showKelasDetailDialog(BuildContext context, GuruStatsLoaded state) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => Dialog(
+        backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 600, maxHeight: 700),
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppTheme.secondaryTeal.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(
+                      Icons.class_,
+                      color: AppTheme.secondaryTeal,
+                      size: 28,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Detail Total Kelas',
+                          style: Theme.of(dialogContext).textTheme.titleLarge
+                              ?.copyWith(fontWeight: FontWeight.bold),
+                        ),
+                        Text(
+                          '${state.totalClasses} Kelas yang Diajar',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: isDark ? Colors.grey[400] : Colors.grey[600],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.pop(dialogContext),
+                    icon: const Icon(Icons.close),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              if (state.kelasNgajarDetail.isEmpty)
+                Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(32),
+                    child: Text(
+                      'Belum ada kelas yang diajar',
+                      style: TextStyle(
+                        color: isDark ? Colors.grey[400] : Colors.grey[600],
+                      ),
+                    ),
+                  ),
+                )
+              else
+                Expanded(
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: state.kelasNgajarDetail.length,
+                    itemBuilder: (listContext, index) {
+                      final kelas = state.kelasNgajarDetail[index];
+                      return InkWell(
+                        onTap: () {
+                          Navigator.pop(dialogContext);
+                          Future.delayed(const Duration(milliseconds: 100), () {
+                            if (context.mounted) {
+                              _showSiswaKelasDialog(context, kelas);
+                            }
+                          });
+                        },
+                        borderRadius: BorderRadius.circular(12),
+                        child: Container(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: isDark ? Colors.grey[850] : Colors.grey[50],
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: isDark
+                                  ? Colors.grey[800]!
+                                  : Colors.grey[200]!,
+                            ),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 4,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: AppTheme.secondaryTeal.withOpacity(
+                                        0.2,
+                                      ),
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: Text(
+                                      kelas['namaKelas'] ?? 'Kelas',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.bold,
+                                        color: AppTheme.secondaryTeal,
+                                      ),
+                                    ),
+                                  ),
+                                  const Spacer(),
+                                  Icon(
+                                    Icons.arrow_forward_ios,
+                                    size: 16,
+                                    color: isDark
+                                        ? Colors.grey[400]
+                                        : Colors.grey[600],
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.book,
+                                    size: 18,
+                                    color: isDark
+                                        ? Colors.grey[400]
+                                        : Colors.grey[600],
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      kelas['namaMapel'] ?? 'Mata Pelajaran',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color: isDark
+                                            ? Colors.grey[300]
+                                            : Colors.grey[700],
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              if (kelas['hari'] != null &&
+                                  kelas['hari'].toString().isNotEmpty)
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 8),
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        Icons.schedule,
+                                        size: 18,
+                                        color: isDark
+                                            ? Colors.grey[400]
+                                            : Colors.grey[600],
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        '${kelas['hari']} - ${kelas['jam'] ?? ''}',
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          color: isDark
+                                              ? Colors.grey[400]
+                                              : Colors.grey[600],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Method untuk menampilkan siswa dari kelas tertentu (dari siswa_kelas)
+  void _showSiswaKelasDialog(BuildContext context, Map<String, dynamic> kelas) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => Dialog(
+        backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 800, maxHeight: 700),
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppTheme.secondaryTeal.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(
+                      Icons.people,
+                      color: AppTheme.secondaryTeal,
+                      size: 28,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Siswa ${kelas['namaKelas'] ?? 'Kelas'}',
+                          style: Theme.of(dialogContext).textTheme.titleLarge
+                              ?.copyWith(fontWeight: FontWeight.bold),
+                        ),
+                        Text(
+                          kelas['namaMapel'] ?? 'Mata Pelajaran',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: isDark ? Colors.grey[400] : Colors.grey[600],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.pop(dialogContext),
+                    icon: const Icon(Icons.close),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              FutureBuilder<List<Map<String, dynamic>>>(
+                future: _fetchSiswaKelas(kelas['kelasId']),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(32),
+                        child: CircularProgressIndicator(),
+                      ),
+                    );
+                  }
+
+                  if (snapshot.hasError) {
+                    return Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(32),
+                        child: Text(
+                          'Terjadi kesalahan: ${snapshot.error}',
+                          style: TextStyle(
+                            color: isDark ? Colors.grey[400] : Colors.grey[600],
+                          ),
+                        ),
+                      ),
+                    );
+                  }
+
+                  final siswaList = snapshot.data ?? [];
+
+                  if (siswaList.isEmpty) {
+                    return Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(32),
+                        child: Text(
+                          'Belum ada siswa di kelas ini',
+                          style: TextStyle(
+                            color: isDark ? Colors.grey[400] : Colors.grey[600],
+                          ),
+                        ),
+                      ),
+                    );
+                  }
+
+                  return Expanded(
+                    child: Column(
+                      children: [
+                        // Tombol Isi Absensi
+                        Container(
+                          width: double.infinity,
+                          margin: const EdgeInsets.only(bottom: 16),
+                          child: ElevatedButton.icon(
+                            onPressed: () {
+                              Navigator.pop(dialogContext);
+                              Future.delayed(
+                                const Duration(milliseconds: 100),
+                                () {
+                                  if (context.mounted) {
+                                    _showAbsensiMapelDialog(
+                                      context,
+                                      siswaList,
+                                      kelas,
+                                    );
+                                  }
+                                },
+                              );
+                            },
+                            icon: const Icon(Icons.fact_check),
+                            label: const Text('Isi Absensi Mapel'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppTheme.primaryPurple,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(
+                                vertical: 12,
+                                horizontal: 24,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                          ),
+                        ),
+                        // Tabel Siswa
+                        Expanded(
+                          child: SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: SingleChildScrollView(
+                              child: DataTable(
+                                headingRowColor: WidgetStateProperty.all(
+                                  AppTheme.primaryPurple.withOpacity(0.1),
+                                ),
+                                columns: const [
+                                  DataColumn(label: Text('No')),
+                                  DataColumn(label: Text('Nama')),
+                                  DataColumn(label: Text('NIS')),
+                                ],
+                                rows: List.generate(siswaList.length, (index) {
+                                  final siswa = siswaList[index];
+                                  return DataRow(
+                                    color:
+                                        WidgetStateProperty.resolveWith<Color?>(
+                                          (states) => index % 2 == 0
+                                              ? (isDark
+                                                    ? Colors.grey[850]
+                                                    : Colors.grey[50])
+                                              : (isDark
+                                                    ? Colors.grey[900]
+                                                    : Colors.white),
+                                        ),
+                                    cells: [
+                                      DataCell(Text('${index + 1}')),
+                                      DataCell(
+                                        Text(siswa['namaLengkap'] ?? '-'),
+                                      ),
+                                      DataCell(Text(siswa['nis'] ?? '-')),
+                                    ],
+                                  );
+                                }),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Fetch siswa dari collection siswa_kelas
+  Future<List<Map<String, dynamic>>> _fetchSiswaKelas(String? kelasId) async {
+    if (kelasId == null) return [];
+
+    try {
+      // Query siswa_kelas berdasarkan kelas_id
+      final siswaKelasSnapshot = await FirebaseFirestore.instance
+          .collection('siswa_kelas')
+          .where('kelas_id', isEqualTo: kelasId)
+          .get();
+
+      final List<Map<String, dynamic>> siswaList = [];
+
+      // Ambil detail siswa dari collection siswa
+      for (final doc in siswaKelasSnapshot.docs) {
+        final siswaId = doc['siswa_id'];
+        if (siswaId != null) {
+          final siswaDoc = await FirebaseFirestore.instance
+              .collection('siswa')
+              .doc(siswaId)
+              .get();
+
+          if (siswaDoc.exists) {
+            siswaList.add({
+              'siswaId': siswaDoc.id,
+              'namaLengkap': siswaDoc['nama'],
+              'nis': siswaDoc['nis'],
+            });
+          }
+        }
+      }
+
+      return siswaList;
+    } catch (e) {
+      debugPrint('Error fetching siswa kelas: $e');
+      rethrow;
+    }
+  }
+
+  // Method untuk isi absensi mapel
+  void _showAbsensiMapelDialog(
+    BuildContext context,
+    List<Map<String, dynamic>> siswaList,
+    Map<String, dynamic> kelas,
+  ) async {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final guruId = userProvider.userId ?? '';
+    final today = DateTime.now();
+
+    // Inisialisasi locale Indonesia
+    await initializeDateFormatting('id_ID', null);
+
+    final formattedDate = DateFormat(
+      'EEEE, dd MMMM yyyy',
+      'id_ID',
+    ).format(today);
+
+    // State untuk menyimpan status hadir (checked = hadir)
+    final absensiChecked = <String, bool>{};
+
+    // Initialize all students as unchecked
+    for (final siswa in siswaList) {
+      absensiChecked[siswa['siswaId'] as String] = false;
+    }
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setState) {
+          return Dialog(
+            backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Container(
+              constraints: const BoxConstraints(maxWidth: 900, maxHeight: 700),
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Header
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: AppTheme.secondaryTeal.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(
+                          Icons.fact_check,
+                          color: AppTheme.secondaryTeal,
+                          size: 28,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Absensi Mapel ${kelas['namaMapel'] ?? ''}',
+                              style: Theme.of(context).textTheme.titleLarge
+                                  ?.copyWith(fontWeight: FontWeight.bold),
+                            ),
+                            Text(
+                              '${kelas['namaKelas'] ?? ''} - $formattedDate',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: isDark
+                                    ? Colors.grey[400]
+                                    : Colors.grey[600],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () => Navigator.pop(context),
+                        icon: const Icon(Icons.close),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  const Divider(),
+                  const SizedBox(height: 16),
+                  // Tabel Absensi
+                  Expanded(
+                    child: SingleChildScrollView(
+                      child: DataTable(
+                        headingRowColor: WidgetStateProperty.all(
+                          AppTheme.secondaryTeal.withOpacity(0.1),
+                        ),
+                        columns: const [
+                          DataColumn(label: Text('No')),
+                          DataColumn(label: Text('Nama')),
+                          DataColumn(label: Text('NIS')),
+                          DataColumn(label: Text('Hadir')),
+                        ],
+                        rows: List.generate(siswaList.length, (index) {
+                          final siswa = siswaList[index];
+                          final siswaId = siswa['siswaId'] as String;
+                          return DataRow(
+                            color: WidgetStateProperty.resolveWith<Color?>(
+                              (states) => index % 2 == 0
+                                  ? (isDark
+                                        ? Colors.grey[850]
+                                        : Colors.grey[50])
+                                  : (isDark ? Colors.grey[900] : Colors.white),
+                            ),
+                            cells: [
+                              DataCell(Text('${index + 1}')),
+                              DataCell(Text(siswa['namaLengkap'] ?? '-')),
+                              DataCell(Text(siswa['nis'] ?? '-')),
+                              DataCell(
+                                Checkbox(
+                                  value: absensiChecked[siswaId] ?? false,
+                                  onChanged: (value) {
+                                    setState(() {
+                                      absensiChecked[siswaId] = value ?? false;
+                                    });
+                                  },
+                                  activeColor: AppTheme.secondaryTeal,
+                                ),
+                              ),
+                            ],
+                          );
+                        }),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  const Divider(),
+                  const SizedBox(height: 16),
+                  // Footer dengan tombol
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: Text(
+                          'Batal',
+                          style: TextStyle(
+                            color: isDark ? Colors.grey[400] : Colors.grey[600],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      ElevatedButton.icon(
+                        onPressed: () async {
+                          await _simpanAbsensiMapelCheckbox(
+                            context,
+                            siswaList,
+                            kelas,
+                            absensiChecked,
+                            guruId,
+                            today,
+                          );
+                        },
+                        icon: const Icon(Icons.save, size: 18),
+                        label: const Text('Simpan Absensi'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.secondaryTeal,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 24,
+                            vertical: 14,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  // Method untuk simpan absensi mapel
+  Future<void> _simpanAbsensiMapelCheckbox(
+    BuildContext context,
+    List<Map<String, dynamic>> siswaList,
+    Map<String, dynamic> kelas,
+    Map<String, bool> absensiChecked,
+    String guruId,
+    DateTime tanggal,
+  ) async {
+    try {
+      final firestore = FirebaseFirestore.instance;
+
+      // Tampilkan loading
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(child: CircularProgressIndicator()),
+      );
+
+      // Cek apakah sudah ada absensi untuk jadwal dan tanggal ini
+      final dateString = DateFormat('yyyy-MM-dd').format(tanggal);
+      final jadwalId = kelas['jadwalId'] ?? '';
+
+      // Query sederhana
+      final existingAbsensiCheck = await firestore
+          .collection('absensi')
+          .where('jadwal_id', isEqualTo: jadwalId)
+          .where('tipe_absen', isEqualTo: 'mapel')
+          .get();
+
+      // Filter secara manual berdasarkan tanggal
+      final todayAbsensi = existingAbsensiCheck.docs.where((doc) {
+        final data = doc.data();
+        final timestamp = data['tanggal'] as Timestamp?;
+        if (timestamp != null) {
+          final docDate = timestamp.toDate();
+          final docDateString = DateFormat('yyyy-MM-dd').format(docDate);
+          return docDateString == dateString;
+        }
+        return false;
+      }).toList();
+
+      if (todayAbsensi.isNotEmpty) {
+        // Tutup loading dialog
+        if (context.mounted) Navigator.pop(context);
+
+        // Tutup absensi dialog
+        if (context.mounted) Navigator.pop(context);
+
+        // Tampilkan peringatan
+        if (context.mounted) {
+          showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: Row(
+                children: [
+                  Icon(Icons.warning, color: Colors.orange[700]),
+                  const SizedBox(width: 12),
+                  const Text('Peringatan'),
+                ],
+              ),
+              content: Text(
+                'Absensi untuk mapel ini pada tanggal $dateString sudah pernah diisi. Tidak dapat mengisi absensi dua kali dalam satu hari.',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('OK'),
+                ),
+              ],
+            ),
+          );
+        }
+        return;
+      }
+
+      // Ambil ID terakhir untuk generate numeric ID
+      final allAbsensiDocs = await firestore.collection('absensi').get();
+      int maxId = 0;
+      for (final doc in allAbsensiDocs.docs) {
+        final docId = int.tryParse(doc.id);
+        if (docId != null && docId > maxId) {
+          maxId = docId;
+        }
+      }
+
+      // Batch write untuk semua siswa
+      final batch = firestore.batch();
+      final timestamp = Timestamp.fromDate(tanggal);
+
+      for (final siswa in siswaList) {
+        final siswaId = siswa['siswaId'] as String;
+        final isHadir = absensiChecked[siswaId] ?? false;
+
+        maxId++;
+        final docRef = firestore.collection('absensi').doc(maxId.toString());
+
+        batch.set(docRef, {
+          'siswa_id': siswaId,
+          'kelas_id': kelas['kelasId'] ?? '',
+          'jadwal_id': jadwalId,
+          'tanggal': timestamp,
+          'status': isHadir ? 'hadir' : 'alpa',
+          'tipe_absen': 'mapel',
+          'diabsen_oleh': guruId,
+          'created_at': FieldValue.serverTimestamp(),
+          'updated_at': FieldValue.serverTimestamp(),
+        });
+      }
+
+      await batch.commit();
+
+      // Tutup loading dialog
+      if (context.mounted) Navigator.pop(context);
+
+      // Tutup absensi dialog
+      if (context.mounted) Navigator.pop(context);
+
+      // Tampilkan sukses
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                Icon(Icons.check_circle, color: Colors.white),
+                const SizedBox(width: 12),
+                Text('Berhasil menyimpan absensi ${siswaList.length} siswa'),
+              ],
+            ),
+            backgroundColor: Colors.green[600],
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      // Tutup loading dialog
+      if (context.mounted) Navigator.pop(context);
+
+      // Tutup absensi dialog
+      if (context.mounted) Navigator.pop(context);
+
+      // Tampilkan error
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                Icon(Icons.error, color: Colors.white),
+                const SizedBox(width: 12),
+                Expanded(child: Text('Gagal menyimpan absensi: $e')),
+              ],
+            ),
+            backgroundColor: Colors.red[600],
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+        );
+      }
+    }
+  }
+
+  void _showSiswaDetailDialog(BuildContext context, GuruStatsLoaded state) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => Dialog(
+        backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 800, maxHeight: 700),
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppTheme.accentGreen.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(
+                      Icons.people,
+                      color: AppTheme.accentGreen,
+                      size: 28,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Detail Total Siswa',
+                          style: Theme.of(dialogContext).textTheme.titleLarge
+                              ?.copyWith(fontWeight: FontWeight.bold),
+                        ),
+                        Text(
+                          '${state.totalStudents} Siswa di Kelas Wali',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: isDark ? Colors.grey[400] : Colors.grey[600],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  ElevatedButton.icon(
+                    onPressed: () async {
+                      // Tutup dialog detail siswa terlebih dahulu
+                      Navigator.pop(dialogContext);
+                      // Tunggu sedikit agar dialog tertutup sempurna
+                      await Future.delayed(const Duration(milliseconds: 100));
+                      // Buka dialog absensi dengan context yang benar
+                      if (context.mounted) {
+                        _showAbsensiDialog(context, state);
+                      }
+                    },
+                    icon: const Icon(Icons.fact_check, size: 18),
+                    label: const Text('Isi Absensi'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.primaryPurple,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  IconButton(
+                    onPressed: () => Navigator.pop(dialogContext),
+                    icon: const Icon(Icons.close),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              if (state.kelasWali.isEmpty)
+                Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(32),
+                    child: Text(
+                      'Belum ada kelas wali',
+                      style: TextStyle(
+                        color: isDark ? Colors.grey[400] : Colors.grey[600],
+                      ),
+                    ),
+                  ),
+                )
+              else
+                Expanded(
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: state.kelasWali.length,
+                    itemBuilder: (listContext, index) {
+                      final kelas = state.kelasWali[index];
+                      final kelasId = kelas['id'] as String;
+                      final siswaList = state.siswaPerKelas[kelasId] ?? [];
+
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 16),
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: isDark ? Colors.grey[850] : Colors.grey[50],
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: isDark
+                                ? Colors.grey[800]!
+                                : Colors.grey[200]!,
+                          ),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    kelas['namaKelas'] ?? 'Kelas',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      color: AppTheme.accentGreen,
+                                    ),
+                                  ),
+                                ),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: AppTheme.accentGreen.withOpacity(
+                                      0.2,
+                                    ),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Text(
+                                    '${siswaList.length} Siswa',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                      color: AppTheme.accentGreen,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            if (siswaList.isNotEmpty) ...[
+                              const SizedBox(height: 12),
+                              const Divider(),
+                              const SizedBox(height: 8),
+                              // Table Header
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 10,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: AppTheme.accentGreen.withOpacity(0.1),
+                                  borderRadius: const BorderRadius.only(
+                                    topLeft: Radius.circular(8),
+                                    topRight: Radius.circular(8),
+                                  ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    SizedBox(
+                                      width: 40,
+                                      child: Text(
+                                        'No',
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.bold,
+                                          color: AppTheme.accentGreen,
+                                        ),
+                                      ),
+                                    ),
+                                    Expanded(
+                                      flex: 3,
+                                      child: Text(
+                                        'Nama',
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.bold,
+                                          color: AppTheme.accentGreen,
+                                        ),
+                                      ),
+                                    ),
+                                    Expanded(
+                                      flex: 2,
+                                      child: Text(
+                                        'NIS',
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.bold,
+                                          color: AppTheme.accentGreen,
+                                        ),
+                                      ),
+                                    ),
+                                    SizedBox(
+                                      width: 80,
+                                      child: Text(
+                                        'Status',
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.bold,
+                                          color: AppTheme.accentGreen,
+                                        ),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              // Table Body
+                              Container(
+                                decoration: BoxDecoration(
+                                  border: Border.all(
+                                    color: isDark
+                                        ? Colors.grey[700]!
+                                        : Colors.grey[300]!,
+                                  ),
+                                  borderRadius: const BorderRadius.only(
+                                    bottomLeft: Radius.circular(8),
+                                    bottomRight: Radius.circular(8),
+                                  ),
+                                ),
+                                child: Column(
+                                  children: siswaList.asMap().entries.map((
+                                    entry,
+                                  ) {
+                                    final index = entry.key;
+                                    final siswa = entry.value;
+                                    final isLastItem =
+                                        index == siswaList.length - 1;
+
+                                    return Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 12,
+                                        vertical: 10,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: index % 2 == 0
+                                            ? (isDark
+                                                  ? Colors.grey[850]
+                                                  : Colors.white)
+                                            : (isDark
+                                                  ? Colors.grey[800]
+                                                  : Colors.grey[50]),
+                                        border: isLastItem
+                                            ? null
+                                            : Border(
+                                                bottom: BorderSide(
+                                                  color: isDark
+                                                      ? Colors.grey[700]!
+                                                      : Colors.grey[300]!,
+                                                  width: 0.5,
+                                                ),
+                                              ),
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          SizedBox(
+                                            width: 40,
+                                            child: Text(
+                                              '${index + 1}',
+                                              style: TextStyle(
+                                                fontSize: 13,
+                                                color: isDark
+                                                    ? Colors.grey[400]
+                                                    : Colors.grey[700],
+                                              ),
+                                            ),
+                                          ),
+                                          Expanded(
+                                            flex: 3,
+                                            child: Text(
+                                              siswa['nama'] ?? 'Siswa',
+                                              style: TextStyle(
+                                                fontSize: 13,
+                                                fontWeight: FontWeight.w500,
+                                                color: isDark
+                                                    ? Colors.grey[200]
+                                                    : Colors.grey[800],
+                                              ),
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ),
+                                          Expanded(
+                                            flex: 2,
+                                            child: Text(
+                                              siswa['nis'] ?? '-',
+                                              style: TextStyle(
+                                                fontSize: 13,
+                                                color: isDark
+                                                    ? Colors.grey[300]
+                                                    : Colors.grey[700],
+                                              ),
+                                            ),
+                                          ),
+                                          SizedBox(
+                                            width: 80,
+                                            child: Container(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 8,
+                                                    vertical: 4,
+                                                  ),
+                                              decoration: BoxDecoration(
+                                                color: Colors.green.withOpacity(
+                                                  0.1,
+                                                ),
+                                                borderRadius:
+                                                    BorderRadius.circular(12),
+                                                border: Border.all(
+                                                  color: Colors.green
+                                                      .withOpacity(0.3),
+                                                ),
+                                              ),
+                                              child: Text(
+                                                'Aktif',
+                                                style: TextStyle(
+                                                  fontSize: 11,
+                                                  fontWeight: FontWeight.w600,
+                                                  color: Colors.green[700],
+                                                ),
+                                                textAlign: TextAlign.center,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  }).toList(),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildDetailRowInDialog(
     IconData icon,
     String label,
@@ -2271,5 +2710,559 @@ class _HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
         ),
       ],
     );
+  }
+
+  void _showAbsensiDialog(BuildContext context, GuruStatsLoaded state) async {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final guruId = userProvider.userId ?? '';
+    final today = DateTime.now();
+
+    // Inisialisasi locale Indonesia
+    await initializeDateFormatting('id_ID', null);
+
+    final formattedDate = DateFormat(
+      'EEEE, dd MMMM yyyy',
+      'id_ID',
+    ).format(today);
+
+    // State untuk menyimpan status hadir (checked = hadir)
+    final absensiChecked = <String, bool>{};
+
+    // Initialize all students as unchecked
+    for (final kelas in state.kelasWali) {
+      final kelasId = kelas['id'] as String;
+      final siswaList = state.siswaPerKelas[kelasId] ?? [];
+      for (final siswa in siswaList) {
+        absensiChecked[siswa['id'] as String] = false;
+      }
+    }
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setState) {
+          return Dialog(
+            backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Container(
+              constraints: const BoxConstraints(maxWidth: 900, maxHeight: 700),
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Header
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: AppTheme.primaryPurple.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(
+                          Icons.fact_check,
+                          color: AppTheme.primaryPurple,
+                          size: 28,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Absensi Siswa',
+                              style: Theme.of(context).textTheme.titleLarge
+                                  ?.copyWith(fontWeight: FontWeight.bold),
+                            ),
+                            Text(
+                              formattedDate,
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: isDark
+                                    ? Colors.grey[400]
+                                    : Colors.grey[600],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () => Navigator.pop(context),
+                        icon: const Icon(Icons.close),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  const Divider(),
+                  const SizedBox(height: 16),
+                  // Daftar Siswa per Kelas
+                  if (state.kelasWali.isEmpty)
+                    const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(32),
+                        child: Text('Belum ada kelas wali'),
+                      ),
+                    )
+                  else
+                    Expanded(
+                      child: ListView.builder(
+                        shrinkWrap: true,
+                        itemCount: state.kelasWali.length,
+                        itemBuilder: (context, kelasIndex) {
+                          final kelas = state.kelasWali[kelasIndex];
+                          final kelasId = kelas['id'] as String;
+                          final siswaList = state.siswaPerKelas[kelasId] ?? [];
+
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 16),
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: isDark
+                                  ? Colors.grey[850]
+                                  : Colors.grey[50],
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: isDark
+                                    ? Colors.grey[800]!
+                                    : Colors.grey[200]!,
+                              ),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        kelas['namaKelas'] ?? 'Kelas',
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                          color: AppTheme.primaryPurple,
+                                        ),
+                                      ),
+                                    ),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 10,
+                                        vertical: 4,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: AppTheme.primaryPurple
+                                            .withOpacity(0.2),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Text(
+                                        '${siswaList.length} Siswa',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w600,
+                                          color: AppTheme.primaryPurple,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                if (siswaList.isNotEmpty) ...[
+                                  const SizedBox(height: 12),
+                                  const Divider(),
+                                  const SizedBox(height: 8),
+                                  // Table Header
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 10,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: AppTheme.primaryPurple.withOpacity(
+                                        0.1,
+                                      ),
+                                      borderRadius: const BorderRadius.only(
+                                        topLeft: Radius.circular(8),
+                                        topRight: Radius.circular(8),
+                                      ),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        SizedBox(
+                                          width: 40,
+                                          child: Text(
+                                            'No',
+                                            style: TextStyle(
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.bold,
+                                              color: AppTheme.primaryPurple,
+                                            ),
+                                          ),
+                                        ),
+                                        Expanded(
+                                          flex: 3,
+                                          child: Text(
+                                            'Nama',
+                                            style: TextStyle(
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.bold,
+                                              color: AppTheme.primaryPurple,
+                                            ),
+                                          ),
+                                        ),
+                                        Expanded(
+                                          flex: 2,
+                                          child: Text(
+                                            'NIS',
+                                            style: TextStyle(
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.bold,
+                                              color: AppTheme.primaryPurple,
+                                            ),
+                                          ),
+                                        ),
+                                        SizedBox(
+                                          width: 80,
+                                          child: Text(
+                                            'Hadir',
+                                            style: TextStyle(
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.bold,
+                                              color: AppTheme.primaryPurple,
+                                            ),
+                                            textAlign: TextAlign.center,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  // Table Body
+                                  Container(
+                                    decoration: BoxDecoration(
+                                      border: Border.all(
+                                        color: isDark
+                                            ? Colors.grey[700]!
+                                            : Colors.grey[300]!,
+                                      ),
+                                      borderRadius: const BorderRadius.only(
+                                        bottomLeft: Radius.circular(8),
+                                        bottomRight: Radius.circular(8),
+                                      ),
+                                    ),
+                                    child: Column(
+                                      children: siswaList.asMap().entries.map((
+                                        entry,
+                                      ) {
+                                        final idx = entry.key;
+                                        final siswa = entry.value;
+                                        final siswaId = siswa['id'] as String;
+                                        final isLastItem =
+                                            idx == siswaList.length - 1;
+
+                                        return Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 12,
+                                            vertical: 10,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: idx % 2 == 0
+                                                ? (isDark
+                                                      ? Colors.grey[850]
+                                                      : Colors.white)
+                                                : (isDark
+                                                      ? Colors.grey[800]
+                                                      : Colors.grey[50]),
+                                            border: isLastItem
+                                                ? null
+                                                : Border(
+                                                    bottom: BorderSide(
+                                                      color: isDark
+                                                          ? Colors.grey[700]!
+                                                          : Colors.grey[300]!,
+                                                      width: 0.5,
+                                                    ),
+                                                  ),
+                                          ),
+                                          child: Row(
+                                            children: [
+                                              SizedBox(
+                                                width: 40,
+                                                child: Text(
+                                                  '${idx + 1}',
+                                                  style: TextStyle(
+                                                    fontSize: 13,
+                                                    color: isDark
+                                                        ? Colors.grey[400]
+                                                        : Colors.grey[700],
+                                                  ),
+                                                ),
+                                              ),
+                                              Expanded(
+                                                flex: 3,
+                                                child: Text(
+                                                  siswa['nama'] ?? 'Siswa',
+                                                  style: TextStyle(
+                                                    fontSize: 13,
+                                                    fontWeight: FontWeight.w500,
+                                                    color: isDark
+                                                        ? Colors.grey[200]
+                                                        : Colors.grey[800],
+                                                  ),
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                ),
+                                              ),
+                                              Expanded(
+                                                flex: 2,
+                                                child: Text(
+                                                  siswa['nis'] ?? '-',
+                                                  style: TextStyle(
+                                                    fontSize: 13,
+                                                    color: isDark
+                                                        ? Colors.grey[300]
+                                                        : Colors.grey[700],
+                                                  ),
+                                                ),
+                                              ),
+                                              SizedBox(
+                                                width: 80,
+                                                child: Center(
+                                                  child: Checkbox(
+                                                    value:
+                                                        absensiChecked[siswaId] ??
+                                                        false,
+                                                    activeColor:
+                                                        AppTheme.primaryPurple,
+                                                    onChanged: (bool? value) {
+                                                      setState(() {
+                                                        absensiChecked[siswaId] =
+                                                            value ?? false;
+                                                      });
+                                                    },
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        );
+                                      }).toList(),
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  const SizedBox(height: 16),
+                  const Divider(),
+                  const SizedBox(height: 16),
+                  // Footer Actions
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: Text(
+                          'Batal',
+                          style: TextStyle(
+                            color: isDark ? Colors.grey[400] : Colors.grey[600],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      ElevatedButton.icon(
+                        onPressed: () async {
+                          await _simpanAbsensiCheckbox(
+                            context,
+                            state,
+                            absensiChecked,
+                            guruId,
+                            today,
+                          );
+                        },
+                        icon: const Icon(Icons.save, size: 18),
+                        label: const Text('Simpan Absensi'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.primaryPurple,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 24,
+                            vertical: 14,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Future<void> _simpanAbsensiCheckbox(
+    BuildContext context,
+    GuruStatsLoaded state,
+    Map<String, bool> absensiChecked,
+    String guruId,
+    DateTime tanggal,
+  ) async {
+    try {
+      final firestore = FirebaseFirestore.instance;
+
+      // Tampilkan loading
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(child: CircularProgressIndicator()),
+      );
+
+      // Cek apakah sudah ada absensi untuk tanggal ini
+      // Menggunakan format tanggal sebagai string untuk pengecekan yang lebih sederhana
+      final dateString = DateFormat('yyyy-MM-dd').format(tanggal);
+
+      // Query sederhana tanpa multiple where yang memerlukan composite index
+      final existingAbsensiCheck = await firestore
+          .collection('absensi')
+          .where('diabsen_oleh', isEqualTo: guruId)
+          .where('tipe_absen', isEqualTo: 'harian')
+          .get();
+
+      // Filter secara manual berdasarkan tanggal
+      final todayAbsensi = existingAbsensiCheck.docs.where((doc) {
+        final data = doc.data();
+        final timestamp = data['tanggal'] as Timestamp?;
+        if (timestamp != null) {
+          final docDate = timestamp.toDate();
+          final docDateString = DateFormat('yyyy-MM-dd').format(docDate);
+          return docDateString == dateString;
+        }
+        return false;
+      }).toList();
+
+      if (todayAbsensi.isNotEmpty) {
+        // Tutup loading dialog
+        if (context.mounted) Navigator.pop(context);
+
+        // Tutup absensi dialog
+        if (context.mounted) Navigator.pop(context);
+
+        // Tampilkan peringatan
+        if (context.mounted) {
+          showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: Row(
+                children: [
+                  Icon(Icons.warning, color: Colors.orange[700]),
+                  const SizedBox(width: 12),
+                  const Text('Absensi Sudah Ada'),
+                ],
+              ),
+              content: const Text(
+                'Absensi untuk tanggal hari ini sudah pernah dilakukan.\n\n'
+                'Anda tidak dapat melakukan absensi lebih dari sekali dalam satu hari.',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('OK'),
+                ),
+              ],
+            ),
+          );
+        }
+        return;
+      }
+
+      // Dapatkan ID terakhir untuk membuat ID numerik baru
+      final allAbsensi = await firestore.collection('absensi').get();
+
+      int nextId = 1;
+      if (allAbsensi.docs.isNotEmpty) {
+        // Cari ID numerik tertinggi
+        int maxId = 0;
+        for (var doc in allAbsensi.docs) {
+          final numId = int.tryParse(doc.id);
+          if (numId != null && numId > maxId) {
+            maxId = numId;
+          }
+        }
+        nextId = maxId + 1;
+      }
+
+      final batch = firestore.batch();
+
+      for (final kelas in state.kelasWali) {
+        final kelasId = kelas['id'] as String;
+        final siswaList = state.siswaPerKelas[kelasId] ?? [];
+
+        for (final siswa in siswaList) {
+          final siswaId = siswa['id'] as String;
+          final isHadir = absensiChecked[siswaId] ?? false;
+          final status = isHadir ? 'hadir' : 'alpa';
+
+          // Buat absensi baru dengan ID numerik
+          final docRef = firestore.collection('absensi').doc(nextId.toString());
+          batch.set(docRef, {
+            'siswa_id': siswaId,
+            'kelas_id': kelasId,
+            'tanggal': Timestamp.fromDate(
+              DateTime(tanggal.year, tanggal.month, tanggal.day),
+            ),
+            'tipe_absen': 'harian',
+            'jadwal_id': null,
+            'status': status,
+            'diabsen_oleh': guruId,
+            'created_at': FieldValue.serverTimestamp(),
+            'updated_at': FieldValue.serverTimestamp(),
+          });
+
+          nextId++; // Increment untuk siswa berikutnya
+        }
+      }
+
+      await batch.commit();
+
+      // Tutup loading dialog
+      if (context.mounted) Navigator.pop(context);
+
+      // Tutup absensi dialog
+      if (context.mounted) Navigator.pop(context);
+
+      // Tampilkan success message
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('✅ Absensi berhasil disimpan'),
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      // Tutup loading dialog
+      if (context.mounted) Navigator.pop(context);
+
+      // Tampilkan error message
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('❌ Gagal menyimpan absensi: $e'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
   }
 }

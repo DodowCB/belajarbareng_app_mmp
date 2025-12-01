@@ -74,7 +74,8 @@ class _SiswaKelasScreenState extends State<SiswaKelasScreen> {
         ],
       ),
       child: TextField(
-        onChanged: (value) => setState(() => _searchQuery = value.toLowerCase()),
+        onChanged: (value) =>
+            setState(() => _searchQuery = value.toLowerCase()),
         decoration: InputDecoration(
           hintText: 'Search students by name or NIS...',
           prefixIcon: const Icon(Icons.search),
@@ -86,7 +87,10 @@ class _SiswaKelasScreenState extends State<SiswaKelasScreen> {
             borderRadius: BorderRadius.circular(12),
             borderSide: BorderSide.none,
           ),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 12,
+          ),
         ),
       ),
     );
@@ -94,132 +98,137 @@ class _SiswaKelasScreenState extends State<SiswaKelasScreen> {
 
   Widget _buildStudentsList() {
     return StreamBuilder<QuerySnapshot>(
-        stream: _firestore
-            .collection('siswa_kelas')
-            .where('kelas_id', isEqualTo: widget.kelasId)
-            .snapshots(),
-        builder: (context, snapshot) {
-          if (snapshot.hasError) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.error_outline, size: 64, color: Colors.grey[400]),
-                  const SizedBox(height: 16),
-                  Text('Error: ${snapshot.error}'),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () => setState(() {}),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.accentGreen,
-                      foregroundColor: Colors.white,
-                    ),
-                    child: const Text('Retry'),
+      stream: _firestore
+          .collection('siswa_kelas')
+          .where('kelas_id', isEqualTo: widget.kelasId)
+          .snapshots(),
+      builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.error_outline, size: 64, color: Colors.grey[400]),
+                const SizedBox(height: 16),
+                Text('Error: ${snapshot.error}'),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: () => setState(() {}),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.accentGreen,
+                    foregroundColor: Colors.white,
                   ),
-                ],
-              ),
-            );
-          }
-
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          final docs = snapshot.data?.docs ?? [];
-
-          if (docs.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.people_outline, size: 64, color: Colors.grey[400]),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'No students in this class yet',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Add students using the + button above',
-                    style: TextStyle(color: Colors.grey[600]),
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton.icon(
-                    onPressed: _showAddSiswaDialog,
-                    icon: const Icon(Icons.person_add),
-                    label: const Text('Add Student'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.accentGreen,
-                      foregroundColor: Colors.white,
-                    ),
-                  ),
-                ],
-              ),
-            );
-          }
-
-          return LayoutBuilder(
-            builder: (context, constraints) {
-              final isDesktop = constraints.maxWidth >= 1200;
-              final isTablet = constraints.maxWidth >= 768;
-              final crossAxisCount = isDesktop ? 3 : isTablet ? 2 : 1;
-
-              return GridView.builder(
-                padding: const EdgeInsets.all(20),
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: crossAxisCount,
-                  crossAxisSpacing: 16,
-                  mainAxisSpacing: 16,
-                  childAspectRatio: 1.5,
+                  child: const Text('Retry'),
                 ),
-                itemCount: docs.length,
-                itemBuilder: (context, index) {
-                  final data = docs[index].data() as Map<String, dynamic>;
-                  final docId = docs[index].id;
-                  final siswaId = data['siswa_id'] ?? '';
-
-                  return FutureBuilder<Map<String, dynamic>?>(
-                    future: _getSiswaData(siswaId),
-                    builder: (context, siswaSnapshot) {
-                      if (siswaSnapshot.connectionState == ConnectionState.waiting) {
-                        return Card(
-                          elevation: 2,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: const Center(child: CircularProgressIndicator()),
-                        );
-                      }
-
-                      final siswaData = siswaSnapshot.data;
-                      final namaSiswa = siswaData?['nama'] ?? 'Unknown';
-                      final nis = siswaData?['nis'] ?? '-';
-                      final email = siswaData?['email'] ?? '-';
-
-                      // Filter by search
-                      if (_searchQuery.isNotEmpty) {
-                        if (!namaSiswa.toLowerCase().contains(_searchQuery) &&
-                            !nis.toLowerCase().contains(_searchQuery)) {
-                          return const SizedBox.shrink();
-                        }
-                      }
-
-                      return _buildStudentCard(
-                        namaSiswa,
-                        nis,
-                        email,
-                        siswaId,
-                        docId,
-                        index,
-                      );
-                    },
-                  );
-                },
-              );
-            },
+              ],
+            ),
           );
-        },
-      );
+        }
+
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        final docs = snapshot.data?.docs ?? [];
+
+        if (docs.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.people_outline, size: 64, color: Colors.grey[400]),
+                const SizedBox(height: 16),
+                const Text(
+                  'No students in this class yet',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Add students using the + button above',
+                  style: TextStyle(color: Colors.grey[600]),
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton.icon(
+                  onPressed: _showAddSiswaDialog,
+                  icon: const Icon(Icons.person_add),
+                  label: const Text('Add Student'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.accentGreen,
+                    foregroundColor: Colors.white,
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            final isDesktop = constraints.maxWidth >= 1200;
+            final isTablet = constraints.maxWidth >= 768;
+            final crossAxisCount = isDesktop
+                ? 3
+                : isTablet
+                ? 2
+                : 1;
+
+            return GridView.builder(
+              padding: const EdgeInsets.all(20),
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: crossAxisCount,
+                crossAxisSpacing: 16,
+                mainAxisSpacing: 16,
+                childAspectRatio: 1.5,
+              ),
+              itemCount: docs.length,
+              itemBuilder: (context, index) {
+                final data = docs[index].data() as Map<String, dynamic>;
+                final docId = docs[index].id;
+                final siswaId = data['siswa_id'] ?? '';
+
+                return FutureBuilder<Map<String, dynamic>?>(
+                  future: _getSiswaData(siswaId),
+                  builder: (context, siswaSnapshot) {
+                    if (siswaSnapshot.connectionState ==
+                        ConnectionState.waiting) {
+                      return Card(
+                        elevation: 2,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Center(child: CircularProgressIndicator()),
+                      );
+                    }
+
+                    final siswaData = siswaSnapshot.data;
+                    final namaSiswa = siswaData?['nama'] ?? 'Unknown';
+                    final nis = siswaData?['nis'] ?? '-';
+                    final email = siswaData?['email'] ?? '-';
+
+                    // Filter by search
+                    if (_searchQuery.isNotEmpty) {
+                      if (!namaSiswa.toLowerCase().contains(_searchQuery) &&
+                          !nis.toLowerCase().contains(_searchQuery)) {
+                        return const SizedBox.shrink();
+                      }
+                    }
+
+                    return _buildStudentCard(
+                      namaSiswa,
+                      nis,
+                      email,
+                      siswaId,
+                      docId,
+                      index,
+                    );
+                  },
+                );
+              },
+            );
+          },
+        );
+      },
+    );
   }
 
   Widget _buildStudentCard(
@@ -272,19 +281,19 @@ class _SiswaKelasScreenState extends State<SiswaKelasScreen> {
                         children: [
                           Text(
                             namaSiswa,
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: AppTheme.accentGreen,
-                            ),
+                            style: Theme.of(context).textTheme.titleMedium
+                                ?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: AppTheme.accentGreen,
+                                ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
                           const SizedBox(height: 2),
                           Text(
                             'NIS: $nis',
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Colors.grey[600],
-                            ),
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(color: Colors.grey[600]),
                           ),
                         ],
                       ),
@@ -295,7 +304,11 @@ class _SiswaKelasScreenState extends State<SiswaKelasScreen> {
                           value: 'view',
                           child: Row(
                             children: [
-                              Icon(Icons.visibility, color: Colors.blue, size: 16),
+                              Icon(
+                                Icons.visibility,
+                                color: Colors.blue,
+                                size: 16,
+                              ),
                               SizedBox(width: 8),
                               Text('View Detail'),
                             ],
@@ -305,14 +318,19 @@ class _SiswaKelasScreenState extends State<SiswaKelasScreen> {
                           value: 'remove',
                           child: Row(
                             children: [
-                              Icon(Icons.remove_circle, color: Colors.red, size: 16),
+                              Icon(
+                                Icons.remove_circle,
+                                color: Colors.red,
+                                size: 16,
+                              ),
                               SizedBox(width: 8),
                               Text('Remove from Class'),
                             ],
                           ),
                         ),
                       ],
-                      onSelected: (value) => _handleMenuAction(value, namaSiswa, docId),
+                      onSelected: (value) =>
+                          _handleMenuAction(value, namaSiswa, docId),
                     ),
                   ],
                 ),
@@ -345,7 +363,12 @@ class _SiswaKelasScreenState extends State<SiswaKelasScreen> {
     );
   }
 
-  void _showStudentDetail(String nama, String nis, String email, String siswaId) {
+  void _showStudentDetail(
+    String nama,
+    String nis,
+    String email,
+    String siswaId,
+  ) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -415,10 +438,7 @@ class _SiswaKelasScreenState extends State<SiswaKelasScreen> {
                   ),
                 ),
                 const SizedBox(height: 4),
-                Text(
-                  value,
-                  style: const TextStyle(fontSize: 14),
-                ),
+                Text(value, style: const TextStyle(fontSize: 14)),
               ],
             ),
           ),
@@ -435,7 +455,9 @@ class _SiswaKelasScreenState extends State<SiswaKelasScreen> {
       final confirm = await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           title: const Text('Confirm Removal'),
           content: Text('Remove "$namaSiswa" from ${widget.namaKelas}?'),
           actions: [
@@ -643,10 +665,26 @@ class _AddSiswaDialogState extends State<AddSiswaDialog> {
     if (_selectedSiswaId == null) return;
 
     try {
-      // Add to siswa_kelas collection with simple structure
-      await _firestore.collection('siswa_kelas').add({
+      // Generate next integer ID
+      final querySnapshot = await _firestore
+          .collection('siswa_kelas')
+          .orderBy('id', descending: true)
+          .limit(1)
+          .get();
+
+      String nextId = '1';
+      if (querySnapshot.docs.isNotEmpty) {
+        final lastDoc = querySnapshot.docs.first;
+        final lastId = int.tryParse(lastDoc.id) ?? 0;
+        nextId = (lastId + 1).toString();
+      }
+
+      // Add to siswa_kelas collection with integer ID
+      await _firestore.collection('siswa_kelas').doc(nextId).set({
+        'id': int.parse(nextId),
         'kelas_id': widget.kelasId,
         'siswa_id': _selectedSiswaId!,
+        'createdAt': FieldValue.serverTimestamp(),
       });
 
       if (mounted) {

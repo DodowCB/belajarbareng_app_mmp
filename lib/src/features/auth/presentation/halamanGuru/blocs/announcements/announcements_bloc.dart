@@ -1,9 +1,12 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../../data/models/pengumuman_model.dart';
 import 'announcements_event.dart';
 import 'announcements_state.dart';
 
 class AnnouncementsBloc extends Bloc<AnnouncementsEvent, AnnouncementsState> {
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
   AnnouncementsBloc() : super(const AnnouncementsInitial()) {
     on<LoadAnnouncements>(_onLoadAnnouncements);
     on<CreateAnnouncement>(_onCreateAnnouncement);
@@ -17,31 +20,35 @@ class AnnouncementsBloc extends Bloc<AnnouncementsEvent, AnnouncementsState> {
     emit(const AnnouncementsLoading());
 
     try {
-      // Dummy data untuk testing performance
-      await Future.delayed(const Duration(milliseconds: 300));
+      print('📢 [AnnouncementsBloc] Loading announcements from Firestore...');
 
-      final announcements = [
-        PengumumanModel(
-          id: '1',
-          judul: 'Informasi Ujian Tengah Semester',
-          deskripsi:
-              'Ujian tengah semester akan dilaksanakan mulai tanggal 15 November 2024.',
-          guruId: 'guru1',
-          namaGuru: 'Budi Santoso',
-          pembuat: 'admin',
-          createdAt: DateTime.now().subtract(const Duration(days: 1)),
-        ),
-        PengumumanModel(
-          id: '2',
-          judul: 'Libur Nasional',
-          deskripsi:
-              'Sekolah akan libur pada tanggal 17 November dalam rangka memperingati Hari Guru.',
-          guruId: 'guru2',
-          namaGuru: 'Siti Aminah',
-          pembuat: 'admin',
-          createdAt: DateTime.now().subtract(const Duration(days: 2)),
-        ),
-      ];
+      // Fetch from Firestore collection 'pengumuman'
+      final querySnapshot = await _firestore
+          .collection('pengumuman')
+          .orderBy('createdAt', descending: true)
+          .get();
+
+      print(
+        '📢 [AnnouncementsBloc] Found ${querySnapshot.docs.length} announcements',
+      );
+
+      final announcements = querySnapshot.docs.map((doc) {
+        final data = doc.data();
+        return PengumumanModel(
+          id: doc.id,
+          judul: data['judul'] ?? '',
+          deskripsi: data['deskripsi'] ?? '',
+          guruId: data['guruId'] ?? data['guru_id'] ?? '',
+          namaGuru: data['namaGuru'] ?? data['nama_guru'] ?? '',
+          pembuat: data['pembuat'] ?? 'admin',
+          createdAt:
+              (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+        );
+      }).toList();
+
+      print(
+        '✅ [AnnouncementsBloc] Successfully loaded ${announcements.length} announcements',
+      );
 
       emit(
         AnnouncementsLoaded(
@@ -50,6 +57,7 @@ class AnnouncementsBloc extends Bloc<AnnouncementsEvent, AnnouncementsState> {
         ),
       );
     } catch (e) {
+      print('❌ [AnnouncementsBloc] Error loading announcements: $e');
       emit(AnnouncementsError('Failed to load announcements: ${e.toString()}'));
     }
   }

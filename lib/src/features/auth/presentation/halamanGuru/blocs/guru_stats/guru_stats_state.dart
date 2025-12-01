@@ -22,6 +22,8 @@ class GuruStatsLoaded extends GuruStatsState {
   final int totalStudents;
   final int totalClasses;
   final int tugasPerluDinilai;
+  final List<Map<String, dynamic>> kelasNgajarDetail;
+  final Map<String, List<Map<String, dynamic>>> siswaPerKelas;
 
   const GuruStatsLoaded({
     required this.kelasWali,
@@ -30,6 +32,8 @@ class GuruStatsLoaded extends GuruStatsState {
     required this.totalStudents,
     required this.totalClasses,
     required this.tugasPerluDinilai,
+    this.kelasNgajarDetail = const [],
+    this.siswaPerKelas = const {},
   });
 
   @override
@@ -40,6 +44,8 @@ class GuruStatsLoaded extends GuruStatsState {
     totalStudents,
     totalClasses,
     tugasPerluDinilai,
+    kelasNgajarDetail,
+    siswaPerKelas,
   ];
 }
 
