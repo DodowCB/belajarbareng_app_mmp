@@ -6,8 +6,10 @@ import '../../../../../core/providers/user_provider.dart';
 import '../halaman_guru_screen.dart';
 import 'kelas_guru_screen.dart';
 import 'nilai_siswa_screen.dart';
+import 'kelas_nilai_list_screen.dart';
 import 'tugas_guru_screen.dart';
 import 'materi_guru_screen.dart';
+import 'absensi_guru_screen.dart';
 import '../../profile/profile_screen.dart';
 import '../../settings/settings_screen.dart';
 import '../../notifications/notifications_screen.dart';
@@ -144,7 +146,7 @@ extension GuruSidebarWidgets on HalamanGuruScreenState {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => const NilaiSiswaScreen(),
+                        builder: (context) => const KelasNilaiListScreen(),
                       ),
                     );
                   },
@@ -169,6 +171,18 @@ extension GuruSidebarWidgets on HalamanGuruScreenState {
                       context,
                       MaterialPageRoute(
                         builder: (context) => const MateriGuruScreen(),
+                      ),
+                    );
+                  },
+                ),
+                buildSidebarItem(
+                  icon: Icons.fact_check,
+                  title: 'Absensi',
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const AbsensiGuruScreen(),
                       ),
                     );
                   },
@@ -323,7 +337,7 @@ extension GuruSidebarWidgets on HalamanGuruScreenState {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => const NilaiSiswaScreen(),
+                        builder: (context) => const KelasNilaiListScreen(),
                       ),
                     );
                   },
@@ -350,6 +364,19 @@ extension GuruSidebarWidgets on HalamanGuruScreenState {
                       context,
                       MaterialPageRoute(
                         builder: (context) => const MateriGuruScreen(),
+                      ),
+                    );
+                  },
+                ),
+                buildDrawerItem(
+                  icon: Icons.fact_check,
+                  title: 'Absensi',
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const AbsensiGuruScreen(),
                       ),
                     );
                   },
