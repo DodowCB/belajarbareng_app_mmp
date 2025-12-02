@@ -21,11 +21,21 @@ void main() async {
   // Initialize services for offline support
   try {
     await ConnectivityService().initialize();
-    await LocalStorageService().initialize();
-    debugPrint('Offline support services initialized successfully');
+    debugPrint('Connectivity service initialized successfully');
   } catch (e) {
-    debugPrint('Offline services initialization error: $e');
+    debugPrint('Connectivity service initialization error: $e');
   }
+
+  // Initialize local storage (with error handling for web)
+  try {
+    await LocalStorageService().initialize();
+    debugPrint('Local storage service initialized successfully');
+  } catch (e) {
+    debugPrint('Local storage service initialization warning (web platform may have limited support): $e');
+    // Continue execution even if local storage fails on web
+  }
+
+  debugPrint('All offline support services initialized');
 
   runApp(const ProviderScope(child: AppWidget()));
 }

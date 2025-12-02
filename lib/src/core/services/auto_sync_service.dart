@@ -76,10 +76,7 @@ class AutoSyncService {
       ]);
 
       // Update last sync timestamp
-      await _localStorage.store.setValue(
-        'last_sync_time',
-        DateTime.now().toIso8601String(),
-      );
+      await _localStorage.saveLastSync(DateTime.now());
 
       final duration = DateTime.now().difference(startTime);
       debugPrint('✅ Background sync completed in ${duration.inSeconds}s');

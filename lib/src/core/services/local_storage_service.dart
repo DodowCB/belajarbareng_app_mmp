@@ -1,38 +1,81 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:tostore/tostore.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// Service untuk mengelola penyimpanan data lokal
-/// Menggunakan Tostore untuk database offline berkinerja tinggi
+/// Menggunakan Tostore untuk mobile/desktop dan SharedPreferences untuk web
 class LocalStorageService {
   static final LocalStorageService _instance = LocalStorageService._internal();
   factory LocalStorageService() => _instance;
   LocalStorageService._internal();
 
   ToStore? _store;
+  SharedPreferences? _prefs;
+  bool _isWeb = kIsWeb;
 
-  /// Initialize Tostore
+  /// Initialize storage (Tostore for mobile/desktop, SharedPreferences for web)
   Future<void> initialize() async {
     try {
-      _store = ToStore(
-        version: 1,
-        schemas: [], // Empty schemas for simple key-value storage
-      );
-      await _store!.initialize();
-      debugPrint('LocalStorageService initialized successfully with Tostore');
+      if (_isWeb) {
+        // Use SharedPreferences for web platform
+        _prefs = await SharedPreferences.getInstance();
+        debugPrint('LocalStorageService initialized successfully with SharedPreferences (Web)');
+      } else {
+        // Use Tostore for mobile/desktop platforms
+        _store = ToStore(
+          version: 1,
+          schemas: [], // Empty schemas for simple key-value storage
+        );
+        await _store!.initialize();
+        debugPrint('LocalStorageService initialized successfully with Tostore (Native)');
+      }
     } catch (e) {
       debugPrint('Error initializing LocalStorageService: $e');
+      // Try fallback to SharedPreferences even on native if Tostore fails
+      if (!_isWeb && _prefs == null) {
+        try {
+          _prefs = await SharedPreferences.getInstance();
+          debugPrint('LocalStorageService fallback to SharedPreferences successful');
+        } catch (fallbackError) {
+          debugPrint('LocalStorageService fallback failed: $fallbackError');
+          rethrow;
+        }
+      }
     }
   }
 
-  /// Ensure Tostore is initialized
-  ToStore get store {
-    if (_store == null) {
-      throw Exception(
-        'LocalStorageService not initialized. Call initialize() first.',
-      );
+  /// Get value from storage (web or native)
+  Future<String?> _getValue(String key) async {
+    if (_isWeb && _prefs != null) {
+      return _prefs!.getString(key);
+    } else if (_store != null) {
+      return await _store!.getValue(key);
+    } else if (_prefs != null) {
+      return _prefs!.getString(key);
     }
-    return _store!;
+    throw Exception('LocalStorageService not initialized. Call initialize() first.');
+  }
+
+  /// Set value to storage (web or native)
+  Future<void> _setValue(String key, String? value) async {
+    if (_isWeb && _prefs != null) {
+      if (value == null) {
+        await _prefs!.remove(key);
+      } else {
+        await _prefs!.setString(key, value);
+      }
+    } else if (_store != null) {
+      await _store!.setValue(key, value);
+    } else if (_prefs != null) {
+      if (value == null) {
+        await _prefs!.remove(key);
+      } else {
+        await _prefs!.setString(key, value);
+      }
+    } else {
+      throw Exception('LocalStorageService not initialized. Call initialize() first.');
+    }
   }
 
   /// Create sample offline data for testing
@@ -241,7 +284,7 @@ class LocalStorageService {
         'lastUpdated': DateTime.now().toIso8601String(),
       };
 
-      await store.setValue(_keyAdminStats, jsonEncode(data));
+      await _setValue(_keyAdminStats, jsonEncode(data));
 
       debugPrint('💾 Admin stats saved to local storage successfully');
       debugPrint(
@@ -259,7 +302,7 @@ class LocalStorageService {
   /// Get admin statistics from local storage
   Future<Map<String, dynamic>?> getAdminStats() async {
     try {
-      final dataString = await store.getValue(_keyAdminStats);
+      final dataString = await _getValue(_keyAdminStats);
       if (dataString == null) {
         debugPrint('💾 No admin stats found in local storage');
         return null;
@@ -302,7 +345,7 @@ class LocalStorageService {
         'lastUpdated': DateTime.now().toIso8601String(),
       };
 
-      await store.setValue(_keyPengumumanData, jsonEncode(data));
+      await _setValue(_keyPengumumanData, jsonEncode(data));
 
       debugPrint('💾 Pengumuman data saved: ${pengumumanList.length} items');
       await _updateLastSync();
@@ -317,7 +360,7 @@ class LocalStorageService {
   /// Get pengumuman list from local storage
   Future<List<Map<String, dynamic>>?> getPengumumanData() async {
     try {
-      final dataString = await store.getValue(_keyPengumumanData);
+      final dataString = await _getValue(_keyPengumumanData);
       if (dataString == null) return null;
 
       final data = jsonDecode(dataString) as Map<String, dynamic>;
@@ -340,7 +383,7 @@ class LocalStorageService {
         'lastUpdated': DateTime.now().toIso8601String(),
       };
 
-      await store.setValue(_keySiswaData, jsonEncode(data));
+      await _setValue(_keySiswaData, jsonEncode(data));
 
       debugPrint('💾 Siswa data saved: ${siswaList.length} items');
       await _updateLastSync();
@@ -355,7 +398,7 @@ class LocalStorageService {
   /// Get siswa list from local storage
   Future<List<Map<String, dynamic>>?> getSiswaData() async {
     try {
-      final dataString = await store.getValue(_keySiswaData);
+      final dataString = await _getValue(_keySiswaData);
       if (dataString == null) return null;
 
       final data = jsonDecode(dataString) as Map<String, dynamic>;
@@ -378,7 +421,7 @@ class LocalStorageService {
         'lastUpdated': DateTime.now().toIso8601String(),
       };
 
-      await store.setValue(_keyGuruData, jsonEncode(data));
+      await _setValue(_keyGuruData, jsonEncode(data));
 
       debugPrint('💾 Guru data saved: ${guruList.length} items');
       await _updateLastSync();
@@ -393,7 +436,7 @@ class LocalStorageService {
   /// Get guru list from local storage
   Future<List<Map<String, dynamic>>?> getGuruData() async {
     try {
-      final dataString = await store.getValue(_keyGuruData);
+      final dataString = await _getValue(_keyGuruData);
       if (dataString == null) return null;
 
       final data = jsonDecode(dataString) as Map<String, dynamic>;
@@ -416,7 +459,7 @@ class LocalStorageService {
         'lastUpdated': DateTime.now().toIso8601String(),
       };
 
-      await store.setValue(_keyKelasData, jsonEncode(data));
+      await _setValue(_keyKelasData, jsonEncode(data));
 
       debugPrint('💾 Kelas data saved: ${kelasList.length} items');
       await _updateLastSync();
@@ -431,7 +474,7 @@ class LocalStorageService {
   /// Get kelas list from local storage
   Future<List<Map<String, dynamic>>?> getKelasData() async {
     try {
-      final dataString = await store.getValue(_keyKelasData);
+      final dataString = await _getValue(_keyKelasData);
       if (dataString == null) return null;
 
       final data = jsonDecode(dataString) as Map<String, dynamic>;
@@ -456,7 +499,7 @@ class LocalStorageService {
         'lastUpdated': DateTime.now().toIso8601String(),
       };
 
-      await store.setValue(_keySiswaKelasData, jsonEncode(data));
+      await _setValue(_keySiswaKelasData, jsonEncode(data));
 
       debugPrint('💾 Siswa-Kelas data saved: ${siswaKelasList.length} items');
       await _updateLastSync();
@@ -471,7 +514,7 @@ class LocalStorageService {
   /// Get siswa-kelas relation list from local storage
   Future<List<Map<String, dynamic>>?> getSiswaKelasData() async {
     try {
-      final dataString = await store.getValue(_keySiswaKelasData);
+      final dataString = await _getValue(_keySiswaKelasData);
       if (dataString == null) return null;
 
       final data = jsonDecode(dataString) as Map<String, dynamic>;
@@ -494,7 +537,7 @@ class LocalStorageService {
         'lastUpdated': DateTime.now().toIso8601String(),
       };
 
-      await store.setValue(_keyMapelData, jsonEncode(data));
+      await _setValue(_keyMapelData, jsonEncode(data));
 
       debugPrint('💾 Mapel data saved: ${mapelList.length} items');
       await _updateLastSync();
@@ -509,7 +552,7 @@ class LocalStorageService {
   /// Get mapel list from local storage
   Future<List<Map<String, dynamic>>?> getMapelData() async {
     try {
-      final dataString = await store.getValue(_keyMapelData);
+      final dataString = await _getValue(_keyMapelData);
       if (dataString == null) return null;
 
       final data = jsonDecode(dataString) as Map<String, dynamic>;
@@ -527,17 +570,27 @@ class LocalStorageService {
   /// Update last sync timestamp
   Future<void> _updateLastSync() async {
     try {
-      await store.setValue(_keyLastSync, DateTime.now().toIso8601String());
+      await _setValue(_keyLastSync, DateTime.now().toIso8601String());
       debugPrint('💾 Last sync updated');
     } catch (e) {
       debugPrint('Error updating last sync: $e');
     }
   }
 
+  /// Save last sync timestamp (public method for external services)
+  Future<void> saveLastSync(DateTime timestamp) async {
+    try {
+      await _setValue(_keyLastSync, timestamp.toIso8601String());
+      debugPrint('💾 Last sync timestamp saved: $timestamp');
+    } catch (e) {
+      debugPrint('Error saving last sync: $e');
+    }
+  }
+
   /// Get last sync timestamp
   Future<DateTime?> getLastSync() async {
     try {
-      final lastSyncString = await store.getValue(_keyLastSync);
+      final lastSyncString = await _getValue(_keyLastSync);
       if (lastSyncString == null) return null;
 
       return DateTime.parse(lastSyncString);
@@ -562,7 +615,7 @@ class LocalStorageService {
       ];
 
       for (final key in keys) {
-        await store.setValue(key, null);
+        await _setValue(key, null);
       }
 
       debugPrint('💾 All local storage data cleared');
@@ -574,13 +627,13 @@ class LocalStorageService {
   /// Check if any offline data exists
   Future<bool> hasOfflineData() async {
     try {
-      final adminStats = await store.getValue(_keyAdminStats);
-      final pengumuman = await store.getValue(_keyPengumumanData);
-      final siswa = await store.getValue(_keySiswaData);
-      final guru = await store.getValue(_keyGuruData);
-      final kelas = await store.getValue(_keyKelasData);
-      final siswaKelas = await store.getValue(_keySiswaKelasData);
-      final mapel = await store.getValue(_keyMapelData);
+      final adminStats = await _getValue(_keyAdminStats);
+      final pengumuman = await _getValue(_keyPengumumanData);
+      final siswa = await _getValue(_keySiswaData);
+      final guru = await _getValue(_keyGuruData);
+      final kelas = await _getValue(_keyKelasData);
+      final siswaKelas = await _getValue(_keySiswaKelasData);
+      final mapel = await _getValue(_keyMapelData);
 
       return adminStats != null ||
           pengumuman != null ||
@@ -706,3 +759,4 @@ class LocalStorageService {
     }
   }
 }
+

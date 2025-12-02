@@ -87,6 +87,7 @@ dependencies:
   # 8. Connectivity & Local Storage for Offline Support
   connectivity_plus: ^6.0.5
   tostore: ^1.8.8
+  shared_preferences: ^2.2.2 # For web platform storage
 
 dev_dependencies:
   flutter_test:
