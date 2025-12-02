@@ -87,7 +87,7 @@ class _KelasScreenState extends State<KelasScreen> {
                   print('Document $docId: $data');
 
                   // Build display name
-                  String namaKelas = data['namaKelas'] ?? '';
+                  String namaKelas = data['nama_kelas'] ?? '';
                   if (namaKelas.isEmpty) {
                     final jenjang = data['jenjang_kelas'] ?? '';
                     final nomor = data['nomor_kelas'] ?? '';

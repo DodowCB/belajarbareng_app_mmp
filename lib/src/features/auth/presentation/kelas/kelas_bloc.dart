@@ -74,7 +74,7 @@ class KelasBloc extends Bloc<KelasEvent, KelasState> {
       }
 
       await _firestore.collection('kelas').doc(nextId.toString()).set({
-        'namaKelas': event.namaKelas,
+        'nama_kelas': event.namaKelas,
         'jenjang_kelas': event.jenjangKelas,
         'nomor_kelas': event.nomorKelas,
         'tahun_ajaran': event.tahunAjaran,
@@ -112,7 +112,7 @@ class KelasBloc extends Bloc<KelasEvent, KelasState> {
 
     try {
       final updateData = {
-        'namaKelas': event.namaKelas,
+        'nama_kelas': event.namaKelas,
         'jenjang_kelas': event.jenjangKelas,
         'nomor_kelas': event.nomorKelas,
         'tahun_ajaran': event.tahunAjaran,
@@ -189,14 +189,26 @@ class KelasBloc extends Bloc<KelasEvent, KelasState> {
 
   Future<void> _onLoadGuru(LoadGuru event, Emitter<KelasState> emit) async {
     try {
+      print('🔵 LoadGuru: Fetching guru from Firestore...');
       final querySnapshot = await _firestore.collection('guru').get();
+      print('🔵 LoadGuru: Got ${querySnapshot.docs.length} guru documents');
 
       final guruList = querySnapshot.docs
           .map((doc) => GuruModel.fromFirestore(doc))
           .toList();
 
+      print('🔵 LoadGuru: Parsed ${guruList.length} GuruModel objects');
+      for (var guru in guruList) {
+        print(
+          '   - ID: ${guru.id}, Nama: ${guru.namaLengkap}, NIG: ${guru.nig}',
+        );
+      }
+
       emit(state.copyWith(guruList: guruList));
+      print('🔵 LoadGuru: State updated with guruList');
     } catch (e) {
+      print('🔴 LoadGuru ERROR: ${e.toString()}');
+      print('🔴 Stack trace: ${StackTrace.current}');
       emit(state.copyWith(error: 'Error loading guru: ${e.toString()}'));
     }
   }

@@ -86,7 +86,8 @@ class _ClassesScreenState extends State<ClassesScreen> {
         ],
       ),
       child: TextField(
-        onChanged: (value) => setState(() => _searchQuery = value.toLowerCase()),
+        onChanged: (value) =>
+            setState(() => _searchQuery = value.toLowerCase()),
         decoration: InputDecoration(
           hintText: 'Search classes by name, level, or teacher...',
           prefixIcon: const Icon(Icons.search),
@@ -98,7 +99,10 @@ class _ClassesScreenState extends State<ClassesScreen> {
             borderRadius: BorderRadius.circular(12),
             borderSide: BorderSide.none,
           ),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 12,
+          ),
         ),
       ),
     );
@@ -126,20 +130,24 @@ class _ClassesScreenState extends State<ClassesScreen> {
         }
 
         final docs = snapshot.data?.docs ?? [];
-        
+
         // Filter by search query
         List<QueryDocumentSnapshot> filteredDocs = docs;
         if (_searchQuery.isNotEmpty) {
           filteredDocs = docs.where((doc) {
             final data = doc.data() as Map<String, dynamic>;
-            final namaKelas = (data['namaKelas'] ?? '').toString().toLowerCase();
-            final jenjang = (data['jenjang_kelas'] ?? '').toString().toLowerCase();
+            final namaKelas = (data['nama_kelas'] ?? '')
+                .toString()
+                .toLowerCase();
+            final jenjang = (data['jenjang_kelas'] ?? '')
+                .toString()
+                .toLowerCase();
             final nomor = (data['nomor_kelas'] ?? '').toString().toLowerCase();
             final guru = (data['nama_guru'] ?? '').toString().toLowerCase();
             return namaKelas.contains(_searchQuery) ||
-                   jenjang.contains(_searchQuery) ||
-                   nomor.contains(_searchQuery) ||
-                   guru.contains(_searchQuery);
+                jenjang.contains(_searchQuery) ||
+                nomor.contains(_searchQuery) ||
+                guru.contains(_searchQuery);
           }).toList();
         }
 
@@ -173,7 +181,11 @@ class _ClassesScreenState extends State<ClassesScreen> {
           builder: (context, constraints) {
             final isDesktop = constraints.maxWidth >= 1200;
             final isTablet = constraints.maxWidth >= 768;
-            final crossAxisCount = isDesktop ? 3 : isTablet ? 2 : 1;
+            final crossAxisCount = isDesktop
+                ? 3
+                : isTablet
+                ? 2
+                : 1;
 
             return GridView.builder(
               padding: const EdgeInsets.all(20),
@@ -181,7 +193,11 @@ class _ClassesScreenState extends State<ClassesScreen> {
                 crossAxisCount: crossAxisCount,
                 crossAxisSpacing: 16,
                 mainAxisSpacing: 16,
-                childAspectRatio: isDesktop ? 1.4 : isTablet ? 1.2 : 1.3,
+                childAspectRatio: isDesktop
+                    ? 1.4
+                    : isTablet
+                    ? 1.2
+                    : 1.3,
               ),
               itemCount: filteredDocs.length,
               itemBuilder: (context, index) {
@@ -198,18 +214,20 @@ class _ClassesScreenState extends State<ClassesScreen> {
 
   Widget _buildClassCard(String docId, Map<String, dynamic> data) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
-    String namaKelas = data['namaKelas'] ?? '';
+
+    String namaKelas = data['nama_kelas'] ?? '';
     if (namaKelas.isEmpty) {
       final jenjang = data['jenjang_kelas'] ?? '';
       final nomor = data['nomor_kelas'] ?? '';
-      namaKelas = jenjang.isNotEmpty && nomor.isNotEmpty ? '$jenjang $nomor' : docId;
+      namaKelas = jenjang.isNotEmpty && nomor.isNotEmpty
+          ? '$jenjang $nomor'
+          : docId;
     }
-    
+
     final tahunAjaran = data['tahun_ajaran'] ?? 'N/A';
     final namaGuru = data['nama_guru'] ?? 'No teacher assigned';
     final status = data['status'] ?? false;
-    
+
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       child: Card(
@@ -253,19 +271,19 @@ class _ClassesScreenState extends State<ClassesScreen> {
                         children: [
                           Text(
                             'Class $namaKelas',
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: AppTheme.accentPink,
-                            ),
+                            style: Theme.of(context).textTheme.titleMedium
+                                ?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: AppTheme.accentPink,
+                                ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
                           const SizedBox(height: 2),
                           Text(
                             tahunAjaran,
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Colors.grey[600],
-                            ),
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(color: Colors.grey[600]),
                           ),
                         ],
                       ),
@@ -311,7 +329,11 @@ class _ClassesScreenState extends State<ClassesScreen> {
                             child: const Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(Icons.people, size: 16, color: AppTheme.accentPink),
+                                Icon(
+                                  Icons.people,
+                                  size: 16,
+                                  color: AppTheme.accentPink,
+                                ),
                                 SizedBox(width: 4),
                                 Text(
                                   'Students',
@@ -392,15 +414,17 @@ class _ClassesScreenState extends State<ClassesScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => SiswaKelasScreen(
-          kelasId: kelasId,
-          namaKelas: namaKelas,
-        ),
+        builder: (context) =>
+            SiswaKelasScreen(kelasId: kelasId, namaKelas: namaKelas),
       ),
     );
   }
 
-  void _showClassDetail(String docId, Map<String, dynamic> data, String namaKelas) {
+  void _showClassDetail(
+    String docId,
+    Map<String, dynamic> data,
+    String namaKelas,
+  ) {
     showDialog(
       context: context,
       builder: (context) => Dialog(
@@ -436,13 +460,15 @@ class _ClassesScreenState extends State<ClassesScreen> {
                         children: [
                           Text(
                             'Class $namaKelas',
-                            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
+                            style: Theme.of(context).textTheme.headlineSmall
+                                ?.copyWith(fontWeight: FontWeight.bold),
                           ),
                           Container(
                             margin: const EdgeInsets.only(top: 4),
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 2,
+                            ),
                             decoration: BoxDecoration(
                               color: AppTheme.accentPink.withOpacity(0.2),
                               borderRadius: BorderRadius.circular(8),
@@ -569,10 +595,7 @@ class _ClassesScreenState extends State<ClassesScreen> {
           ),
           const SizedBox(width: 12),
           Expanded(
-            child: Text(
-              value,
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
+            child: Text(value, style: Theme.of(context).textTheme.bodyMedium),
           ),
         ],
       ),
@@ -581,7 +604,7 @@ class _ClassesScreenState extends State<ClassesScreen> {
 
   void _showClassForm({String? docId, Map<String, dynamic>? data}) {
     final isEdit = docId != null;
-    
+
     showDialog(
       context: context,
       builder: (dialogContext) => BlocProvider(
@@ -693,7 +716,7 @@ class _ClassFormDialogState extends State<ClassFormDialog> {
     _tahunController = TextEditingController(
       text: widget.data?['tahun_ajaran'] ?? '2025-2026',
     );
-    _selectedGuruId = widget.data?['guru_id'];
+    _selectedGuruId = widget.data?['guru_id']?.toString();
     _selectedGuruNama = widget.data?['nama_guru'];
   }
 
@@ -707,23 +730,41 @@ class _ClassFormDialogState extends State<ClassFormDialog> {
 
   @override
   Widget build(BuildContext context) {
+    print('🟢 ClassFormDialog build called');
     return BlocConsumer<KelasBloc, KelasState>(
       listener: (context, state) {
+        print(
+          '🟡 ClassFormDialog listener: guruList.length = ${state.guruList.length}',
+        );
+
         if (state.successMessage != null) {
           Navigator.pop(context);
           widget.onSuccess();
         } else if (state.error != null) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(state.error!),
-              backgroundColor: Colors.red,
-            ),
+            SnackBar(content: Text(state.error!), backgroundColor: Colors.red),
           );
+        }
+
+        // Validasi _selectedGuruId saat guruList di-load
+        if (state.guruList.isNotEmpty && _selectedGuruId != null) {
+          final guruExists = state.guruList.any((g) => g.id == _selectedGuruId);
+          if (!guruExists) {
+            setState(() {
+              _selectedGuruId = null;
+              _selectedGuruNama = null;
+            });
+          }
         }
       },
       builder: (context, state) {
+        print(
+          '🟢 ClassFormDialog builder: guruList.length = ${state.guruList.length}',
+        );
         return Dialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
           child: Container(
             constraints: const BoxConstraints(maxWidth: 600),
             padding: const EdgeInsets.all(24),
@@ -752,9 +793,8 @@ class _ClassFormDialogState extends State<ClassFormDialog> {
                         Expanded(
                           child: Text(
                             widget.isEdit ? 'Edit Class' : 'Add New Class',
-                            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
+                            style: Theme.of(context).textTheme.headlineSmall
+                                ?.copyWith(fontWeight: FontWeight.bold),
                           ),
                         ),
                         IconButton(
@@ -788,8 +828,9 @@ class _ClassFormDialogState extends State<ClassFormDialog> {
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      validator: (value) =>
-                          value?.isEmpty ?? true ? 'Class number is required' : null,
+                      validator: (value) => value?.isEmpty ?? true
+                          ? 'Class number is required'
+                          : null,
                     ),
                     const SizedBox(height: 16),
                     TextFormField(
@@ -801,43 +842,84 @@ class _ClassFormDialogState extends State<ClassFormDialog> {
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      validator: (value) =>
-                          value?.isEmpty ?? true ? 'Academic year is required' : null,
+                      validator: (value) => value?.isEmpty ?? true
+                          ? 'Academic year is required'
+                          : null,
                     ),
                     const SizedBox(height: 16),
-                    DropdownButtonFormField<String>(
-                      value: _selectedGuruId,
-                      decoration: InputDecoration(
-                        labelText: 'Homeroom Teacher *',
-                        prefixIcon: const Icon(Icons.person),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      items: state.guruList.map((guru) {
-                        return DropdownMenuItem<String>(
-                          value: guru.id,
-                          child: Text('${guru.namaLengkap} (${guru.nig})'),
+                    // Dropdown Guru
+                    BlocBuilder<KelasBloc, KelasState>(
+                      builder: (context, state) {
+                        print(
+                          '🟣 Dropdown BlocBuilder: guruList.length = ${state.guruList.length}',
                         );
-                      }).toList(),
-                      onChanged: (value) {
-                        setState(() {
-                          _selectedGuruId = value;
-                          if (value != null) {
-                            _selectedGuruNama = state.guruList
-                                .firstWhere((guru) => guru.id == value)
-                                .namaLengkap;
-                          }
-                        });
+
+                        if (state.guruList.isEmpty) {
+                          print(
+                            '🟣 Dropdown: Showing loading (guruList is empty)',
+                          );
+                          return Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              border: Border.all(color: Colors.grey),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Row(
+                              children: [
+                                SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                ),
+                                SizedBox(width: 16),
+                                Text('Loading teachers...'),
+                              ],
+                            ),
+                          );
+                        }
+
+                        print(
+                          '🟣 Dropdown: Showing dropdown with ${state.guruList.length} teachers',
+                        );
+                        return DropdownButtonFormField<String>(
+                          value: _selectedGuruId,
+                          decoration: InputDecoration(
+                            labelText: 'Homeroom Teacher *',
+                            prefixIcon: const Icon(Icons.person),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          items: state.guruList.map((guru) {
+                            return DropdownMenuItem<String>(
+                              value: guru.id.toString(),
+                              child: Text(
+                                '${guru.namaLengkap} (NIG: ${guru.nig})',
+                              ),
+                            );
+                          }).toList(),
+                          onChanged: (value) {
+                            setState(() {
+                              _selectedGuruId = value;
+                              if (value != null) {
+                                final selectedGuru = state.guruList.firstWhere(
+                                  (g) => g.id == value,
+                                );
+                                _selectedGuruNama = selectedGuru.namaLengkap;
+                              }
+                            });
+                          },
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please select a homeroom teacher';
+                            }
+                            return null;
+                          },
+                        );
                       },
-                      validator: (value) =>
-                          value == null ? 'Homeroom teacher is required' : null,
                     ),
-                    if (state.isLoading && state.guruList.isEmpty)
-                      const Padding(
-                        padding: EdgeInsets.all(16.0),
-                        child: Center(child: CircularProgressIndicator()),
-                      ),
                     const SizedBox(height: 24),
                     Row(
                       children: [
@@ -868,9 +950,13 @@ class _ClassFormDialogState extends State<ClassFormDialog> {
                                           UpdateKelas(
                                             id: widget.docId!,
                                             namaKelas: namaKelas,
-                                            jenjangKelas: _jenjangController.text.trim(),
-                                            nomorKelas: _nomorController.text.trim(),
-                                            tahunAjaran: _tahunController.text.trim(),
+                                            jenjangKelas: _jenjangController
+                                                .text
+                                                .trim(),
+                                            nomorKelas: _nomorController.text
+                                                .trim(),
+                                            tahunAjaran: _tahunController.text
+                                                .trim(),
                                             guruId: _selectedGuruId!,
                                             namaGuru: _selectedGuruNama!,
                                           ),
@@ -879,9 +965,13 @@ class _ClassFormDialogState extends State<ClassFormDialog> {
                                         context.read<KelasBloc>().add(
                                           AddKelas(
                                             namaKelas: namaKelas,
-                                            jenjangKelas: _jenjangController.text.trim(),
-                                            nomorKelas: _nomorController.text.trim(),
-                                            tahunAjaran: _tahunController.text.trim(),
+                                            jenjangKelas: _jenjangController
+                                                .text
+                                                .trim(),
+                                            nomorKelas: _nomorController.text
+                                                .trim(),
+                                            tahunAjaran: _tahunController.text
+                                                .trim(),
                                             guruId: _selectedGuruId!,
                                             namaGuru: _selectedGuruNama!,
                                           ),
@@ -903,7 +993,9 @@ class _ClassFormDialogState extends State<ClassFormDialog> {
                                     height: 20,
                                     child: CircularProgressIndicator(
                                       strokeWidth: 2,
-                                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                        Colors.white,
+                                      ),
                                     ),
                                   )
                                 : Text(widget.isEdit ? 'Update' : 'Add'),

@@ -27,17 +27,29 @@ class GuruModel {
 
   factory GuruModel.fromFirestore(DocumentSnapshot doc) {
     Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+
+    // Parse NIG - bisa String atau int dari Firestore
+    int parsedNig = 0;
+    if (data['nig'] != null) {
+      if (data['nig'] is int) {
+        parsedNig = data['nig'] as int;
+      } else if (data['nig'] is String) {
+        parsedNig = int.tryParse(data['nig'] as String) ?? 0;
+      }
+    }
+
     return GuruModel(
       id: doc.id,
       namaLengkap: data['nama_lengkap'] ?? '',
       email: data['email'] ?? '',
-      nig: data['nig'] ?? 0,
+      nig: parsedNig,
       mataPelajaran: data['mata_pelajaran'] ?? '',
       sekolah: data['sekolah'] ?? '',
       jenisKelamin: data['jenis_kelamin'] ?? '',
       status: data['status'] ?? 'aktif',
       photoUrl: data['photo_url']?.isEmpty == true ? null : data['photo_url'],
-      tanggalLahir: (data['tanggal_lahir'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      tanggalLahir:
+          (data['tanggal_lahir'] as Timestamp?)?.toDate() ?? DateTime.now(),
     );
   }
 

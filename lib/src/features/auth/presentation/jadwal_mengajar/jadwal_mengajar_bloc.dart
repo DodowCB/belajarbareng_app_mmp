@@ -62,22 +62,17 @@ class JadwalMengajarBloc
       emit(JadwalMengajarActionInProgress('Adding teaching schedule...'));
       try {
         // Generate next integer ID
-        final querySnapshot = await _firestore
-            .collection('kelas_ngajar')
-            .orderBy('id', descending: true)
-            .limit(1)
-            .get();
+        final querySnapshot = await _firestore.collection('kelas_ngajar').get();
 
-        String nextId = '1';
-        if (querySnapshot.docs.isNotEmpty) {
-          final lastDoc = querySnapshot.docs.first;
-          final lastId = int.tryParse(lastDoc.id) ?? 0;
-          nextId = (lastId + 1).toString();
+        int maxId = 0;
+        for (var doc in querySnapshot.docs) {
+          final id = int.tryParse(doc.id) ?? 0;
+          if (id > maxId) maxId = id;
         }
+        String nextId = (maxId + 1).toString();
 
         // Create document with specific integer ID
         await _firestore.collection('kelas_ngajar').doc(nextId).set({
-          'id': int.parse(nextId),
           'id_guru': event.idGuru,
           'id_kelas': event.idKelas,
           'id_mapel': event.idMapel,
@@ -138,7 +133,7 @@ class JadwalMengajarBloc
         final currentState = state as JadwalMengajarLoaded;
         final filteredList = currentState.jadwalList.where((jadwal) {
           final query = event.query.toLowerCase();
-          
+
           // Get teacher name from ID
           String getGuruName(String? guruId) {
             if (guruId == null) return '';
@@ -148,17 +143,17 @@ class JadwalMengajarBloc
             );
             return guru['nama_lengkap']?.toString().toLowerCase() ?? '';
           }
-          
+
           // Get class name from ID
           String getKelasName(String? kelasId) {
             if (kelasId == null) return '';
             final kelas = currentState.kelasList.firstWhere(
               (k) => k['id'] == kelasId,
-              orElse: () => {'namaKelas': ''},
+              orElse: () => {'nama_kelas': ''},
             );
-            return kelas['namaKelas']?.toString().toLowerCase() ?? '';
+            return kelas['nama_kelas']?.toString().toLowerCase() ?? '';
           }
-          
+
           // Get subject name from ID
           String getMapelName(String? mapelId) {
             if (mapelId == null) return '';
@@ -168,9 +163,11 @@ class JadwalMengajarBloc
             );
             return mapel['namaMapel']?.toString().toLowerCase() ?? '';
           }
-          
-          return jadwal['jam']?.toString().toLowerCase().contains(query) == true ||
-              jadwal['hari']?.toString().toLowerCase().contains(query) == true ||
+
+          return jadwal['jam']?.toString().toLowerCase().contains(query) ==
+                  true ||
+              jadwal['hari']?.toString().toLowerCase().contains(query) ==
+                  true ||
               getGuruName(jadwal['id_guru']).contains(query) ||
               getKelasName(jadwal['id_kelas']).contains(query) ||
               getMapelName(jadwal['id_mapel']).contains(query);

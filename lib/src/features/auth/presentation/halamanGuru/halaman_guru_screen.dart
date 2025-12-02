@@ -2165,12 +2165,12 @@ class HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
 
       // Cek apakah sudah ada absensi untuk jadwal dan tanggal ini
       final dateString = DateFormat('yyyy-MM-dd').format(tanggal);
-      final jadwalId = kelas['jadwalId'] ?? '';
+      final kelasId = kelas['kelasId'] ?? '';
 
       // Query sederhana
       final existingAbsensiCheck = await firestore
           .collection('absensi')
-          .where('jadwal_id', isEqualTo: jadwalId)
+          .where('jadwal_id', isEqualTo: kelasId)
           .where('tipe_absen', isEqualTo: 'mapel')
           .get();
 
@@ -2244,13 +2244,13 @@ class HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
         batch.set(docRef, {
           'siswa_id': siswaId,
           'kelas_id': kelas['kelasId'] ?? '',
-          'jadwal_id': jadwalId,
+          'jadwal_id': kelasId,
           'tanggal': timestamp,
           'status': isHadir ? 'hadir' : 'alpa',
           'tipe_absen': 'mapel',
           'diabsen_oleh': guruId,
-          'created_at': FieldValue.serverTimestamp(),
-          'updated_at': FieldValue.serverTimestamp(),
+          'createdAt': FieldValue.serverTimestamp(),
+          'updatedAt': FieldValue.serverTimestamp(),
         });
       }
 
@@ -3223,8 +3223,8 @@ class HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
             'jadwal_id': null,
             'status': status,
             'diabsen_oleh': guruId,
-            'created_at': FieldValue.serverTimestamp(),
-            'updated_at': FieldValue.serverTimestamp(),
+            'createdAt': FieldValue.serverTimestamp(),
+            'updatedAt': FieldValue.serverTimestamp(),
           });
 
           nextId++; // Increment untuk siswa berikutnya

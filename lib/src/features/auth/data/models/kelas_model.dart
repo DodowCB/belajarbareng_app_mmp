@@ -30,7 +30,7 @@ class KelasModel {
     final data = doc.data() as Map<String, dynamic>;
 
     // Buat nama kelas dari jenjang_kelas + nomor_kelas jika tidak ada namaKelas
-    String namaKelas = data['namaKelas'] ?? '';
+    String namaKelas = data['nama_kelas'] ?? '';
     if (namaKelas.isEmpty) {
       final jenjang = data['jenjang_kelas'] ?? '';
       final nomor = data['nomor_kelas'] ?? '';
@@ -45,7 +45,7 @@ class KelasModel {
       jenjangKelas: data['jenjang_kelas'] ?? '',
       nomorKelas: data['nomor_kelas'] ?? '',
       tahunAjaran: data['tahun_ajaran'] ?? '',
-      guruId: data['guru_id'],
+      guruId: data['guru_id']?.toString(),
       namaGuru: data['nama_guru'],
       status: data['status'] ?? true,
       createdAt: data['createdAt'] != null
@@ -61,11 +61,11 @@ class KelasModel {
   factory KelasModel.fromMap(Map<String, dynamic> map, String id) {
     return KelasModel(
       id: id,
-      namaKelas: map['namaKelas'] ?? '',
+      namaKelas: map['nama_kelas'] ?? '',
       jenjangKelas: map['jenjang_kelas'] ?? '',
       nomorKelas: map['nomor_kelas'] ?? '',
       tahunAjaran: map['tahun_ajaran'] ?? '',
-      guruId: map['guru_id'],
+      guruId: map['guru_id']?.toString(),
       namaGuru: map['nama_guru'],
       status: map['status'] ?? true,
       createdAt: map['createdAt'] != null
@@ -80,7 +80,7 @@ class KelasModel {
   // Method untuk mengkonversi objek ke Map untuk Firestore
   Map<String, dynamic> toMap() {
     return {
-      'namaKelas': namaKelas,
+      'nama_kelas': namaKelas,
       'jenjang_kelas': jenjangKelas,
       'nomor_kelas': nomorKelas,
       'tahun_ajaran': tahunAjaran,

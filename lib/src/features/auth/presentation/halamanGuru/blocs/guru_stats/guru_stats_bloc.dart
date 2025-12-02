@@ -84,8 +84,8 @@ class GuruStatsBloc extends Bloc<GuruStatsEvent, GuruStatsState> {
 
         kelasWali.add({
           'id': kelasId,
-          'namaKelas':
-              kelasData['namaKelas'] ??
+          'nama_kelas':
+              kelasData['nama_kelas'] ??
               '${kelasData['jenjang_kelas']} ${kelasData['nomor_kelas']}',
           'jumlahSiswa': jumlahSiswaKelas,
           'jenjang_kelas': kelasData['jenjang_kelas'] ?? '',
@@ -93,7 +93,7 @@ class GuruStatsBloc extends Bloc<GuruStatsEvent, GuruStatsState> {
           'tahun_ajaran': kelasData['tahun_ajaran'] ?? '2024/2025',
         });
 
-        print('📚 Kelas ${kelasData['namaKelas']}: $jumlahSiswaKelas siswa');
+        print('📚 Kelas ${kelasData['nama_kelas']}: $jumlahSiswaKelas siswa');
       }
 
       // Get kelas_ngajar details for this guru
@@ -128,7 +128,7 @@ class GuruStatsBloc extends Bloc<GuruStatsEvent, GuruStatsState> {
         kelasNgajarDetail.add({
           'id': doc.id,
           'kelasId': kelasId,
-          'namaKelas': kelasData?['namaKelas'] ?? 'Kelas Tidak Ditemukan',
+          'nama_kelas': kelasData?['nama_kelas'] ?? 'Kelas Tidak Ditemukan',
           'mapelId': mapelId,
           'namaMapel': mapelData?['namaMapel'] ?? 'Mapel Tidak Ditemukan',
           'hari': data['hari'] ?? '',

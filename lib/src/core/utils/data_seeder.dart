@@ -150,7 +150,6 @@ class DataSeeder {
       final kelas = [
         {
           'nama_kelas': 'X IPA 1',
-          'namaKelas': 'X IPA 1',
           'tingkat': 'X',
           'jurusan': 'IPA',
           'tahun_ajaran': '2024/2025',
@@ -160,7 +159,6 @@ class DataSeeder {
         },
         {
           'nama_kelas': 'XI IPA 2',
-          'namaKelas': 'XI IPA 2',
           'tingkat': 'XI',
           'jurusan': 'IPA',
           'tahun_ajaran': '2024/2025',
@@ -170,7 +168,6 @@ class DataSeeder {
         },
         {
           'nama_kelas': 'XII IPS 1',
-          'namaKelas': 'XII IPS 1',
           'tingkat': 'XII',
           'jurusan': 'IPS',
           'tahun_ajaran': '2024/2025',

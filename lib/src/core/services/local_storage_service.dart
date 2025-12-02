@@ -20,7 +20,9 @@ class LocalStorageService {
       if (_isWeb) {
         // Use SharedPreferences for web platform
         _prefs = await SharedPreferences.getInstance();
-        debugPrint('LocalStorageService initialized successfully with SharedPreferences (Web)');
+        debugPrint(
+          'LocalStorageService initialized successfully with SharedPreferences (Web)',
+        );
       } else {
         // Use Tostore for mobile/desktop platforms
         _store = ToStore(
@@ -28,7 +30,9 @@ class LocalStorageService {
           schemas: [], // Empty schemas for simple key-value storage
         );
         await _store!.initialize();
-        debugPrint('LocalStorageService initialized successfully with Tostore (Native)');
+        debugPrint(
+          'LocalStorageService initialized successfully with Tostore (Native)',
+        );
       }
     } catch (e) {
       debugPrint('Error initializing LocalStorageService: $e');
@@ -36,7 +40,9 @@ class LocalStorageService {
       if (!_isWeb && _prefs == null) {
         try {
           _prefs = await SharedPreferences.getInstance();
-          debugPrint('LocalStorageService fallback to SharedPreferences successful');
+          debugPrint(
+            'LocalStorageService fallback to SharedPreferences successful',
+          );
         } catch (fallbackError) {
           debugPrint('LocalStorageService fallback failed: $fallbackError');
           rethrow;
@@ -54,7 +60,9 @@ class LocalStorageService {
     } else if (_prefs != null) {
       return _prefs!.getString(key);
     }
-    throw Exception('LocalStorageService not initialized. Call initialize() first.');
+    throw Exception(
+      'LocalStorageService not initialized. Call initialize() first.',
+    );
   }
 
   /// Set value to storage (web or native)
@@ -74,7 +82,9 @@ class LocalStorageService {
         await _prefs!.setString(key, value);
       }
     } else {
-      throw Exception('LocalStorageService not initialized. Call initialize() first.');
+      throw Exception(
+        'LocalStorageService not initialized. Call initialize() first.',
+      );
     }
   }
 
@@ -111,16 +121,28 @@ class LocalStorageService {
     final sampleGuru = [
       {
         'id': 'guru_001',
-        'nama': 'Dr. Lestari Wijaya',
+        'nama_lengkap': 'Dr. Lestari Wijaya',
         'email': 'lestari.wijaya@teacher.com',
-        'mapel': 'Matematika',
+        'nig': 12345,
+        'mata_pelajaran': 'Matematika',
+        'sekolah': 'SMA Negeri 1',
+        'jenis_kelamin': 'Perempuan',
+        'status': 'aktif',
+        'photo_url': '',
+        'tanggal_lahir': DateTime(1985, 5, 15).toIso8601String(),
         'created_at': DateTime.now().toIso8601String(),
       },
       {
         'id': 'guru_002',
-        'nama': 'Prof. Andi Suryanto',
+        'nama_lengkap': 'Prof. Andi Suryanto',
         'email': 'andi.suryanto@teacher.com',
-        'mapel': 'Fisika',
+        'nig': 12346,
+        'mata_pelajaran': 'Fisika',
+        'sekolah': 'SMA Negeri 1',
+        'jenis_kelamin': 'Laki-laki',
+        'status': 'aktif',
+        'photo_url': '',
+        'tanggal_lahir': DateTime(1980, 8, 20).toIso8601String(),
         'created_at': DateTime.now().toIso8601String(),
       },
     ];
@@ -129,23 +151,38 @@ class LocalStorageService {
     final sampleKelas = [
       {
         'id': 'kelas_001',
-        'nama': 'X-A',
+        'nama_kelas': 'X-A',
+        'jenjang_kelas': 'X',
+        'nomor_kelas': 'A',
         'wali_kelas': 'Dr. Lestari Wijaya',
+        'guru_id': 'guru_001',
         'jumlah_siswa': 30,
+        'tahun_ajaran': '2023/2024',
+        'status': true,
         'created_at': DateTime.now().toIso8601String(),
       },
       {
         'id': 'kelas_002',
-        'nama': 'X-B',
+        'nama_kelas': 'X-B',
+        'jenjang_kelas': 'X',
+        'nomor_kelas': 'B',
         'wali_kelas': 'Prof. Andi Suryanto',
+        'guru_id': 'guru_002',
         'jumlah_siswa': 28,
+        'tahun_ajaran': '2023/2024',
+        'status': true,
         'created_at': DateTime.now().toIso8601String(),
       },
       {
         'id': 'kelas_003',
-        'nama': 'XI-A',
+        'nama_kelas': 'XI-A',
+        'jenjang_kelas': 'XI',
+        'nomor_kelas': 'A',
         'wali_kelas': 'Dr. Lestari Wijaya',
+        'guru_id': 'guru_001',
         'jumlah_siswa': 25,
+        'tahun_ajaran': '2023/2024',
+        'status': true,
         'created_at': DateTime.now().toIso8601String(),
       },
     ];
@@ -686,7 +723,7 @@ class LocalStorageService {
         debugPrint('👨‍🏫 GURU DATA (${guruData.length} records):');
         for (final guru in guruData) {
           debugPrint(
-            '   - ${guru['nama']} (${guru['email']}) - Mapel: ${guru['mapel']}',
+            '   - ${guru['nama_lengkap']} (${guru['email']}) - Mapel: ${guru['mata_pelajaran']}',
           );
         }
       } else {
@@ -699,7 +736,7 @@ class LocalStorageService {
         debugPrint('🏫 KELAS DATA (${kelasData.length} records):');
         for (final kelas in kelasData) {
           debugPrint(
-            '   - ${kelas['nama']} - Wali: ${kelas['wali_kelas']} - Siswa: ${kelas['jumlah_siswa']}',
+            '   - ${kelas['nama_kelas']} - Wali: ${kelas['wali_kelas']} - Siswa: ${kelas['jumlah_siswa']}',
           );
         }
       } else {
@@ -759,4 +796,3 @@ class LocalStorageService {
     }
   }
 }
-

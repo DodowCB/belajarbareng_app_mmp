@@ -16,27 +16,27 @@ class GuruStatsBloc extends Bloc<GuruStatsEvent, GuruStatsState> {
   ) async {
     try {
       emit(const GuruStatsLoading());
-      
+
       // Dummy data untuk testing performance
       await Future.delayed(const Duration(milliseconds: 500));
-      
+
       final kelasWali = [
         {
           'id': '1',
-          'namaKelas': 'XII IPA 1',
+          'nama_kelas': 'XII IPA 1',
           'jumlahSiswa': 32,
           'tingkat': 'XII',
           'jurusan': 'IPA',
           'tahun_ajaran': '2024/2025',
         },
         {
-          'id': '2', 
-          'namaKelas': 'XI IPA 2',
+          'id': '2',
+          'nama_kelas': 'XI IPA 2',
           'jumlahSiswa': 30,
           'tingkat': 'XI',
           'jurusan': 'IPA',
           'tahun_ajaran': '2024/2025',
-        }
+        },
       ];
 
       final teachingStats = {
@@ -47,14 +47,16 @@ class GuruStatsBloc extends Bloc<GuruStatsEvent, GuruStatsState> {
         'tugas': 3,
       };
 
-      emit(GuruStatsLoaded(
-        kelasWali: kelasWali,
-        jadwalMengajar: [],
-        teachingStats: teachingStats,
-        totalStudents: 62,
-        totalClasses: 2,
-        tugasPerluDinilai: 3,
-      ));
+      emit(
+        GuruStatsLoaded(
+          kelasWali: kelasWali,
+          jadwalMengajar: [],
+          teachingStats: teachingStats,
+          totalStudents: 62,
+          totalClasses: 2,
+          tugasPerluDinilai: 3,
+        ),
+      );
     } catch (e) {
       emit(GuruStatsError('Error: ${e.toString()}'));
     }

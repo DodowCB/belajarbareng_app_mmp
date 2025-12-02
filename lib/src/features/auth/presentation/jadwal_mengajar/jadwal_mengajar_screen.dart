@@ -92,7 +92,8 @@ class _JadwalMengajarScreenState extends State<JadwalMengajarScreen> {
               _jadwalBloc.add(SearchJadwal(value));
             },
             decoration: InputDecoration(
-              hintText: 'Search by teacher name, class, subject, day, or time...',
+              hintText:
+                  'Search by teacher name, class, subject, day, or time...',
               prefixIcon: const Icon(Icons.search),
               filled: true,
               fillColor: Theme.of(context).brightness == Brightness.dark
@@ -241,7 +242,7 @@ class _JadwalMengajarScreenState extends State<JadwalMengajarScreen> {
         (k) => k['id'] == kelasId,
         orElse: () => {'nama': 'Unknown Class'},
       );
-      return kelas['namaKelas'] ?? 'Unknown Class';
+      return kelas['nama_kelas'] ?? 'Unknown Class';
     }
 
     String getMapelName(String? mapelId) {
@@ -290,9 +291,8 @@ class _JadwalMengajarScreenState extends State<JadwalMengajarScreen> {
                           const SizedBox(height: 4),
                           Text(
                             '${getKelasName(jadwal['id_kelas'])} - ${getMapelName(jadwal['id_mapel'])}',
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: Colors.grey[600],
-                            ),
+                            style: Theme.of(context).textTheme.bodyMedium
+                                ?.copyWith(color: Colors.grey[600]),
                           ),
                         ],
                       ),
@@ -322,7 +322,10 @@ class _JadwalMengajarScreenState extends State<JadwalMengajarScreen> {
                             children: [
                               Icon(Icons.delete, size: 16, color: Colors.red),
                               SizedBox(width: 8),
-                              Text('Delete', style: TextStyle(color: Colors.red)),
+                              Text(
+                                'Delete',
+                                style: TextStyle(color: Colors.red),
+                              ),
                             ],
                           ),
                         ),
@@ -439,7 +442,10 @@ class _JadwalMengajarScreenState extends State<JadwalMengajarScreen> {
     );
   }
 
-  void _showJadwalDetail(Map<String, dynamic> jadwal, JadwalMengajarLoaded state) {
+  void _showJadwalDetail(
+    Map<String, dynamic> jadwal,
+    JadwalMengajarLoaded state,
+  ) {
     // Helper functions to get names from IDs
     String getGuruName(String? guruId) {
       if (guruId == null) return 'Unknown Teacher';
@@ -454,9 +460,9 @@ class _JadwalMengajarScreenState extends State<JadwalMengajarScreen> {
       if (kelasId == null) return 'Unknown Class';
       final kelas = state.kelasList.firstWhere(
         (k) => k['id'] == kelasId,
-        orElse: () => {'namaKelas': 'Unknown Class'},
+        orElse: () => {'nama_kelas': 'Unknown Class'},
       );
-      return kelas['namaKelas'] ?? 'Unknown Class';
+      return kelas['nama_kelas'] ?? 'Unknown Class';
     }
 
     String getMapelName(String? mapelId) {
@@ -490,9 +496,7 @@ class _JadwalMengajarScreenState extends State<JadwalMengajarScreen> {
               child: const Icon(Icons.schedule, color: Colors.purple),
             ),
             const SizedBox(width: 12),
-            const Expanded(
-              child: Text('Teaching Schedule Details'),
-            ),
+            const Expanded(child: Text('Teaching Schedule Details')),
           ],
         ),
         content: SingleChildScrollView(
@@ -500,17 +504,41 @@ class _JadwalMengajarScreenState extends State<JadwalMengajarScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              _buildDetailRow('Teacher', getGuruName(jadwal['id_guru']), Icons.person),
+              _buildDetailRow(
+                'Teacher',
+                getGuruName(jadwal['id_guru']),
+                Icons.person,
+              ),
               const SizedBox(height: 12),
-              _buildDetailRow('Class', getKelasName(jadwal['id_kelas']), Icons.class_),
+              _buildDetailRow(
+                'Class',
+                getKelasName(jadwal['id_kelas']),
+                Icons.class_,
+              ),
               const SizedBox(height: 12),
-              _buildDetailRow('Subject', getMapelName(jadwal['id_mapel']), Icons.book),
+              _buildDetailRow(
+                'Subject',
+                getMapelName(jadwal['id_mapel']),
+                Icons.book,
+              ),
               const SizedBox(height: 12),
-              _buildDetailRow('Day', jadwal['hari'] ?? 'N/A', Icons.calendar_today),
+              _buildDetailRow(
+                'Day',
+                jadwal['hari'] ?? 'N/A',
+                Icons.calendar_today,
+              ),
               const SizedBox(height: 12),
-              _buildDetailRow('Time', jadwal['jam'] ?? 'N/A', Icons.access_time),
+              _buildDetailRow(
+                'Time',
+                jadwal['jam'] ?? 'N/A',
+                Icons.access_time,
+              ),
               const SizedBox(height: 12),
-              _buildDetailRow('Date', formatDate(jadwal['tanggal']), Icons.event),
+              _buildDetailRow(
+                'Date',
+                formatDate(jadwal['tanggal']),
+                Icons.event,
+              ),
             ],
           ),
         ),
@@ -740,7 +768,7 @@ class _JadwalMengajarScreenState extends State<JadwalMengajarScreen> {
 
       final snapshot = await FirebaseFirestore.instance
           .collection('kelas')
-          .where('namaKelas', isEqualTo: name)
+          .where('nama_kelas', isEqualTo: name)
           .limit(1)
           .get();
 
@@ -1047,9 +1075,9 @@ class _JadwalFormDialogState extends State<JadwalFormDialog> {
   void initState() {
     super.initState();
     if (widget.jadwal != null) {
-      _selectedGuruId = widget.jadwal!['id_guru'];
-      _selectedKelasId = widget.jadwal!['id_kelas'];
-      _selectedMapelId = widget.jadwal!['id_mapel'];
+      _selectedGuruId = widget.jadwal!['id_guru']?.toString();
+      _selectedKelasId = widget.jadwal!['id_kelas']?.toString();
+      _selectedMapelId = widget.jadwal!['id_mapel']?.toString();
       // Convert Indonesian day name to English for dropdown
       _selectedHari = _convertDayToEnglish(widget.jadwal!['hari']);
       _jamController.text = widget.jadwal!['jam'] ?? '';
@@ -1086,25 +1114,51 @@ class _JadwalFormDialogState extends State<JadwalFormDialog> {
                     if (state is JadwalMengajarLoaded) {
                       return Column(
                         children: [
-                          DropdownButtonFormField<String>(
-                            value: _selectedGuruId,
-                            decoration: const InputDecoration(
-                              labelText: 'Teacher',
-                              border: OutlineInputBorder(),
-                            ),
-                            items: state.guruList.map((guru) {
-                              print(guru);
-                              return DropdownMenuItem<String>(
-                                value: guru['id'],
-                                child: Text(guru['nama_lengkap'] ?? 'Unknown'),
-                              );
-                            }).toList(),
-                            onChanged: (value) =>
-                                setState(() => _selectedGuruId = value),
-                            validator: (value) => value == null
-                                ? 'Please select a teacher'
-                                : null,
-                          ),
+                          // Dropdown Guru dengan styling seperti classes_screen
+                          state.guruList.isEmpty
+                              ? Container(
+                                  padding: const EdgeInsets.all(16),
+                                  decoration: BoxDecoration(
+                                    border: Border.all(color: Colors.grey),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: const Row(
+                                    children: [
+                                      SizedBox(
+                                        width: 20,
+                                        height: 20,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                        ),
+                                      ),
+                                      SizedBox(width: 16),
+                                      Text('Loading teachers...'),
+                                    ],
+                                  ),
+                                )
+                              : DropdownButtonFormField<String>(
+                                  value: _selectedGuruId,
+                                  decoration: InputDecoration(
+                                    labelText: 'Teacher *',
+                                    prefixIcon: const Icon(Icons.person),
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                  ),
+                                  items: state.guruList.map((guru) {
+                                    return DropdownMenuItem<String>(
+                                      value: guru['id'],
+                                      child: Text(
+                                        '${guru['nama_lengkap'] ?? 'Unknown'} (NIG: ${guru['nig'] ?? '-'})',
+                                      ),
+                                    );
+                                  }).toList(),
+                                  onChanged: (value) =>
+                                      setState(() => _selectedGuruId = value),
+                                  validator: (value) => value == null
+                                      ? 'Please select a teacher'
+                                      : null,
+                                ),
                           const SizedBox(height: 16),
                           DropdownButtonFormField<String>(
                             value: _selectedKelasId,
@@ -1115,7 +1169,7 @@ class _JadwalFormDialogState extends State<JadwalFormDialog> {
                             items: state.kelasList.map((kelas) {
                               return DropdownMenuItem<String>(
                                 value: kelas['id'],
-                                child: Text(kelas['namaKelas'] ?? 'Unknown'),
+                                child: Text(kelas['nama_kelas'] ?? 'Unknown'),
                               );
                             }).toList(),
                             onChanged: (value) =>
@@ -1336,22 +1390,17 @@ class _JadwalFormDialogState extends State<JadwalFormDialog> {
   }) async {
     try {
       // Generate next integer ID
-      final querySnapshot = await _firestore
-          .collection('kelas_ngajar')
-          .orderBy('id', descending: true)
-          .limit(1)
-          .get();
+      final querySnapshot = await _firestore.collection('kelas_ngajar').get();
 
-      String nextId = '1';
-      if (querySnapshot.docs.isNotEmpty) {
-        final lastDoc = querySnapshot.docs.first;
-        final lastId = int.tryParse(lastDoc.id) ?? 0;
-        nextId = (lastId + 1).toString();
+      int maxId = 0;
+      for (var doc in querySnapshot.docs) {
+        final id = int.tryParse(doc.id) ?? 0;
+        if (id > maxId) maxId = id;
       }
+      String nextId = (maxId + 1).toString();
 
       // Use parameters if provided (for Excel import), otherwise use form values
       await _firestore.collection('kelas_ngajar').doc(nextId).set({
-        'id': int.parse(nextId),
         'id_guru': idGuru ?? _selectedGuruId!,
         'id_kelas': idKelas ?? _selectedKelasId!,
         'id_mapel': idMapel ?? _selectedMapelId!,
