@@ -665,23 +665,21 @@ class _AddSiswaDialogState extends State<AddSiswaDialog> {
     if (_selectedSiswaId == null) return;
 
     try {
-      // Generate next integer ID
-      final querySnapshot = await _firestore
-          .collection('siswa_kelas')
-          .orderBy('id', descending: true)
-          .limit(1)
-          .get();
+      // Generate next integer ID by getting all docs and finding max ID
+      final querySnapshot = await _firestore.collection('siswa_kelas').get();
 
-      String nextId = '1';
-      if (querySnapshot.docs.isNotEmpty) {
-        final lastDoc = querySnapshot.docs.first;
-        final lastId = int.tryParse(lastDoc.id) ?? 0;
-        nextId = (lastId + 1).toString();
+      int maxId = 0;
+      for (var doc in querySnapshot.docs) {
+        final id = int.tryParse(doc.id) ?? 0;
+        if (id > maxId) {
+          maxId = id;
+        }
       }
+
+      String nextId = (maxId + 1).toString();
 
       // Add to siswa_kelas collection with integer ID
       await _firestore.collection('siswa_kelas').doc(nextId).set({
-        'id': int.parse(nextId),
         'kelas_id': widget.kelasId,
         'siswa_id': _selectedSiswaId!,
         'createdAt': FieldValue.serverTimestamp(),

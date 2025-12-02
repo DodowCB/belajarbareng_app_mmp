@@ -14,6 +14,60 @@ class _SubjectsScreenState extends State<SubjectsScreen> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   String _searchQuery = '';
 
+  /// Cleanup function to remove 'id' field from all mapel documents
+  Future<void> _cleanupIdField() async {
+    try {
+      final querySnapshot = await _firestore.collection('mapel').get();
+
+      int updatedCount = 0;
+      for (var doc in querySnapshot.docs) {
+        final data = doc.data();
+        if (data.containsKey('id')) {
+          await doc.reference.update({'id': FieldValue.delete()});
+          updatedCount++;
+        }
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.check_circle, color: Colors.white),
+                const SizedBox(width: 12),
+                Text('Successfully cleaned up $updatedCount field IDs'),
+              ],
+            ),
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.error_outline, color: Colors.white),
+                const SizedBox(width: 12),
+                Text('Error cleanup: ${e.toString()}'),
+              ],
+            ),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -22,6 +76,51 @@ class _SubjectsScreenState extends State<SubjectsScreen> {
         title: 'Subjects Management',
         icon: Icons.library_books,
         additionalActions: [
+          MouseRegion(
+            cursor: SystemMouseCursors.click,
+            child: IconButton(
+              icon: const Icon(Icons.cleaning_services),
+              onPressed: () {
+                showDialog(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    title: const Row(
+                      children: [
+                        Icon(Icons.cleaning_services, color: Colors.orange),
+                        SizedBox(width: 12),
+                        Text('Cleanup Field ID'),
+                      ],
+                    ),
+                    content: const Text(
+                      'Remove "id" field from all existing subject data?\n\n'
+                      'This will clean up duplicate fields and only use Document ID.',
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text('Cancel'),
+                      ),
+                      ElevatedButton(
+                        onPressed: () {
+                          Navigator.pop(context);
+                          _cleanupIdField();
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.orange,
+                          foregroundColor: Colors.white,
+                        ),
+                        child: const Text('Cleanup'),
+                      ),
+                    ],
+                  ),
+                );
+              },
+              tooltip: 'Cleanup Field ID',
+            ),
+          ),
           MouseRegion(
             cursor: SystemMouseCursors.click,
             child: IconButton(
@@ -54,8 +153,10 @@ class _SubjectsScreenState extends State<SubjectsScreen> {
           ),
         ],
       ),
+
       child: TextField(
-        onChanged: (value) => setState(() => _searchQuery = value.toLowerCase()),
+        onChanged: (value) =>
+            setState(() => _searchQuery = value.toLowerCase()),
         decoration: InputDecoration(
           hintText: 'Search subjects by name...',
           prefixIcon: const Icon(Icons.search),
@@ -67,7 +168,10 @@ class _SubjectsScreenState extends State<SubjectsScreen> {
             borderRadius: BorderRadius.circular(12),
             borderSide: BorderSide.none,
           ),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 12,
+          ),
         ),
       ),
     );
@@ -98,7 +202,7 @@ class _SubjectsScreenState extends State<SubjectsScreen> {
         }
 
         final docs = snapshot.data?.docs ?? [];
-        
+
         // Filter by search query
         List<QueryDocumentSnapshot> filteredDocs = docs;
         if (_searchQuery.isNotEmpty) {
@@ -114,7 +218,11 @@ class _SubjectsScreenState extends State<SubjectsScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.library_books_outlined, size: 64, color: Colors.grey[400]),
+                Icon(
+                  Icons.library_books_outlined,
+                  size: 64,
+                  color: Colors.grey[400],
+                ),
                 const SizedBox(height: 16),
                 Text(
                   'No subjects found',
@@ -139,7 +247,11 @@ class _SubjectsScreenState extends State<SubjectsScreen> {
           builder: (context, constraints) {
             final isDesktop = constraints.maxWidth >= 1200;
             final isTablet = constraints.maxWidth >= 768;
-            final crossAxisCount = isDesktop ? 3 : isTablet ? 2 : 1;
+            final crossAxisCount = isDesktop
+                ? 3
+                : isTablet
+                ? 2
+                : 1;
 
             return GridView.builder(
               padding: const EdgeInsets.all(20),
@@ -166,7 +278,7 @@ class _SubjectsScreenState extends State<SubjectsScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final namaMapel = data['namaMapel'] ?? 'Unknown';
     final id = data['id'] ?? docId;
-    
+
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       child: Card(
@@ -207,19 +319,19 @@ class _SubjectsScreenState extends State<SubjectsScreen> {
                         children: [
                           Text(
                             namaMapel,
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: AppTheme.accentOrange,
-                            ),
+                            style: Theme.of(context).textTheme.titleMedium
+                                ?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: AppTheme.accentOrange,
+                                ),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                           ),
                           const SizedBox(height: 4),
                           Text(
                             'ID: $id',
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Colors.grey[600],
-                            ),
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(color: Colors.grey[600]),
                           ),
                         ],
                       ),
@@ -233,7 +345,8 @@ class _SubjectsScreenState extends State<SubjectsScreen> {
                     _buildActionButton(
                       icon: Icons.edit,
                       color: Colors.blue,
-                      onPressed: () => _showSubjectForm(docId: docId, data: data),
+                      onPressed: () =>
+                          _showSubjectForm(docId: docId, data: data),
                     ),
                     const SizedBox(width: 4),
                     _buildActionButton(
@@ -308,13 +421,15 @@ class _SubjectsScreenState extends State<SubjectsScreen> {
                       children: [
                         Text(
                           namaMapel,
-                          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
+                          style: Theme.of(context).textTheme.headlineSmall
+                              ?.copyWith(fontWeight: FontWeight.bold),
                         ),
                         Container(
                           margin: const EdgeInsets.only(top: 4),
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
                             color: AppTheme.accentOrange.withOpacity(0.2),
                             borderRadius: BorderRadius.circular(8),
@@ -409,10 +524,7 @@ class _SubjectsScreenState extends State<SubjectsScreen> {
           ),
           const SizedBox(width: 12),
           Expanded(
-            child: Text(
-              value,
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
+            child: Text(value, style: Theme.of(context).textTheme.bodyMedium),
           ),
         ],
       ),
@@ -458,9 +570,8 @@ class _SubjectsScreenState extends State<SubjectsScreen> {
                       Expanded(
                         child: Text(
                           isEdit ? 'Edit Subject' : 'Add New Subject',
-                          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
+                          style: Theme.of(context).textTheme.headlineSmall
+                              ?.copyWith(fontWeight: FontWeight.bold),
                         ),
                       ),
                       IconButton(
@@ -482,8 +593,9 @@ class _SubjectsScreenState extends State<SubjectsScreen> {
                       ),
                     ),
                     textCapitalization: TextCapitalization.words,
-                    validator: (value) =>
-                        value?.isEmpty ?? true ? 'Subject name is required' : null,
+                    validator: (value) => value?.isEmpty ?? true
+                        ? 'Subject name is required'
+                        : null,
                   ),
                   const SizedBox(height: 24),
                   Row(
@@ -511,8 +623,9 @@ class _SubjectsScreenState extends State<SubjectsScreen> {
                                       .collection('mapel')
                                       .doc(docId)
                                       .update({
-                                    'namaMapel': namaMapelController.text.trim(),
-                                  });
+                                        'namaMapel': namaMapelController.text
+                                            .trim(),
+                                      });
                                   _showSnackBar('Subject updated successfully');
                                 } else {
                                   final querySnapshot = await _firestore
@@ -524,15 +637,19 @@ class _SubjectsScreenState extends State<SubjectsScreen> {
                                       .collection('mapel')
                                       .doc(nextId.toString())
                                       .set({
-                                    'id': nextId,
-                                    'namaMapel': namaMapelController.text.trim(),
-                                    'createdAt': FieldValue.serverTimestamp(),
-                                  });
+                                        'namaMapel': namaMapelController.text
+                                            .trim(),
+                                        'createdAt':
+                                            FieldValue.serverTimestamp(),
+                                      });
                                   _showSnackBar('Subject added successfully');
                                 }
                                 Navigator.pop(dialogContext);
                               } catch (e) {
-                                _showSnackBar('Error: ${e.toString()}', isError: true);
+                                _showSnackBar(
+                                  'Error: ${e.toString()}',
+                                  isError: true,
+                                );
                               }
                             }
                           },

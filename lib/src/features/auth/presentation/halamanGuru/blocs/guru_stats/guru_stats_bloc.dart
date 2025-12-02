@@ -32,6 +32,7 @@ class GuruStatsBloc extends Bloc<GuruStatsEvent, GuruStatsState> {
       final kelasWaliSnapshot = await _firestore
           .collection('kelas')
           .where('guru_id', isEqualTo: event.guruId)
+          .where('status', isEqualTo: true)
           .get();
 
       print(
@@ -117,7 +118,10 @@ class GuruStatsBloc extends Bloc<GuruStatsEvent, GuruStatsState> {
             .get();
         final kelasData = kelasDoc.exists ? kelasDoc.data() : null;
 
-        // Get mapel info
+        // Skip if kelas status is not true
+        if (kelasData != null && kelasData['status'] != true) {
+          continue;
+        } // Get mapel info
         final mapelId = data['id_mapel']?.toString() ?? '';
         final mapelDoc = await _firestore
             .collection('mapel')
@@ -214,6 +218,7 @@ class GuruStatsBloc extends Bloc<GuruStatsEvent, GuruStatsState> {
       final kelasSnapshot = await _firestore
           .collection('kelas')
           .where('guru_id', isEqualTo: event.guruId)
+          .where('status', isEqualTo: true)
           .get();
 
       final myClasses = <Map<String, dynamic>>[];

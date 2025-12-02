@@ -69,12 +69,16 @@ class _PengumumanScreenState extends State<PengumumanScreen> {
                     }
 
                     // Filter by search query
-                    final filteredList = state.pengumumanList.where((pengumuman) {
+                    final filteredList = state.pengumumanList.where((
+                      pengumuman,
+                    ) {
                       if (_searchQuery.isEmpty) return true;
                       final query = _searchQuery.toLowerCase();
                       return pengumuman.judul.toLowerCase().contains(query) ||
                           pengumuman.deskripsi.toLowerCase().contains(query) ||
-                          pengumuman.pembuatDisplay.toLowerCase().contains(query);
+                          pengumuman.pembuatDisplay.toLowerCase().contains(
+                            query,
+                          );
                     }).toList();
 
                     if (filteredList.isEmpty) {
@@ -92,7 +96,10 @@ class _PengumumanScreenState extends State<PengumumanScreen> {
                               _searchQuery.isEmpty
                                   ? 'No announcements yet'
                                   : 'No announcements found',
-                              style: TextStyle(fontSize: 18, color: Colors.grey[600]),
+                              style: TextStyle(
+                                fontSize: 18,
+                                color: Colors.grey[600],
+                              ),
                             ),
                             const SizedBox(height: 8),
                             Text(
@@ -121,12 +128,13 @@ class _PengumumanScreenState extends State<PengumumanScreen> {
 
                           return GridView.builder(
                             padding: const EdgeInsets.all(20),
-                            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: crossAxisCount,
-                              crossAxisSpacing: 16,
-                              mainAxisSpacing: 16,
-                              childAspectRatio: 1.5,
-                            ),
+                            gridDelegate:
+                                SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: crossAxisCount,
+                                  crossAxisSpacing: 16,
+                                  mainAxisSpacing: 16,
+                                  childAspectRatio: 1.5,
+                                ),
                             itemCount: filteredList.length,
                             itemBuilder: (context, index) {
                               final pengumuman = filteredList[index];
@@ -212,121 +220,116 @@ class _PengumumanScreenState extends State<PengumumanScreen> {
               children: [
                 // Header dengan icon dan menu
                 Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.orange.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8),
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(
+                        Icons.announcement,
+                        color: Colors.orange,
+                        size: 20,
+                      ),
                     ),
-                    child: const Icon(
-                      Icons.announcement,
-                      color: Colors.orange,
-                      size: 20,
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        pengumuman.judul,
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(fontWeight: FontWeight.bold),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      pengumuman.judul,
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
+                    PopupMenuButton(
+                      itemBuilder: (context) => [
+                        const PopupMenuItem(
+                          value: 'edit',
+                          child: Row(
+                            children: [
+                              Icon(Icons.edit, color: Colors.blue, size: 16),
+                              SizedBox(width: 8),
+                              Text('Edit'),
+                            ],
                           ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
+                        ),
+                        const PopupMenuItem(
+                          value: 'delete',
+                          child: Row(
+                            children: [
+                              Icon(Icons.delete, color: Colors.red, size: 16),
+                              SizedBox(width: 8),
+                              Text('Delete'),
+                            ],
+                          ),
+                        ),
+                      ],
+                      onSelected: (value) {
+                        if (value == 'edit') {
+                          _showEditPengumumanDialog(context, pengumuman);
+                        } else if (value == 'delete') {
+                          _showDeleteConfirmation(context, pengumuman);
+                        }
+                      },
                     ),
-                  ),
-                  PopupMenuButton(
-                    itemBuilder: (context) => [
-                      const PopupMenuItem(
-                        value: 'edit',
-                        child: Row(
-                          children: [
-                            Icon(Icons.edit, color: Colors.blue, size: 16),
-                            SizedBox(width: 8),
-                            Text('Edit'),
-                          ],
-                        ),
-                      ),
-                      const PopupMenuItem(
-                        value: 'delete',
-                        child: Row(
-                          children: [
-                            Icon(Icons.delete, color: Colors.red, size: 16),
-                            SizedBox(width: 8),
-                            Text('Delete'),
-                          ],
-                        ),
-                      ),
-                    ],
-                    onSelected: (value) {
-                      if (value == 'edit') {
-                        _showEditPengumumanDialog(context, pengumuman);
-                      } else if (value == 'delete') {
-                        _showDeleteConfirmation(context, pengumuman);
-                      }
-                    },
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-
-              // Deskripsi
-              Expanded(
-                child: Text(
-                  pengumuman.deskripsi,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Colors.grey[600],
-                      ),
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
+                  ],
                 ),
-              ),
-              const SizedBox(height: 12),
+                const SizedBox(height: 12),
 
-              // Footer dengan pembuat dan tanggal
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: pengumuman.pembuat == 'admin'
-                          ? Colors.red.withOpacity(0.1)
-                          : Colors.blue.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text(
-                      pengumuman.pembuatDisplay,
-                      style: TextStyle(
-                        fontSize: 12,
+                // Deskripsi
+                Expanded(
+                  child: Text(
+                    pengumuman.deskripsi,
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                const SizedBox(height: 12),
+
+                // Footer dengan pembuat dan tanggal
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
                         color: pengumuman.pembuat == 'admin'
-                            ? Colors.red[700]
-                            : Colors.blue[700],
-                        fontWeight: FontWeight.w500,
+                            ? Colors.red.withOpacity(0.1)
+                            : Colors.blue.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        pengumuman.pembuatDisplay,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: pengumuman.pembuat == 'admin'
+                              ? Colors.red[700]
+                              : Colors.blue[700],
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                     ),
-                  ),
-                  const Spacer(),
-                  Icon(
-                    Icons.access_time,
-                    size: 14,
-                    color: Colors.grey[500],
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    pengumuman.formattedDateTime,
-                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                  ),
-                ],
-              ),
-            ],
+                    const Spacer(),
+                    Icon(Icons.access_time, size: 14, color: Colors.grey[500]),
+                    const SizedBox(width: 4),
+                    Text(
+                      pengumuman.formattedDateTime,
+                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),
-    ),
     );
   }
 
@@ -342,15 +345,10 @@ class _PengumumanScreenState extends State<PengumumanScreen> {
                 color: Colors.orange.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Icon(
-                Icons.announcement,
-                color: Colors.orange,
-              ),
+              child: const Icon(Icons.announcement, color: Colors.orange),
             ),
             const SizedBox(width: 12),
-            const Expanded(
-              child: Text('Announcement Details'),
-            ),
+            const Expanded(child: Text('Announcement Details')),
           ],
         ),
         content: SingleChildScrollView(
@@ -396,9 +394,17 @@ class _PengumumanScreenState extends State<PengumumanScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-              _buildDetailRow('Posted By', pengumuman.pembuatDisplay, Icons.person),
+              _buildDetailRow(
+                'Posted By',
+                pengumuman.pembuatDisplay,
+                Icons.person,
+              ),
               const SizedBox(height: 16),
-              _buildDetailRow('Date & Time', pengumuman.formattedDateTime, Icons.access_time),
+              _buildDetailRow(
+                'Date & Time',
+                pengumuman.formattedDateTime,
+                Icons.access_time,
+              ),
             ],
           ),
         ),
@@ -491,22 +497,22 @@ class _PengumumanScreenState extends State<PengumumanScreen> {
     BuildContext context,
     PengumumanModel pengumuman,
   ) {
+    final bloc = context.read<PengumumanBloc>();
+
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Confirm Delete'),
         content: Text('Are you sure you want to delete "${pengumuman.judul}"?'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => Navigator.of(dialogContext).pop(),
             child: const Text('Cancel'),
           ),
           ElevatedButton(
             onPressed: () {
-              Navigator.of(context).pop();
-              context.read<PengumumanBloc>().add(
-                DeletePengumuman(id: pengumuman.id),
-              );
+              Navigator.of(dialogContext).pop();
+              bloc.add(DeletePengumuman(id: pengumuman.id));
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red,

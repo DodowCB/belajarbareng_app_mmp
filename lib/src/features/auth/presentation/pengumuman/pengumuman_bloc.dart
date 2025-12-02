@@ -70,7 +70,6 @@ class PengumumanBloc extends Bloc<PengumumanEvent, PengumumanState> {
 
       // Create pengumuman with numeric ID
       await _firestore.collection('pengumuman').doc(nextId.toString()).set({
-        'id': nextId,
         'judul': event.judul,
         'deskripsi': event.deskripsi,
         'guru_id': event.guruId,
@@ -143,7 +142,22 @@ class PengumumanBloc extends Bloc<PengumumanEvent, PengumumanState> {
     emit(state.copyWith(isLoading: true, error: null, successMessage: null));
 
     try {
-      await _firestore.collection('pengumuman').doc(event.id).delete();
+      print('🗑️ Attempting to delete pengumuman with ID: ${event.id}');
+
+      final docRef = _firestore.collection('pengumuman').doc(event.id);
+      final docSnapshot = await docRef.get();
+
+      if (!docSnapshot.exists) {
+        print('❌ Document not found: ${event.id}');
+        emit(
+          state.copyWith(isLoading: false, error: 'Pengumuman tidak ditemukan'),
+        );
+        return;
+      }
+
+      print('✅ Document found, deleting...');
+      await docRef.delete();
+      print('✅ Successfully deleted pengumuman: ${event.id}');
 
       emit(
         state.copyWith(
@@ -155,6 +169,7 @@ class PengumumanBloc extends Bloc<PengumumanEvent, PengumumanState> {
       // Reload data
       add(LoadPengumuman());
     } catch (e) {
+      print('❌ Error deleting pengumuman: $e');
       emit(
         state.copyWith(
           isLoading: false,
