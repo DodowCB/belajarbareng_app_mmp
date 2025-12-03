@@ -5,9 +5,9 @@ import '../../../../../core/providers/theme_provider.dart';
 import '../../../../../core/providers/user_provider.dart';
 import '../halaman_guru_screen.dart';
 import 'kelas_guru_screen.dart';
-import 'nilai_siswa_screen.dart';
+import 'kelas_list_screen.dart';
 import 'kelas_nilai_list_screen.dart';
-import 'tugas_guru_screen.dart';
+import 'tugas_list_screen.dart';
 import 'materi_guru_screen.dart';
 import 'absensi_guru_screen.dart';
 import '../../profile/profile_screen.dart';
@@ -134,7 +134,7 @@ extension GuruSidebarWidgets on HalamanGuruScreenState {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => const KelasGuruScreen(),
+                        builder: (context) => const KelasListScreen(),
                       ),
                     );
                   },
@@ -158,7 +158,7 @@ extension GuruSidebarWidgets on HalamanGuruScreenState {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => const TugasGuruScreen(),
+                        builder: (context) => const TugasListScreen(),
                       ),
                     );
                   },
@@ -324,7 +324,7 @@ extension GuruSidebarWidgets on HalamanGuruScreenState {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => const KelasGuruScreen(),
+                        builder: (context) => const KelasListScreen(),
                       ),
                     );
                   },
@@ -350,7 +350,7 @@ extension GuruSidebarWidgets on HalamanGuruScreenState {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => const TugasGuruScreen(),
+                        builder: (context) => const TugasListScreen(),
                       ),
                     );
                   },

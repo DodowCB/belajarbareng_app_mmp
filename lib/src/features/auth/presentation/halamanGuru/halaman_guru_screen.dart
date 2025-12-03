@@ -8,8 +8,8 @@ import '../../../../core/config/theme.dart';
 import '../../../../core/providers/user_provider.dart';
 import '../../data/models/pengumuman_model.dart';
 import 'blocs/blocs.dart';
-import 'component/nilai_siswa_screen.dart';
-import 'component/tugas_guru_screen.dart';
+import 'component/kelas_nilai_list_screen.dart';
+import 'component/tugas_list_screen.dart';
 import 'component/materi_guru_screen.dart';
 
 // Import extension files
@@ -337,7 +337,7 @@ class HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const NilaiSiswaScreen(),
+                          builder: (context) => const KelasNilaiListScreen(),
                         ),
                       );
                     },
@@ -352,7 +352,7 @@ class HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const TugasGuruScreen(),
+                          builder: (context) => const TugasListScreen(),
                         ),
                       );
                     },
@@ -389,7 +389,7 @@ class HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const NilaiSiswaScreen(),
+                          builder: (context) => const KelasNilaiListScreen(),
                         ),
                       );
                     },
@@ -403,7 +403,7 @@ class HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const TugasGuruScreen(),
+                          builder: (context) => const TugasListScreen(),
                         ),
                       );
                     },
@@ -672,7 +672,7 @@ class HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const TugasGuruScreen(),
+                    builder: (context) => const TugasListScreen(),
                   ),
                 );
               }
@@ -1003,7 +1003,7 @@ class HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => const TugasGuruScreen(),
+                      builder: (context) => const TugasListScreen(),
                     ),
                   );
                 },
@@ -1511,7 +1511,7 @@ class HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const TugasGuruScreen(),
+                          builder: (context) => const TugasListScreen(),
                         ),
                       );
                     },

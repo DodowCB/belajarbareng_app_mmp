@@ -4,8 +4,9 @@ import '../../../../core/config/theme.dart';
 import '../../../../core/providers/theme_provider.dart';
 import '../halamanGuru/halaman_guru_screen.dart';
 import '../halamanGuru/component/kelas_guru_screen.dart';
-import '../halamanGuru/component/nilai_siswa_screen.dart';
-import '../halamanGuru/component/tugas_guru_screen.dart';
+import '../halamanGuru/component/kelas_list_screen.dart';
+import '../halamanGuru/component/kelas_nilai_list_screen.dart';
+import '../halamanGuru/component/tugas_list_screen.dart';
 import '../halamanGuru/component/materi_guru_screen.dart';
 import '../profile/profile_screen.dart';
 import '../settings/settings_screen.dart';
@@ -139,7 +140,7 @@ class _GuruAppScaffoldState extends ConsumerState<GuruAppScaffold> {
                       Navigator.pushReplacement(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const KelasGuruScreen(),
+                          builder: (context) => const KelasListScreen(),
                         ),
                       );
                     }
@@ -151,10 +152,10 @@ class _GuruAppScaffoldState extends ConsumerState<GuruAppScaffold> {
                   isActive: widget.currentRoute == '/nilai-siswa',
                   onTap: () {
                     if (widget.currentRoute != '/nilai-siswa') {
-                      Navigator.pushReplacement(
+                      Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const NilaiSiswaScreen(),
+                          builder: (context) => const KelasNilaiListScreen(),
                         ),
                       );
                     }
@@ -169,7 +170,7 @@ class _GuruAppScaffoldState extends ConsumerState<GuruAppScaffold> {
                       Navigator.pushReplacement(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const TugasGuruScreen(),
+                          builder: (context) => const TugasListScreen(),
                         ),
                       );
                     }
@@ -653,7 +654,7 @@ class _GuruAppScaffoldState extends ConsumerState<GuruAppScaffold> {
                       Navigator.pushReplacement(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const KelasGuruScreen(),
+                          builder: (context) => const KelasListScreen(),
                         ),
                       );
                     }
@@ -669,7 +670,7 @@ class _GuruAppScaffoldState extends ConsumerState<GuruAppScaffold> {
                       Navigator.pushReplacement(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const NilaiSiswaScreen(),
+                          builder: (context) => const KelasNilaiListScreen(),
                         ),
                       );
                     }
@@ -685,7 +686,7 @@ class _GuruAppScaffoldState extends ConsumerState<GuruAppScaffold> {
                       Navigator.pushReplacement(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const TugasGuruScreen(),
+                          builder: (context) => const TugasListScreen(),
                         ),
                       );
                     }
