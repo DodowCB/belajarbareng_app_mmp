@@ -967,6 +967,7 @@ class HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
 
   Widget _buildUpcomingTasks({required bool isDesktop}) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final guruId = userProvider.userId ?? '';
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -1016,92 +1017,203 @@ class HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
             ],
           ),
           const SizedBox(height: 16),
-          if (isDesktop) ...[
-            // Header table for desktop
-            Container(
-              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-              decoration: BoxDecoration(
-                color: isDark ? Colors.grey[850] : Colors.grey[50],
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: isDark ? Colors.grey[800]! : Colors.grey[200]!,
-                ),
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    flex: 3,
-                    child: Text(
-                      'Nama Tugas',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: isDark ? Colors.grey[400] : Colors.grey[700],
-                      ),
+          // Load tugas from Firestore
+          StreamBuilder<QuerySnapshot>(
+            stream: FirebaseFirestore.instance
+                .collection('tugas')
+                .where('id_guru', isEqualTo: guruId)
+                .where('status', isEqualTo: 'Aktif')
+                .snapshots(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(20),
+                    child: CircularProgressIndicator(),
+                  ),
+                );
+              }
+
+              if (snapshot.hasError) {
+                return Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      children: [
+                        Icon(
+                          Icons.error_outline,
+                          size: 48,
+                          color: Colors.red[600],
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          'Error loading tugas',
+                          style: TextStyle(color: Colors.red[600]),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          snapshot.error.toString(),
+                          style: TextStyle(
+                            color: Colors.grey[600],
+                            fontSize: 12,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
                     ),
                   ),
-                  Expanded(
-                    flex: 2,
-                    child: Text(
-                      'Kelas',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: isDark ? Colors.grey[400] : Colors.grey[700],
-                      ),
+                );
+              }
+
+              // Get docs and sort by deadline on client side
+              var tugasDocs = snapshot.data?.docs ?? [];
+
+              // Sort by deadline
+              tugasDocs.sort((a, b) {
+                final aData = a.data() as Map<String, dynamic>;
+                final bData = b.data() as Map<String, dynamic>;
+                final aDeadline = aData['deadline'] as Timestamp?;
+                final bDeadline = bData['deadline'] as Timestamp?;
+
+                if (aDeadline == null && bDeadline == null) return 0;
+                if (aDeadline == null) return 1;
+                if (bDeadline == null) return -1;
+
+                return aDeadline.compareTo(bDeadline);
+              });
+
+              // Limit to 4 items
+              if (tugasDocs.length > 4) {
+                tugasDocs = tugasDocs.sublist(0, 4);
+              }
+
+              if (tugasDocs.isEmpty) {
+                return Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      children: [
+                        Icon(
+                          Icons.assignment,
+                          size: 48,
+                          color: Colors.grey[400],
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          'Belum ada tugas aktif',
+                          style: TextStyle(color: Colors.grey[600]),
+                        ),
+                      ],
                     ),
                   ),
-                  Expanded(
-                    flex: 2,
-                    child: Text(
-                      'Tanggal Tenggat',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: isDark ? Colors.grey[400] : Colors.grey[700],
+                );
+              }
+
+              if (isDesktop) {
+                return Column(
+                  children: [
+                    // Header table for desktop
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 12,
+                        horizontal: 16,
+                      ),
+                      decoration: BoxDecoration(
+                        color: isDark ? Colors.grey[850] : Colors.grey[50],
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: isDark ? Colors.grey[800]! : Colors.grey[200]!,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            flex: 3,
+                            child: Text(
+                              'Nama Tugas',
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                    color: isDark
+                                        ? Colors.grey[400]
+                                        : Colors.grey[700],
+                                  ),
+                            ),
+                          ),
+                          Expanded(
+                            flex: 2,
+                            child: Text(
+                              'Kelas',
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                    color: isDark
+                                        ? Colors.grey[400]
+                                        : Colors.grey[700],
+                                  ),
+                            ),
+                          ),
+                          Expanded(
+                            flex: 2,
+                            child: Text(
+                              'Tanggal Tenggat',
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                    color: isDark
+                                        ? Colors.grey[400]
+                                        : Colors.grey[700],
+                                  ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 8),
-            // Task items
-            _buildTaskItem(
-              'Presentasi Sejarah Kemerdekaan',
-              '11 IPA 2',
-              '28 Nov 2023',
-              isDesktop: true,
-            ),
-            _buildTaskItem(
-              'Ujian Praktik Biologi',
-              '12 IPA 1',
-              '30 Nov 2023',
-              isDesktop: true,
-            ),
-            _buildTaskItem(
-              'Esai Sastra Indonesia',
-              '10 IPS 3',
-              '02 Des 2023',
-              isDesktop: true,
-            ),
-            _buildTaskItem(
-              'Laporan Kimia',
-              '11 IPA 1',
-              '05 Des 2023',
-              isDesktop: true,
-            ),
-          ] else ...[
-            // Card layout for mobile/tablet
-            _buildTaskCard(
-              'Presentasi Sejarah Kemerdekaan',
-              '11 IPA 2',
-              '28 Nov 2023',
-            ),
-            const SizedBox(height: 12),
-            _buildTaskCard('Ujian Praktik Biologi', '12 IPA 1', '30 Nov 2023'),
-            const SizedBox(height: 12),
-            _buildTaskCard('Esai Sastra Indonesia', '10 IPS 3', '02 Des 2023'),
-            const SizedBox(height: 12),
-            _buildTaskCard('Laporan Kimia', '11 IPA 1', '05 Des 2023'),
-          ],
+                    const SizedBox(height: 8),
+                    // Task items from Firestore
+                    ...tugasDocs.map((doc) {
+                      final data = doc.data() as Map<String, dynamic>;
+                      final deadline = data['deadline'] as Timestamp?;
+                      final deadlineStr = deadline != null
+                          ? DateFormat(
+                              'dd MMM yyyy',
+                              'id_ID',
+                            ).format(deadline.toDate())
+                          : '-';
+                      return _buildTaskItem(
+                        data['judul'] ?? 'Tugas',
+                        data['kelas'] ?? 'Kelas',
+                        deadlineStr,
+                        isDesktop: true,
+                      );
+                    }).toList(),
+                  ],
+                );
+              } else {
+                // Card layout for mobile/tablet
+                return Column(
+                  children: tugasDocs.map((doc) {
+                    final data = doc.data() as Map<String, dynamic>;
+                    final deadline = data['deadline'] as Timestamp?;
+                    final deadlineStr = deadline != null
+                        ? DateFormat(
+                            'dd MMM yyyy',
+                            'id_ID',
+                          ).format(deadline.toDate())
+                        : '-';
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: _buildTaskCard(
+                        data['judul'] ?? 'Tugas',
+                        data['kelas'] ?? 'Kelas',
+                        deadlineStr,
+                      ),
+                    );
+                  }).toList(),
+                );
+              }
+            },
+          ),
         ],
       ),
     );

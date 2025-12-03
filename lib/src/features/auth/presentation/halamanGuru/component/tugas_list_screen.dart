@@ -47,9 +47,22 @@ class _TugasListScreenState extends State<TugasListScreen>
           .get();
 
       final List<Map<String, dynamic>> tugasList = [];
+      final batch = _firestore.batch();
+      final now = DateTime.now();
 
       for (final doc in snapshot.docs) {
         final data = doc.data();
+
+        // Check if deadline has passed and status is still Aktif
+        var currentStatus = data['status'] ?? 'Aktif';
+        if (data['deadline'] is Timestamp) {
+          final deadline = (data['deadline'] as Timestamp).toDate();
+          if (deadline.isBefore(now) && currentStatus == 'Aktif') {
+            // Auto-update status to Selesai if deadline passed
+            currentStatus = 'Selesai';
+            batch.update(doc.reference, {'status': 'Selesai'});
+          }
+        }
 
         // Get jumlah pengumpulan
         final pengumpulanSnapshot = await _firestore
@@ -64,11 +77,14 @@ class _TugasListScreenState extends State<TugasListScreen>
           'id_kelas': data['id_kelas']?.toString() ?? '',
           'kelas': data['kelas'] ?? '',
           'deadline': data['deadline'],
-          'status': data['status'] ?? 'Aktif',
+          'status': currentStatus,
           'jumlahSiswa': data['jumlahSiswa'] ?? 0,
           'sudahMengumpulkan': pengumpulanSnapshot.docs.length,
         });
       }
+
+      // Commit batch update for status changes
+      await batch.commit();
 
       // Sort by deadline (nearest first)
       tugasList.sort((a, b) {

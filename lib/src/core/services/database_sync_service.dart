@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:drift/drift.dart' as drift;
 import '../storage/app_database.dart';
@@ -355,7 +354,7 @@ class DatabaseSyncService {
 
       for (final item in pendingItems) {
         try {
-          switch (item.tableName) {
+          switch (item.syncTableName) {
             case 'kelas':
               final kelas = await _db.getKelasById(item.recordId);
               if (kelas != null) {

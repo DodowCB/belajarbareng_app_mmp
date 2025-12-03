@@ -176,8 +176,18 @@ class GuruStatsBloc extends Bloc<GuruStatsEvent, GuruStatsState> {
         'tugas': 5, // Default untuk performance
       };
 
+      // Count tugas with status Selesai (Tugas Perlu Dinilai)
+      // Tugas yang sudah selesai (deadline lewat) perlu dinilai
+      final tugasSelesaiSnapshot = await _firestore
+          .collection('tugas')
+          .where('id_guru', isEqualTo: event.guruId)
+          .where('status', isEqualTo: 'Selesai')
+          .get();
+
+      final tugasPerluDinilai = tugasSelesaiSnapshot.docs.length;
+
       print(
-        '✅ [GuruStatsBloc] Stats loaded - Total Students: $totalStudents, Total Classes: ${kelasNgajarIds.length}',
+        '✅ [GuruStatsBloc] Stats loaded - Total Students: $totalStudents, Total Classes: ${kelasNgajarIds.length}, Tugas Selesai (Perlu Dinilai): $tugasPerluDinilai',
       );
       print('📦 [GuruStatsBloc] kelasWali data: $kelasWali');
 
@@ -188,7 +198,7 @@ class GuruStatsBloc extends Bloc<GuruStatsEvent, GuruStatsState> {
           teachingStats: teachingStats,
           totalStudents: totalStudents,
           totalClasses: kelasNgajarIds.length,
-          tugasPerluDinilai: teachingStats['tugas'] as int,
+          tugasPerluDinilai: tugasPerluDinilai,
           kelasNgajarDetail: kelasNgajarDetail,
           siswaPerKelas: siswaPerKelas,
         ),

@@ -4,7 +4,7 @@ part of 'app_database.dart';
 
 // ignore_for_file: type=lint
 class $CachedKelasTable extends CachedKelas
-    with TableInfo<$CachedKelasTable, CachedKela> {
+    with TableInfo<$CachedKelasTable, CachedKelasData> {
   @override
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
@@ -101,7 +101,7 @@ class $CachedKelasTable extends CachedKelas
   static const String $name = 'cached_kelas';
   @override
   VerificationContext validateIntegrity(
-    Insertable<CachedKela> instance, {
+    Insertable<CachedKelasData> instance, {
     bool isInserting = false,
   }) {
     final context = VerificationContext();
@@ -161,9 +161,9 @@ class $CachedKelasTable extends CachedKelas
   @override
   Set<GeneratedColumn> get $primaryKey => {id};
   @override
-  CachedKela map(Map<String, dynamic> data, {String? tablePrefix}) {
+  CachedKelasData map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
-    return CachedKela(
+    return CachedKelasData(
       id: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}id'],
@@ -201,7 +201,7 @@ class $CachedKelasTable extends CachedKelas
   }
 }
 
-class CachedKela extends DataClass implements Insertable<CachedKela> {
+class CachedKelasData extends DataClass implements Insertable<CachedKelasData> {
   final String id;
   final String namaKelas;
   final String guruId;
@@ -209,7 +209,7 @@ class CachedKela extends DataClass implements Insertable<CachedKela> {
   final DateTime createdAt;
   final DateTime updatedAt;
   final DateTime? syncedAt;
-  const CachedKela({
+  const CachedKelasData({
     required this.id,
     required this.namaKelas,
     required this.guruId,
@@ -247,12 +247,12 @@ class CachedKela extends DataClass implements Insertable<CachedKela> {
     );
   }
 
-  factory CachedKela.fromJson(
+  factory CachedKelasData.fromJson(
     Map<String, dynamic> json, {
     ValueSerializer? serializer,
   }) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
-    return CachedKela(
+    return CachedKelasData(
       id: serializer.fromJson<String>(json['id']),
       namaKelas: serializer.fromJson<String>(json['namaKelas']),
       guruId: serializer.fromJson<String>(json['guruId']),
@@ -276,7 +276,7 @@ class CachedKela extends DataClass implements Insertable<CachedKela> {
     };
   }
 
-  CachedKela copyWith({
+  CachedKelasData copyWith({
     String? id,
     String? namaKelas,
     String? guruId,
@@ -284,7 +284,7 @@ class CachedKela extends DataClass implements Insertable<CachedKela> {
     DateTime? createdAt,
     DateTime? updatedAt,
     Value<DateTime?> syncedAt = const Value.absent(),
-  }) => CachedKela(
+  }) => CachedKelasData(
     id: id ?? this.id,
     namaKelas: namaKelas ?? this.namaKelas,
     guruId: guruId ?? this.guruId,
@@ -293,8 +293,8 @@ class CachedKela extends DataClass implements Insertable<CachedKela> {
     updatedAt: updatedAt ?? this.updatedAt,
     syncedAt: syncedAt.present ? syncedAt.value : this.syncedAt,
   );
-  CachedKela copyWithCompanion(CachedKelasCompanion data) {
-    return CachedKela(
+  CachedKelasData copyWithCompanion(CachedKelasCompanion data) {
+    return CachedKelasData(
       id: data.id.present ? data.id.value : this.id,
       namaKelas: data.namaKelas.present ? data.namaKelas.value : this.namaKelas,
       guruId: data.guruId.present ? data.guruId.value : this.guruId,
@@ -307,7 +307,7 @@ class CachedKela extends DataClass implements Insertable<CachedKela> {
 
   @override
   String toString() {
-    return (StringBuffer('CachedKela(')
+    return (StringBuffer('CachedKelasData(')
           ..write('id: $id, ')
           ..write('namaKelas: $namaKelas, ')
           ..write('guruId: $guruId, ')
@@ -332,7 +332,7 @@ class CachedKela extends DataClass implements Insertable<CachedKela> {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      (other is CachedKela &&
+      (other is CachedKelasData &&
           other.id == this.id &&
           other.namaKelas == this.namaKelas &&
           other.guruId == this.guruId &&
@@ -342,7 +342,7 @@ class CachedKela extends DataClass implements Insertable<CachedKela> {
           other.syncedAt == this.syncedAt);
 }
 
-class CachedKelasCompanion extends UpdateCompanion<CachedKela> {
+class CachedKelasCompanion extends UpdateCompanion<CachedKelasData> {
   final Value<String> id;
   final Value<String> namaKelas;
   final Value<String> guruId;
@@ -375,7 +375,7 @@ class CachedKelasCompanion extends UpdateCompanion<CachedKela> {
        guruId = Value(guruId),
        createdAt = Value(createdAt),
        updatedAt = Value(updatedAt);
-  static Insertable<CachedKela> custom({
+  static Insertable<CachedKelasData> custom({
     Expression<String>? id,
     Expression<String>? namaKelas,
     Expression<String>? guruId,
@@ -2713,7 +2713,7 @@ class CachedSiswaCompanion extends UpdateCompanion<CachedSiswaData> {
 }
 
 class $CachedSiswaKelasTable extends CachedSiswaKelas
-    with TableInfo<$CachedSiswaKelasTable, CachedSiswaKela> {
+    with TableInfo<$CachedSiswaKelasTable, CachedSiswaKelasData> {
   @override
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
@@ -2798,7 +2798,7 @@ class $CachedSiswaKelasTable extends CachedSiswaKelas
   static const String $name = 'cached_siswa_kelas';
   @override
   VerificationContext validateIntegrity(
-    Insertable<CachedSiswaKela> instance, {
+    Insertable<CachedSiswaKelasData> instance, {
     bool isInserting = false,
   }) {
     final context = VerificationContext();
@@ -2852,9 +2852,9 @@ class $CachedSiswaKelasTable extends CachedSiswaKelas
   @override
   Set<GeneratedColumn> get $primaryKey => {id};
   @override
-  CachedSiswaKela map(Map<String, dynamic> data, {String? tablePrefix}) {
+  CachedSiswaKelasData map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
-    return CachedSiswaKela(
+    return CachedSiswaKelasData(
       id: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}id'],
@@ -2888,14 +2888,15 @@ class $CachedSiswaKelasTable extends CachedSiswaKelas
   }
 }
 
-class CachedSiswaKela extends DataClass implements Insertable<CachedSiswaKela> {
+class CachedSiswaKelasData extends DataClass
+    implements Insertable<CachedSiswaKelasData> {
   final String id;
   final String siswaId;
   final String kelasId;
   final DateTime createdAt;
   final DateTime updatedAt;
   final DateTime? syncedAt;
-  const CachedSiswaKela({
+  const CachedSiswaKelasData({
     required this.id,
     required this.siswaId,
     required this.kelasId,
@@ -2930,12 +2931,12 @@ class CachedSiswaKela extends DataClass implements Insertable<CachedSiswaKela> {
     );
   }
 
-  factory CachedSiswaKela.fromJson(
+  factory CachedSiswaKelasData.fromJson(
     Map<String, dynamic> json, {
     ValueSerializer? serializer,
   }) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
-    return CachedSiswaKela(
+    return CachedSiswaKelasData(
       id: serializer.fromJson<String>(json['id']),
       siswaId: serializer.fromJson<String>(json['siswaId']),
       kelasId: serializer.fromJson<String>(json['kelasId']),
@@ -2957,14 +2958,14 @@ class CachedSiswaKela extends DataClass implements Insertable<CachedSiswaKela> {
     };
   }
 
-  CachedSiswaKela copyWith({
+  CachedSiswaKelasData copyWith({
     String? id,
     String? siswaId,
     String? kelasId,
     DateTime? createdAt,
     DateTime? updatedAt,
     Value<DateTime?> syncedAt = const Value.absent(),
-  }) => CachedSiswaKela(
+  }) => CachedSiswaKelasData(
     id: id ?? this.id,
     siswaId: siswaId ?? this.siswaId,
     kelasId: kelasId ?? this.kelasId,
@@ -2972,8 +2973,8 @@ class CachedSiswaKela extends DataClass implements Insertable<CachedSiswaKela> {
     updatedAt: updatedAt ?? this.updatedAt,
     syncedAt: syncedAt.present ? syncedAt.value : this.syncedAt,
   );
-  CachedSiswaKela copyWithCompanion(CachedSiswaKelasCompanion data) {
-    return CachedSiswaKela(
+  CachedSiswaKelasData copyWithCompanion(CachedSiswaKelasCompanion data) {
+    return CachedSiswaKelasData(
       id: data.id.present ? data.id.value : this.id,
       siswaId: data.siswaId.present ? data.siswaId.value : this.siswaId,
       kelasId: data.kelasId.present ? data.kelasId.value : this.kelasId,
@@ -2985,7 +2986,7 @@ class CachedSiswaKela extends DataClass implements Insertable<CachedSiswaKela> {
 
   @override
   String toString() {
-    return (StringBuffer('CachedSiswaKela(')
+    return (StringBuffer('CachedSiswaKelasData(')
           ..write('id: $id, ')
           ..write('siswaId: $siswaId, ')
           ..write('kelasId: $kelasId, ')
@@ -3002,7 +3003,7 @@ class CachedSiswaKela extends DataClass implements Insertable<CachedSiswaKela> {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      (other is CachedSiswaKela &&
+      (other is CachedSiswaKelasData &&
           other.id == this.id &&
           other.siswaId == this.siswaId &&
           other.kelasId == this.kelasId &&
@@ -3011,7 +3012,7 @@ class CachedSiswaKela extends DataClass implements Insertable<CachedSiswaKela> {
           other.syncedAt == this.syncedAt);
 }
 
-class CachedSiswaKelasCompanion extends UpdateCompanion<CachedSiswaKela> {
+class CachedSiswaKelasCompanion extends UpdateCompanion<CachedSiswaKelasData> {
   final Value<String> id;
   final Value<String> siswaId;
   final Value<String> kelasId;
@@ -3041,7 +3042,7 @@ class CachedSiswaKelasCompanion extends UpdateCompanion<CachedSiswaKela> {
        kelasId = Value(kelasId),
        createdAt = Value(createdAt),
        updatedAt = Value(updatedAt);
-  static Insertable<CachedSiswaKela> custom({
+  static Insertable<CachedSiswaKelasData> custom({
     Expression<String>? id,
     Expression<String>? siswaId,
     Expression<String>? kelasId,
@@ -3142,11 +3143,11 @@ class $SyncQueueTable extends SyncQueue
       'PRIMARY KEY AUTOINCREMENT',
     ),
   );
-  static const VerificationMeta _tableNameMeta = const VerificationMeta(
-    'tableName',
+  static const VerificationMeta _syncTableNameMeta = const VerificationMeta(
+    'syncTableName',
   );
   @override
-  late final GeneratedColumn<String> tableName = GeneratedColumn<String>(
+  late final GeneratedColumn<String> syncTableName = GeneratedColumn<String>(
     'table_name',
     aliasedName,
     false,
@@ -3234,7 +3235,7 @@ class $SyncQueueTable extends SyncQueue
   @override
   List<GeneratedColumn> get $columns => [
     id,
-    tableName,
+    syncTableName,
     recordId,
     operation,
     data,
@@ -3260,11 +3261,14 @@ class $SyncQueueTable extends SyncQueue
     }
     if (data.containsKey('table_name')) {
       context.handle(
-        _tableNameMeta,
-        tableName.isAcceptableOrUnknown(data['table_name']!, _tableNameMeta),
+        _syncTableNameMeta,
+        syncTableName.isAcceptableOrUnknown(
+          data['table_name']!,
+          _syncTableNameMeta,
+        ),
       );
     } else if (isInserting) {
-      context.missing(_tableNameMeta);
+      context.missing(_syncTableNameMeta);
     }
     if (data.containsKey('record_id')) {
       context.handle(
@@ -3328,7 +3332,7 @@ class $SyncQueueTable extends SyncQueue
         DriftSqlType.int,
         data['${effectivePrefix}id'],
       )!,
-      tableName: attachedDatabase.typeMapping.read(
+      syncTableName: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}table_name'],
       )!,
@@ -3371,7 +3375,7 @@ class $SyncQueueTable extends SyncQueue
 
 class SyncQueueData extends DataClass implements Insertable<SyncQueueData> {
   final int id;
-  final String tableName;
+  final String syncTableName;
   final String recordId;
   final String operation;
   final String? data;
@@ -3381,7 +3385,7 @@ class SyncQueueData extends DataClass implements Insertable<SyncQueueData> {
   final String? errorMessage;
   const SyncQueueData({
     required this.id,
-    required this.tableName,
+    required this.syncTableName,
     required this.recordId,
     required this.operation,
     this.data,
@@ -3394,7 +3398,7 @@ class SyncQueueData extends DataClass implements Insertable<SyncQueueData> {
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['id'] = Variable<int>(id);
-    map['table_name'] = Variable<String>(tableName);
+    map['table_name'] = Variable<String>(syncTableName);
     map['record_id'] = Variable<String>(recordId);
     map['operation'] = Variable<String>(operation);
     if (!nullToAbsent || data != null) {
@@ -3414,7 +3418,7 @@ class SyncQueueData extends DataClass implements Insertable<SyncQueueData> {
   SyncQueueCompanion toCompanion(bool nullToAbsent) {
     return SyncQueueCompanion(
       id: Value(id),
-      tableName: Value(tableName),
+      syncTableName: Value(syncTableName),
       recordId: Value(recordId),
       operation: Value(operation),
       data: data == null && nullToAbsent ? const Value.absent() : Value(data),
@@ -3436,7 +3440,7 @@ class SyncQueueData extends DataClass implements Insertable<SyncQueueData> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return SyncQueueData(
       id: serializer.fromJson<int>(json['id']),
-      tableName: serializer.fromJson<String>(json['tableName']),
+      syncTableName: serializer.fromJson<String>(json['syncTableName']),
       recordId: serializer.fromJson<String>(json['recordId']),
       operation: serializer.fromJson<String>(json['operation']),
       data: serializer.fromJson<String?>(json['data']),
@@ -3451,7 +3455,7 @@ class SyncQueueData extends DataClass implements Insertable<SyncQueueData> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
       'id': serializer.toJson<int>(id),
-      'tableName': serializer.toJson<String>(tableName),
+      'syncTableName': serializer.toJson<String>(syncTableName),
       'recordId': serializer.toJson<String>(recordId),
       'operation': serializer.toJson<String>(operation),
       'data': serializer.toJson<String?>(data),
@@ -3464,7 +3468,7 @@ class SyncQueueData extends DataClass implements Insertable<SyncQueueData> {
 
   SyncQueueData copyWith({
     int? id,
-    String? tableName,
+    String? syncTableName,
     String? recordId,
     String? operation,
     Value<String?> data = const Value.absent(),
@@ -3474,7 +3478,7 @@ class SyncQueueData extends DataClass implements Insertable<SyncQueueData> {
     Value<String?> errorMessage = const Value.absent(),
   }) => SyncQueueData(
     id: id ?? this.id,
-    tableName: tableName ?? this.tableName,
+    syncTableName: syncTableName ?? this.syncTableName,
     recordId: recordId ?? this.recordId,
     operation: operation ?? this.operation,
     data: data.present ? data.value : this.data,
@@ -3486,7 +3490,9 @@ class SyncQueueData extends DataClass implements Insertable<SyncQueueData> {
   SyncQueueData copyWithCompanion(SyncQueueCompanion data) {
     return SyncQueueData(
       id: data.id.present ? data.id.value : this.id,
-      tableName: data.tableName.present ? data.tableName.value : this.tableName,
+      syncTableName: data.syncTableName.present
+          ? data.syncTableName.value
+          : this.syncTableName,
       recordId: data.recordId.present ? data.recordId.value : this.recordId,
       operation: data.operation.present ? data.operation.value : this.operation,
       data: data.data.present ? data.data.value : this.data,
@@ -3503,7 +3509,7 @@ class SyncQueueData extends DataClass implements Insertable<SyncQueueData> {
   String toString() {
     return (StringBuffer('SyncQueueData(')
           ..write('id: $id, ')
-          ..write('tableName: $tableName, ')
+          ..write('syncTableName: $syncTableName, ')
           ..write('recordId: $recordId, ')
           ..write('operation: $operation, ')
           ..write('data: $data, ')
@@ -3518,7 +3524,7 @@ class SyncQueueData extends DataClass implements Insertable<SyncQueueData> {
   @override
   int get hashCode => Object.hash(
     id,
-    tableName,
+    syncTableName,
     recordId,
     operation,
     data,
@@ -3532,7 +3538,7 @@ class SyncQueueData extends DataClass implements Insertable<SyncQueueData> {
       identical(this, other) ||
       (other is SyncQueueData &&
           other.id == this.id &&
-          other.tableName == this.tableName &&
+          other.syncTableName == this.syncTableName &&
           other.recordId == this.recordId &&
           other.operation == this.operation &&
           other.data == this.data &&
@@ -3544,7 +3550,7 @@ class SyncQueueData extends DataClass implements Insertable<SyncQueueData> {
 
 class SyncQueueCompanion extends UpdateCompanion<SyncQueueData> {
   final Value<int> id;
-  final Value<String> tableName;
+  final Value<String> syncTableName;
   final Value<String> recordId;
   final Value<String> operation;
   final Value<String?> data;
@@ -3554,7 +3560,7 @@ class SyncQueueCompanion extends UpdateCompanion<SyncQueueData> {
   final Value<String?> errorMessage;
   const SyncQueueCompanion({
     this.id = const Value.absent(),
-    this.tableName = const Value.absent(),
+    this.syncTableName = const Value.absent(),
     this.recordId = const Value.absent(),
     this.operation = const Value.absent(),
     this.data = const Value.absent(),
@@ -3565,7 +3571,7 @@ class SyncQueueCompanion extends UpdateCompanion<SyncQueueData> {
   });
   SyncQueueCompanion.insert({
     this.id = const Value.absent(),
-    required String tableName,
+    required String syncTableName,
     required String recordId,
     required String operation,
     this.data = const Value.absent(),
@@ -3573,12 +3579,12 @@ class SyncQueueCompanion extends UpdateCompanion<SyncQueueData> {
     this.synced = const Value.absent(),
     this.syncedAt = const Value.absent(),
     this.errorMessage = const Value.absent(),
-  }) : tableName = Value(tableName),
+  }) : syncTableName = Value(syncTableName),
        recordId = Value(recordId),
        operation = Value(operation);
   static Insertable<SyncQueueData> custom({
     Expression<int>? id,
-    Expression<String>? tableName,
+    Expression<String>? syncTableName,
     Expression<String>? recordId,
     Expression<String>? operation,
     Expression<String>? data,
@@ -3589,7 +3595,7 @@ class SyncQueueCompanion extends UpdateCompanion<SyncQueueData> {
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
-      if (tableName != null) 'table_name': tableName,
+      if (syncTableName != null) 'table_name': syncTableName,
       if (recordId != null) 'record_id': recordId,
       if (operation != null) 'operation': operation,
       if (data != null) 'data': data,
@@ -3602,7 +3608,7 @@ class SyncQueueCompanion extends UpdateCompanion<SyncQueueData> {
 
   SyncQueueCompanion copyWith({
     Value<int>? id,
-    Value<String>? tableName,
+    Value<String>? syncTableName,
     Value<String>? recordId,
     Value<String>? operation,
     Value<String?>? data,
@@ -3613,7 +3619,7 @@ class SyncQueueCompanion extends UpdateCompanion<SyncQueueData> {
   }) {
     return SyncQueueCompanion(
       id: id ?? this.id,
-      tableName: tableName ?? this.tableName,
+      syncTableName: syncTableName ?? this.syncTableName,
       recordId: recordId ?? this.recordId,
       operation: operation ?? this.operation,
       data: data ?? this.data,
@@ -3630,8 +3636,8 @@ class SyncQueueCompanion extends UpdateCompanion<SyncQueueData> {
     if (id.present) {
       map['id'] = Variable<int>(id.value);
     }
-    if (tableName.present) {
-      map['table_name'] = Variable<String>(tableName.value);
+    if (syncTableName.present) {
+      map['table_name'] = Variable<String>(syncTableName.value);
     }
     if (recordId.present) {
       map['record_id'] = Variable<String>(recordId.value);
@@ -3661,7 +3667,7 @@ class SyncQueueCompanion extends UpdateCompanion<SyncQueueData> {
   String toString() {
     return (StringBuffer('SyncQueueCompanion(')
           ..write('id: $id, ')
-          ..write('tableName: $tableName, ')
+          ..write('syncTableName: $syncTableName, ')
           ..write('recordId: $recordId, ')
           ..write('operation: $operation, ')
           ..write('data: $data, ')
@@ -3855,17 +3861,17 @@ class $$CachedKelasTableTableManager
         RootTableManager<
           _$AppDatabase,
           $CachedKelasTable,
-          CachedKela,
+          CachedKelasData,
           $$CachedKelasTableFilterComposer,
           $$CachedKelasTableOrderingComposer,
           $$CachedKelasTableAnnotationComposer,
           $$CachedKelasTableCreateCompanionBuilder,
           $$CachedKelasTableUpdateCompanionBuilder,
           (
-            CachedKela,
-            BaseReferences<_$AppDatabase, $CachedKelasTable, CachedKela>,
+            CachedKelasData,
+            BaseReferences<_$AppDatabase, $CachedKelasTable, CachedKelasData>,
           ),
-          CachedKela,
+          CachedKelasData,
           PrefetchHooks Function()
         > {
   $$CachedKelasTableTableManager(_$AppDatabase db, $CachedKelasTable table)
@@ -3931,17 +3937,17 @@ typedef $$CachedKelasTableProcessedTableManager =
     ProcessedTableManager<
       _$AppDatabase,
       $CachedKelasTable,
-      CachedKela,
+      CachedKelasData,
       $$CachedKelasTableFilterComposer,
       $$CachedKelasTableOrderingComposer,
       $$CachedKelasTableAnnotationComposer,
       $$CachedKelasTableCreateCompanionBuilder,
       $$CachedKelasTableUpdateCompanionBuilder,
       (
-        CachedKela,
-        BaseReferences<_$AppDatabase, $CachedKelasTable, CachedKela>,
+        CachedKelasData,
+        BaseReferences<_$AppDatabase, $CachedKelasTable, CachedKelasData>,
       ),
-      CachedKela,
+      CachedKelasData,
       PrefetchHooks Function()
     >;
 typedef $$CachedMapelTableCreateCompanionBuilder =
@@ -5276,21 +5282,21 @@ class $$CachedSiswaKelasTableTableManager
         RootTableManager<
           _$AppDatabase,
           $CachedSiswaKelasTable,
-          CachedSiswaKela,
+          CachedSiswaKelasData,
           $$CachedSiswaKelasTableFilterComposer,
           $$CachedSiswaKelasTableOrderingComposer,
           $$CachedSiswaKelasTableAnnotationComposer,
           $$CachedSiswaKelasTableCreateCompanionBuilder,
           $$CachedSiswaKelasTableUpdateCompanionBuilder,
           (
-            CachedSiswaKela,
+            CachedSiswaKelasData,
             BaseReferences<
               _$AppDatabase,
               $CachedSiswaKelasTable,
-              CachedSiswaKela
+              CachedSiswaKelasData
             >,
           ),
-          CachedSiswaKela,
+          CachedSiswaKelasData,
           PrefetchHooks Function()
         > {
   $$CachedSiswaKelasTableTableManager(
@@ -5354,23 +5360,27 @@ typedef $$CachedSiswaKelasTableProcessedTableManager =
     ProcessedTableManager<
       _$AppDatabase,
       $CachedSiswaKelasTable,
-      CachedSiswaKela,
+      CachedSiswaKelasData,
       $$CachedSiswaKelasTableFilterComposer,
       $$CachedSiswaKelasTableOrderingComposer,
       $$CachedSiswaKelasTableAnnotationComposer,
       $$CachedSiswaKelasTableCreateCompanionBuilder,
       $$CachedSiswaKelasTableUpdateCompanionBuilder,
       (
-        CachedSiswaKela,
-        BaseReferences<_$AppDatabase, $CachedSiswaKelasTable, CachedSiswaKela>,
+        CachedSiswaKelasData,
+        BaseReferences<
+          _$AppDatabase,
+          $CachedSiswaKelasTable,
+          CachedSiswaKelasData
+        >,
       ),
-      CachedSiswaKela,
+      CachedSiswaKelasData,
       PrefetchHooks Function()
     >;
 typedef $$SyncQueueTableCreateCompanionBuilder =
     SyncQueueCompanion Function({
       Value<int> id,
-      required String tableName,
+      required String syncTableName,
       required String recordId,
       required String operation,
       Value<String?> data,
@@ -5382,7 +5392,7 @@ typedef $$SyncQueueTableCreateCompanionBuilder =
 typedef $$SyncQueueTableUpdateCompanionBuilder =
     SyncQueueCompanion Function({
       Value<int> id,
-      Value<String> tableName,
+      Value<String> syncTableName,
       Value<String> recordId,
       Value<String> operation,
       Value<String?> data,
@@ -5406,8 +5416,8 @@ class $$SyncQueueTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<String> get tableName => $composableBuilder(
-    column: $table.tableName,
+  ColumnFilters<String> get syncTableName => $composableBuilder(
+    column: $table.syncTableName,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -5461,8 +5471,8 @@ class $$SyncQueueTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<String> get tableName => $composableBuilder(
-    column: $table.tableName,
+  ColumnOrderings<String> get syncTableName => $composableBuilder(
+    column: $table.syncTableName,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -5514,8 +5524,10 @@ class $$SyncQueueTableAnnotationComposer
   GeneratedColumn<int> get id =>
       $composableBuilder(column: $table.id, builder: (column) => column);
 
-  GeneratedColumn<String> get tableName =>
-      $composableBuilder(column: $table.tableName, builder: (column) => column);
+  GeneratedColumn<String> get syncTableName => $composableBuilder(
+    column: $table.syncTableName,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<String> get recordId =>
       $composableBuilder(column: $table.recordId, builder: (column) => column);
@@ -5573,7 +5585,7 @@ class $$SyncQueueTableTableManager
           updateCompanionCallback:
               ({
                 Value<int> id = const Value.absent(),
-                Value<String> tableName = const Value.absent(),
+                Value<String> syncTableName = const Value.absent(),
                 Value<String> recordId = const Value.absent(),
                 Value<String> operation = const Value.absent(),
                 Value<String?> data = const Value.absent(),
@@ -5583,7 +5595,7 @@ class $$SyncQueueTableTableManager
                 Value<String?> errorMessage = const Value.absent(),
               }) => SyncQueueCompanion(
                 id: id,
-                tableName: tableName,
+                syncTableName: syncTableName,
                 recordId: recordId,
                 operation: operation,
                 data: data,
@@ -5595,7 +5607,7 @@ class $$SyncQueueTableTableManager
           createCompanionCallback:
               ({
                 Value<int> id = const Value.absent(),
-                required String tableName,
+                required String syncTableName,
                 required String recordId,
                 required String operation,
                 Value<String?> data = const Value.absent(),
@@ -5605,7 +5617,7 @@ class $$SyncQueueTableTableManager
                 Value<String?> errorMessage = const Value.absent(),
               }) => SyncQueueCompanion.insert(
                 id: id,
-                tableName: tableName,
+                syncTableName: syncTableName,
                 recordId: recordId,
                 operation: operation,
                 data: data,

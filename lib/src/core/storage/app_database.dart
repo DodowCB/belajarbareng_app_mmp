@@ -11,6 +11,7 @@ part 'app_database.g.dart';
 // ============================================================================
 
 /// Table untuk cache data Kelas
+@DataClassName('CachedKelasData')
 class CachedKelas extends Table {
   TextColumn get id => text()();
   TextColumn get namaKelas => text().named('nama_kelas')();
@@ -94,6 +95,7 @@ class CachedSiswa extends Table {
 }
 
 /// Table untuk cache data Siswa Kelas (Relasi)
+@DataClassName('CachedSiswaKelasData')
 class CachedSiswaKelas extends Table {
   TextColumn get id => text()();
   TextColumn get siswaId => text().named('siswa_id')();
@@ -109,14 +111,15 @@ class CachedSiswaKelas extends Table {
 /// Table untuk tracking sync status
 class SyncQueue extends Table {
   IntColumn get id => integer().autoIncrement()();
-  TextColumn get tableName => text()();
-  TextColumn get recordId => text()();
+  TextColumn get syncTableName => text().named('table_name')();
+  TextColumn get recordId => text().named('record_id')();
   TextColumn get operation => text()(); // 'insert', 'update', 'delete'
   TextColumn get data => text().nullable()(); // JSON data for insert/update
-  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get createdAt =>
+      dateTime().named('created_at').withDefault(currentDateAndTime)();
   BoolColumn get synced => boolean().withDefault(const Constant(false))();
-  DateTimeColumn get syncedAt => dateTime().nullable()();
-  TextColumn get errorMessage => text().nullable()();
+  DateTimeColumn get syncedAt => dateTime().named('synced_at').nullable()();
+  TextColumn get errorMessage => text().named('error_message').nullable()();
 }
 
 // ============================================================================
@@ -360,7 +363,7 @@ class AppDatabase extends _$AppDatabase {
   }) async {
     return await into(syncQueue).insert(
       SyncQueueCompanion.insert(
-        tableName: tableName,
+        syncTableName: tableName,
         recordId: recordId,
         operation: operation,
         data: Value(data),
