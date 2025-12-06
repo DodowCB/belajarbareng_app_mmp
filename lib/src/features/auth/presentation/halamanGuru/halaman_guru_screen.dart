@@ -11,6 +11,7 @@ import 'blocs/blocs.dart';
 import 'component/kelas_nilai_list_screen.dart';
 import 'component/tugas_list_screen.dart';
 import 'component/materi_guru_screen.dart';
+import 'component/upload_materi_screen.dart';
 
 // Import extension files
 import 'component/guru_sidebar_widgets.dart';
@@ -367,7 +368,7 @@ class HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const MateriGuruScreen(),
+                          builder: (context) => const UploadMateriScreen(),
                         ),
                       );
                     },
@@ -417,7 +418,7 @@ class HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const MateriGuruScreen(),
+                          builder: (context) => const UploadMateriScreen(),
                         ),
                       );
                     },

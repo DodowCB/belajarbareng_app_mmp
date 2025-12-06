@@ -43,3 +43,8 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Google OAuth Client Secrets (SENSITIVE - DO NOT COMMIT)
+client_secret*.json
+**/client_secret*.json
+google_drive_options.dart
