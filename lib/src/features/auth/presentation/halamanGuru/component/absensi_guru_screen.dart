@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import '../../../../../core/config/theme.dart';
 import '../../../../../core/providers/user_provider.dart' as user_prov;
+import 'absensi_dialog_helper.dart';
 
 class AbsensiGuruScreen extends StatefulWidget {
   const AbsensiGuruScreen({super.key});
@@ -16,6 +17,7 @@ class _AbsensiGuruScreenState extends State<AbsensiGuruScreen> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   DateTime _selectedDate = DateTime.now();
   String _selectedTab = 'wali_kelas'; // 'wali_kelas' or 'kelas_diajar'
+  int _refreshKey = 0; // Add refresh key
 
   @override
   void initState() {
@@ -346,7 +348,13 @@ class _AbsensiGuruScreenState extends State<AbsensiGuruScreen> {
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    // Generate unique key based on date, kelasId and refresh counter
+    final cardKey = ValueKey(
+      '${kelasId}_${DateFormat('yyyy-MM-dd').format(_selectedDate)}_$_refreshKey',
+    );
+
     return FutureBuilder<bool>(
+      key: cardKey,
       future: _checkAbsensiExists(kelasId, tipeAbsen, jadwalId),
       builder: (context, absensiSnapshot) {
         final sudahAbsen = absensiSnapshot.data ?? false;
@@ -361,19 +369,25 @@ class _AbsensiGuruScreenState extends State<AbsensiGuruScreen> {
             ),
           ),
           child: InkWell(
-            onTap: sudahAbsen
-                ? () => _showAbsensiHistory(
-                    kelasId,
-                    tipeAbsen,
-                    namaKelas,
-                    jadwalId,
-                  )
-                : () => _showIsiAbsensiDialog(
-                    kelasId,
-                    tipeAbsen,
-                    namaKelas,
-                    jadwalId,
-                  ),
+            onTap: () {
+              AbsensiDialogHelper.showAbsensiDialog(
+                context: context,
+                kelasId: kelasId,
+                namaKelas: namaKelas,
+                selectedDate: _selectedDate,
+                tipeAbsen: tipeAbsen,
+                guruId: user_prov.userProvider.userId ?? '',
+                jadwalId: jadwalId,
+                isEdit: sudahAbsen,
+              ).then((_) {
+                // Increment refresh key to trigger rebuild
+                if (mounted) {
+                  setState(() {
+                    _refreshKey++;
+                  });
+                }
+              });
+            },
             borderRadius: BorderRadius.circular(12),
             child: Padding(
               padding: const EdgeInsets.all(16),
@@ -519,205 +533,5 @@ class _AbsensiGuruScreenState extends State<AbsensiGuruScreen> {
         _selectedDate = picked;
       });
     }
-  }
-
-  void _showIsiAbsensiDialog(
-    String kelasId,
-    String tipeAbsen,
-    String namaKelas,
-    String? jadwalId,
-  ) {
-    // Reuse existing absensi dialog logic from halaman_guru_screen
-    // For now, show a simple message
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Isi absensi untuk $namaKelas'),
-        action: SnackBarAction(label: 'OK', onPressed: () {}),
-      ),
-    );
-  }
-
-  void _showAbsensiHistory(
-    String kelasId,
-    String tipeAbsen,
-    String namaKelas,
-    String? jadwalId,
-  ) async {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final dateString = DateFormat('yyyy-MM-dd').format(_selectedDate);
-
-    // Get absensi data for this class and date
-    Query query = _firestore
-        .collection('absensi')
-        .where('kelas_id', isEqualTo: kelasId)
-        .where('tipe_absen', isEqualTo: tipeAbsen);
-
-    if (tipeAbsen == 'mapel' && jadwalId != null) {
-      query = query.where('jadwal_id', isEqualTo: jadwalId);
-    }
-
-    final snapshot = await query.get();
-
-    // Filter by date
-    final todayAbsensi = snapshot.docs.where((doc) {
-      final data = doc.data() as Map<String, dynamic>;
-      final timestamp = data['tanggal'] as Timestamp?;
-      if (timestamp != null) {
-        final docDate = timestamp.toDate();
-        final docDateString = DateFormat('yyyy-MM-dd').format(docDate);
-        return docDateString == dateString;
-      }
-      return false;
-    }).toList();
-
-    // Get student details
-    final List<Map<String, dynamic>> absensiDetails = [];
-
-    for (final doc in todayAbsensi) {
-      final data = doc.data() as Map<String, dynamic>;
-      final siswaId = data['siswa_id'];
-      final status = data['status'];
-
-      final siswaDoc = await _firestore.collection('siswa').doc(siswaId).get();
-      final siswaData = siswaDoc.data();
-
-      absensiDetails.add({
-        'namaLengkap': siswaData?['nama'] ?? 'Siswa',
-        'nis': siswaData?['nis'] ?? '-',
-        'status': status ?? 'alpa',
-      });
-    }
-
-    if (!mounted) return;
-
-    showDialog(
-      context: context,
-      builder: (dialogContext) => Dialog(
-        backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        child: Container(
-          constraints: const BoxConstraints(maxWidth: 600, maxHeight: 700),
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.green.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Icon(
-                      Icons.check_circle,
-                      color: Colors.green,
-                      size: 28,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Rekap Absensi',
-                          style: Theme.of(dialogContext).textTheme.titleLarge
-                              ?.copyWith(fontWeight: FontWeight.bold),
-                        ),
-                        Text(
-                          '$namaKelas - ${DateFormat('dd MMM yyyy', 'id_ID').format(_selectedDate)}',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: isDark ? Colors.grey[400] : Colors.grey[600],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  IconButton(
-                    onPressed: () => Navigator.pop(dialogContext),
-                    icon: const Icon(Icons.close),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
-              const Divider(),
-              const SizedBox(height: 16),
-              Expanded(
-                child: SingleChildScrollView(
-                  child: DataTable(
-                    headingRowColor: WidgetStateProperty.all(
-                      AppTheme.primaryPurple.withOpacity(0.1),
-                    ),
-                    columns: const [
-                      DataColumn(label: Text('NIS')),
-                      DataColumn(label: Text('Nama Siswa')),
-                      DataColumn(label: Text('Status')),
-                    ],
-                    rows: absensiDetails
-                        .map(
-                          (siswa) => DataRow(
-                            cells: [
-                              DataCell(Text(siswa['nis'])),
-                              DataCell(Text(siswa['namaLengkap'])),
-                              DataCell(
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 4,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: siswa['status'] == 'hadir'
-                                        ? Colors.green.withOpacity(0.1)
-                                        : Colors.red.withOpacity(0.1),
-                                    borderRadius: BorderRadius.circular(6),
-                                  ),
-                                  child: Text(
-                                    siswa['status'] == 'hadir'
-                                        ? 'Hadir'
-                                        : 'Alpa',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w600,
-                                      color: siswa['status'] == 'hadir'
-                                          ? Colors.green
-                                          : Colors.red,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        )
-                        .toList(),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              const Divider(),
-              const SizedBox(height: 16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  ElevatedButton(
-                    onPressed: () => Navigator.pop(dialogContext),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.primaryPurple,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    child: const Text('Tutup'),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
   }
 }

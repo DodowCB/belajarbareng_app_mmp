@@ -233,7 +233,9 @@ class HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
             if (state is GuruStatsLoaded) {
               if (state.kelasWali.isNotEmpty) {
                 final kelasWali = state.kelasWali.first;
-                final namaKelas = kelasWali['namaKelas'] ?? 'Kelas';
+                final namaKelas =
+                    kelasWali['nama_kelas'] ??
+                    'Kelas'; // Ambil langsung dari state
                 final jumlahSiswa = kelasWali['jumlahSiswa'] ?? 0;
 
                 return Column(
@@ -2089,12 +2091,12 @@ class HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
       'id_ID',
     ).format(today);
 
-    // State untuk menyimpan status hadir (checked = hadir)
-    final absensiChecked = <String, bool>{};
+    // State untuk menyimpan status absensi (hadir/izin/sakit/alpa)
+    final absensiStatus = <String, String>{};
 
-    // Initialize all students as unchecked
+    // Initialize all students as alpa (default)
     for (final siswa in siswaList) {
-      absensiChecked[siswa['siswaId'] as String] = false;
+      absensiStatus[siswa['siswaId'] as String] = 'alpa';
     }
 
     showDialog(
@@ -2159,49 +2161,147 @@ class HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
                   const SizedBox(height: 24),
                   const Divider(),
                   const SizedBox(height: 16),
-                  // Tabel Absensi
+                  // List siswa dengan 4 tombol status
                   Expanded(
-                    child: SingleChildScrollView(
-                      child: DataTable(
-                        headingRowColor: WidgetStateProperty.all(
-                          AppTheme.secondaryTeal.withOpacity(0.1),
-                        ),
-                        columns: const [
-                          DataColumn(label: Text('No')),
-                          DataColumn(label: Text('Nama')),
-                          DataColumn(label: Text('NIS')),
-                          DataColumn(label: Text('Hadir')),
-                        ],
-                        rows: List.generate(siswaList.length, (index) {
-                          final siswa = siswaList[index];
-                          final siswaId = siswa['siswaId'] as String;
-                          return DataRow(
-                            color: WidgetStateProperty.resolveWith<Color?>(
-                              (states) => index % 2 == 0
-                                  ? (isDark
-                                        ? Colors.grey[850]
-                                        : Colors.grey[50])
-                                  : (isDark ? Colors.grey[900] : Colors.white),
+                    child: ListView.builder(
+                      itemCount: siswaList.length,
+                      itemBuilder: (context, index) {
+                        final siswa = siswaList[index];
+                        final siswaId = siswa['siswaId'] as String;
+                        final currentStatus = absensiStatus[siswaId] ?? 'alpa';
+
+                        return Card(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          color: isDark
+                              ? const Color(0xFF2A2A2A)
+                              : Colors.white,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            side: BorderSide(
+                              color: isDark
+                                  ? Colors.grey[700]!
+                                  : Colors.grey[200]!,
                             ),
-                            cells: [
-                              DataCell(Text('${index + 1}')),
-                              DataCell(Text(siswa['namaLengkap'] ?? '-')),
-                              DataCell(Text(siswa['nis'] ?? '-')),
-                              DataCell(
-                                Checkbox(
-                                  value: absensiChecked[siswaId] ?? false,
-                                  onChanged: (value) {
-                                    setState(() {
-                                      absensiChecked[siswaId] = value ?? false;
-                                    });
-                                  },
-                                  activeColor: AppTheme.secondaryTeal,
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(12),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    CircleAvatar(
+                                      radius: 20,
+                                      backgroundColor: AppTheme.secondaryTeal
+                                          .withOpacity(0.1),
+                                      child: Text(
+                                        (siswa['namaLengkap'] ?? 'S')
+                                            .toString()
+                                            .substring(0, 1)
+                                            .toUpperCase(),
+                                        style: const TextStyle(
+                                          color: AppTheme.secondaryTeal,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            siswa['namaLengkap'] ?? 'Siswa',
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.w600,
+                                              fontSize: 14,
+                                            ),
+                                          ),
+                                          Text(
+                                            'NIS: ${siswa['nis'] ?? '-'}',
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: isDark
+                                                  ? Colors.grey[400]
+                                                  : Colors.grey[600],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                              ),
-                            ],
-                          );
-                        }),
-                      ),
+                                const SizedBox(height: 12),
+                                Row(
+                                  children: [
+                                    _buildStatusButton(
+                                      context,
+                                      'Hadir',
+                                      'hadir',
+                                      currentStatus,
+                                      Colors.green,
+                                      Icons.check_circle,
+                                      () {
+                                        setState(() {
+                                          absensiStatus[siswaId] = 'hadir';
+                                        });
+                                      },
+                                      isDark,
+                                    ),
+                                    const SizedBox(width: 6),
+                                    _buildStatusButton(
+                                      context,
+                                      'Izin',
+                                      'izin',
+                                      currentStatus,
+                                      Colors.blue,
+                                      Icons.mail,
+                                      () {
+                                        setState(() {
+                                          absensiStatus[siswaId] = 'izin';
+                                        });
+                                      },
+                                      isDark,
+                                    ),
+                                    const SizedBox(width: 6),
+                                    _buildStatusButton(
+                                      context,
+                                      'Sakit',
+                                      'sakit',
+                                      currentStatus,
+                                      Colors.orange,
+                                      Icons.local_hospital,
+                                      () {
+                                        setState(() {
+                                          absensiStatus[siswaId] = 'sakit';
+                                        });
+                                      },
+                                      isDark,
+                                    ),
+                                    const SizedBox(width: 6),
+                                    _buildStatusButton(
+                                      context,
+                                      'Alpa',
+                                      'alpa',
+                                      currentStatus,
+                                      Colors.red,
+                                      Icons.cancel,
+                                      () {
+                                        setState(() {
+                                          absensiStatus[siswaId] = 'alpa';
+                                        });
+                                      },
+                                      isDark,
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -2227,7 +2327,7 @@ class HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
                             context,
                             siswaList,
                             kelas,
-                            absensiChecked,
+                            absensiStatus,
                             guruId,
                             today,
                           );
@@ -2262,7 +2362,7 @@ class HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
     BuildContext context,
     List<Map<String, dynamic>> siswaList,
     Map<String, dynamic> kelas,
-    Map<String, bool> absensiChecked,
+    Map<String, String> absensiStatus,
     String guruId,
     DateTime tanggal,
   ) async {
@@ -2349,7 +2449,7 @@ class HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
 
       for (final siswa in siswaList) {
         final siswaId = siswa['siswaId'] as String;
-        final isHadir = absensiChecked[siswaId] ?? false;
+        final status = absensiStatus[siswaId] ?? 'alpa';
 
         maxId++;
         final docRef = firestore.collection('absensi').doc(maxId.toString());
@@ -2359,7 +2459,7 @@ class HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
           'kelas_id': kelas['kelasId'] ?? '',
           'jadwal_id': kelasId,
           'tanggal': timestamp,
-          'status': isHadir ? 'hadir' : 'alpa',
+          'status': status,
           'tipe_absen': 'mapel',
           'diabsen_oleh': guruId,
           'createdAt': FieldValue.serverTimestamp(),
@@ -2838,17 +2938,78 @@ class HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
       'id_ID',
     ).format(today);
 
-    // State untuk menyimpan status hadir (checked = hadir)
-    final absensiChecked = <String, bool>{};
+    // Cek apakah sudah ada absensi untuk tanggal ini
+    final dateString = DateFormat('yyyy-MM-dd').format(today);
+    final firestore = FirebaseFirestore.instance;
 
-    // Initialize all students as unchecked
+    // Tampilkan loading saat pengecekan
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
+    );
+
+    // Kumpulkan semua kelas_id dari kelasWali untuk query
+    final kelasIds = state.kelasWali.map((k) => k['id'] as String).toList();
+
+    // Query absensi yang sudah ada untuk semua kelas wali pada tanggal ini
+    // Menggunakan kelas_id dan tipe_absen seperti di absensi_guru_screen
+    final List<QueryDocumentSnapshot> todayAbsensi = [];
+
+    for (final kelasId in kelasIds) {
+      final snapshot = await firestore
+          .collection('absensi')
+          .where('kelas_id', isEqualTo: kelasId)
+          .where('tipe_absen', isEqualTo: 'wali_kelas')
+          .get();
+
+      // Filter secara manual berdasarkan tanggal
+      final kelasAbsensi = snapshot.docs.where((doc) {
+        final data = doc.data();
+        final timestamp = data['tanggal'] as Timestamp?;
+        if (timestamp != null) {
+          final docDate = timestamp.toDate();
+          final docDateString = DateFormat('yyyy-MM-dd').format(docDate);
+          return docDateString == dateString;
+        }
+        return false;
+      }).toList();
+
+      todayAbsensi.addAll(kelasAbsensi);
+    }
+
+    // State untuk menyimpan status absensi (hadir/izin/sakit/alpa)
+    final absensiStatus = <String, String>{};
+    bool isEditMode = false;
+
+    // Initialize all students as alpa (default)
     for (final kelas in state.kelasWali) {
       final kelasId = kelas['id'] as String;
       final siswaList = state.siswaPerKelas[kelasId] ?? [];
       for (final siswa in siswaList) {
-        absensiChecked[siswa['id'] as String] = false;
+        absensiStatus[siswa['id'] as String] = 'alpa';
       }
     }
+
+    // Jika sudah ada absensi, load data yang sudah ada
+    if (todayAbsensi.isNotEmpty) {
+      isEditMode = true;
+      // Load status absensi dari database
+      for (final doc in todayAbsensi) {
+        final data = doc.data() as Map<String, dynamic>?;
+        if (data != null) {
+          final siswaId = data['siswa_id'] as String?;
+          final status = data['status'] as String?;
+
+          if (siswaId != null && status != null) {
+            absensiStatus[siswaId] = status;
+          }
+        }
+      }
+    }
+
+    // Tutup loading dialog
+    if (context.mounted) Navigator.pop(context);
 
     showDialog(
       context: context,
@@ -2886,10 +3047,37 @@ class HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              'Absensi Siswa',
-                              style: Theme.of(context).textTheme.titleLarge
-                                  ?.copyWith(fontWeight: FontWeight.bold),
+                            Row(
+                              children: [
+                                Text(
+                                  isEditMode
+                                      ? 'Edit Absensi Siswa'
+                                      : 'Absensi Siswa',
+                                  style: Theme.of(context).textTheme.titleLarge
+                                      ?.copyWith(fontWeight: FontWeight.bold),
+                                ),
+                                if (isEditMode) ...[
+                                  const SizedBox(width: 8),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 4,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.orange.withOpacity(0.2),
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: Text(
+                                      'EDIT',
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.orange[700],
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ],
                             ),
                             Text(
                               formattedDate,
@@ -2986,183 +3174,157 @@ class HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
                                   const SizedBox(height: 12),
                                   const Divider(),
                                   const SizedBox(height: 8),
-                                  // Table Header
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 12,
-                                      vertical: 10,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: AppTheme.primaryPurple.withOpacity(
-                                        0.1,
-                                      ),
-                                      borderRadius: const BorderRadius.only(
-                                        topLeft: Radius.circular(8),
-                                        topRight: Radius.circular(8),
-                                      ),
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        SizedBox(
-                                          width: 40,
-                                          child: Text(
-                                            'No',
-                                            style: TextStyle(
-                                              fontSize: 13,
-                                              fontWeight: FontWeight.bold,
-                                              color: AppTheme.primaryPurple,
-                                            ),
-                                          ),
-                                        ),
-                                        Expanded(
-                                          flex: 3,
-                                          child: Text(
-                                            'Nama',
-                                            style: TextStyle(
-                                              fontSize: 13,
-                                              fontWeight: FontWeight.bold,
-                                              color: AppTheme.primaryPurple,
-                                            ),
-                                          ),
-                                        ),
-                                        Expanded(
-                                          flex: 2,
-                                          child: Text(
-                                            'NIS',
-                                            style: TextStyle(
-                                              fontSize: 13,
-                                              fontWeight: FontWeight.bold,
-                                              color: AppTheme.primaryPurple,
-                                            ),
-                                          ),
-                                        ),
-                                        SizedBox(
-                                          width: 80,
-                                          child: Text(
-                                            'Hadir',
-                                            style: TextStyle(
-                                              fontSize: 13,
-                                              fontWeight: FontWeight.bold,
-                                              color: AppTheme.primaryPurple,
-                                            ),
-                                            textAlign: TextAlign.center,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  // Table Body
-                                  Container(
-                                    decoration: BoxDecoration(
-                                      border: Border.all(
-                                        color: isDark
-                                            ? Colors.grey[700]!
-                                            : Colors.grey[300]!,
-                                      ),
-                                      borderRadius: const BorderRadius.only(
-                                        bottomLeft: Radius.circular(8),
-                                        bottomRight: Radius.circular(8),
-                                      ),
-                                    ),
-                                    child: Column(
-                                      children: siswaList.asMap().entries.map((
-                                        entry,
-                                      ) {
-                                        final idx = entry.key;
-                                        final siswa = entry.value;
-                                        final siswaId = siswa['id'] as String;
-                                        final isLastItem =
-                                            idx == siswaList.length - 1;
+                                  // List siswa dengan 4 tombol status
+                                  ...siswaList.asMap().entries.map((entry) {
+                                    final siswa = entry.value;
+                                    final siswaId = siswa['id'] as String;
+                                    final currentStatus =
+                                        absensiStatus[siswaId] ?? 'alpa';
 
-                                        return Container(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 12,
-                                            vertical: 10,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: idx % 2 == 0
-                                                ? (isDark
-                                                      ? Colors.grey[850]
-                                                      : Colors.white)
-                                                : (isDark
-                                                      ? Colors.grey[800]
-                                                      : Colors.grey[50]),
-                                            border: isLastItem
-                                                ? null
-                                                : Border(
-                                                    bottom: BorderSide(
-                                                      color: isDark
-                                                          ? Colors.grey[700]!
-                                                          : Colors.grey[300]!,
-                                                      width: 0.5,
+                                    return Card(
+                                      margin: const EdgeInsets.only(bottom: 12),
+                                      color: isDark
+                                          ? const Color(0xFF2A2A2A)
+                                          : Colors.white,
+                                      elevation: 0,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                        side: BorderSide(
+                                          color: isDark
+                                              ? Colors.grey[700]!
+                                              : Colors.grey[200]!,
+                                        ),
+                                      ),
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(12),
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Row(
+                                              children: [
+                                                CircleAvatar(
+                                                  radius: 20,
+                                                  backgroundColor: AppTheme
+                                                      .primaryPurple
+                                                      .withOpacity(0.1),
+                                                  child: Text(
+                                                    (siswa['nama'] ?? 'S')
+                                                        .toString()
+                                                        .substring(0, 1)
+                                                        .toUpperCase(),
+                                                    style: const TextStyle(
+                                                      color: AppTheme
+                                                          .primaryPurple,
+                                                      fontWeight:
+                                                          FontWeight.bold,
                                                     ),
                                                   ),
-                                          ),
-                                          child: Row(
-                                            children: [
-                                              SizedBox(
-                                                width: 40,
-                                                child: Text(
-                                                  '${idx + 1}',
-                                                  style: TextStyle(
-                                                    fontSize: 13,
-                                                    color: isDark
-                                                        ? Colors.grey[400]
-                                                        : Colors.grey[700],
+                                                ),
+                                                const SizedBox(width: 12),
+                                                Expanded(
+                                                  child: Column(
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment
+                                                            .start,
+                                                    children: [
+                                                      Text(
+                                                        siswa['nama'] ??
+                                                            'Siswa',
+                                                        style: const TextStyle(
+                                                          fontWeight:
+                                                              FontWeight.w600,
+                                                          fontSize: 14,
+                                                        ),
+                                                      ),
+                                                      Text(
+                                                        'NIS: ${siswa['nis'] ?? '-'}',
+                                                        style: TextStyle(
+                                                          fontSize: 12,
+                                                          color: isDark
+                                                              ? Colors.grey[400]
+                                                              : Colors
+                                                                    .grey[600],
+                                                        ),
+                                                      ),
+                                                    ],
                                                   ),
                                                 ),
-                                              ),
-                                              Expanded(
-                                                flex: 3,
-                                                child: Text(
-                                                  siswa['nama'] ?? 'Siswa',
-                                                  style: TextStyle(
-                                                    fontSize: 13,
-                                                    fontWeight: FontWeight.w500,
-                                                    color: isDark
-                                                        ? Colors.grey[200]
-                                                        : Colors.grey[800],
-                                                  ),
-                                                  overflow:
-                                                      TextOverflow.ellipsis,
+                                              ],
+                                            ),
+                                            const SizedBox(height: 12),
+                                            Row(
+                                              children: [
+                                                _buildStatusButton(
+                                                  context,
+                                                  'Hadir',
+                                                  'hadir',
+                                                  currentStatus,
+                                                  Colors.green,
+                                                  Icons.check_circle,
+                                                  () {
+                                                    setState(() {
+                                                      absensiStatus[siswaId] =
+                                                          'hadir';
+                                                    });
+                                                  },
+                                                  isDark,
                                                 ),
-                                              ),
-                                              Expanded(
-                                                flex: 2,
-                                                child: Text(
-                                                  siswa['nis'] ?? '-',
-                                                  style: TextStyle(
-                                                    fontSize: 13,
-                                                    color: isDark
-                                                        ? Colors.grey[300]
-                                                        : Colors.grey[700],
-                                                  ),
+                                                const SizedBox(width: 6),
+                                                _buildStatusButton(
+                                                  context,
+                                                  'Izin',
+                                                  'izin',
+                                                  currentStatus,
+                                                  Colors.blue,
+                                                  Icons.mail,
+                                                  () {
+                                                    setState(() {
+                                                      absensiStatus[siswaId] =
+                                                          'izin';
+                                                    });
+                                                  },
+                                                  isDark,
                                                 ),
-                                              ),
-                                              SizedBox(
-                                                width: 80,
-                                                child: Center(
-                                                  child: Checkbox(
-                                                    value:
-                                                        absensiChecked[siswaId] ??
-                                                        false,
-                                                    activeColor:
-                                                        AppTheme.primaryPurple,
-                                                    onChanged: (bool? value) {
-                                                      setState(() {
-                                                        absensiChecked[siswaId] =
-                                                            value ?? false;
-                                                      });
-                                                    },
-                                                  ),
+                                                const SizedBox(width: 6),
+                                                _buildStatusButton(
+                                                  context,
+                                                  'Sakit',
+                                                  'sakit',
+                                                  currentStatus,
+                                                  Colors.orange,
+                                                  Icons.local_hospital,
+                                                  () {
+                                                    setState(() {
+                                                      absensiStatus[siswaId] =
+                                                          'sakit';
+                                                    });
+                                                  },
+                                                  isDark,
                                                 ),
-                                              ),
-                                            ],
-                                          ),
-                                        );
-                                      }).toList(),
-                                    ),
-                                  ),
+                                                const SizedBox(width: 6),
+                                                _buildStatusButton(
+                                                  context,
+                                                  'Alpa',
+                                                  'alpa',
+                                                  currentStatus,
+                                                  Colors.red,
+                                                  Icons.cancel,
+                                                  () {
+                                                    setState(() {
+                                                      absensiStatus[siswaId] =
+                                                          'alpa';
+                                                    });
+                                                  },
+                                                  isDark,
+                                                ),
+                                              ],
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    );
+                                  }).toList(),
                                 ],
                               ],
                             ),
@@ -3192,13 +3354,19 @@ class HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
                           await _simpanAbsensiCheckbox(
                             context,
                             state,
-                            absensiChecked,
+                            absensiStatus,
                             guruId,
                             today,
+                            isEditMode,
                           );
                         },
-                        icon: const Icon(Icons.save, size: 18),
-                        label: const Text('Simpan Absensi'),
+                        icon: Icon(
+                          isEditMode ? Icons.update : Icons.save,
+                          size: 18,
+                        ),
+                        label: Text(
+                          isEditMode ? 'Update Absensi' : 'Simpan Absensi',
+                        ),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppTheme.primaryPurple,
                           foregroundColor: Colors.white,
@@ -3225,9 +3393,10 @@ class HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
   Future<void> _simpanAbsensiCheckbox(
     BuildContext context,
     GuruStatsLoaded state,
-    Map<String, bool> absensiChecked,
+    Map<String, String> absensiStatus,
     String guruId,
     DateTime tanggal,
+    bool isEditMode,
   ) async {
     try {
       final firestore = FirebaseFirestore.instance;
@@ -3239,15 +3408,14 @@ class HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
         builder: (context) => const Center(child: CircularProgressIndicator()),
       );
 
-      // Cek apakah sudah ada absensi untuk tanggal ini
-      // Menggunakan format tanggal sebagai string untuk pengecekan yang lebih sederhana
+      // Format tanggal untuk pengecekan
       final dateString = DateFormat('yyyy-MM-dd').format(tanggal);
 
-      // Query sederhana tanpa multiple where yang memerlukan composite index
+      // Query absensi yang sudah ada untuk tanggal ini
       final existingAbsensiCheck = await firestore
           .collection('absensi')
           .where('diabsen_oleh', isEqualTo: guruId)
-          .where('tipe_absen', isEqualTo: 'harian')
+          .where('tipe_absen', isEqualTo: 'wali_kelas')
           .get();
 
       // Filter secara manual berdasarkan tanggal
@@ -3262,85 +3430,104 @@ class HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
         return false;
       }).toList();
 
-      if (todayAbsensi.isNotEmpty) {
-        // Tutup loading dialog
-        if (context.mounted) Navigator.pop(context);
-
-        // Tutup absensi dialog
-        if (context.mounted) Navigator.pop(context);
-
-        // Tampilkan peringatan
-        if (context.mounted) {
-          showDialog(
-            context: context,
-            builder: (context) => AlertDialog(
-              title: Row(
-                children: [
-                  Icon(Icons.warning, color: Colors.orange[700]),
-                  const SizedBox(width: 12),
-                  const Text('Absensi Sudah Ada'),
-                ],
-              ),
-              content: const Text(
-                'Absensi untuk tanggal hari ini sudah pernah dilakukan.\n\n'
-                'Anda tidak dapat melakukan absensi lebih dari sekali dalam satu hari.',
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('OK'),
-                ),
-              ],
-            ),
-          );
-        }
-        return;
-      }
-
-      // Dapatkan ID terakhir untuk membuat ID numerik baru
-      final allAbsensi = await firestore.collection('absensi').get();
-
-      int nextId = 1;
-      if (allAbsensi.docs.isNotEmpty) {
-        // Cari ID numerik tertinggi
-        int maxId = 0;
-        for (var doc in allAbsensi.docs) {
-          final numId = int.tryParse(doc.id);
-          if (numId != null && numId > maxId) {
-            maxId = numId;
-          }
-        }
-        nextId = maxId + 1;
-      }
-
       final batch = firestore.batch();
 
-      for (final kelas in state.kelasWali) {
-        final kelasId = kelas['id'] as String;
-        final siswaList = state.siswaPerKelas[kelasId] ?? [];
+      if (isEditMode && todayAbsensi.isNotEmpty) {
+        // Mode Edit: Update data yang sudah ada
+        for (final doc in todayAbsensi) {
+          final data = doc.data();
+          final siswaId = data['siswa_id'] as String?;
 
-        for (final siswa in siswaList) {
-          final siswaId = siswa['id'] as String;
-          final isHadir = absensiChecked[siswaId] ?? false;
-          final status = isHadir ? 'hadir' : 'alpa';
+          if (siswaId != null && absensiStatus.containsKey(siswaId)) {
+            final docRef = firestore.collection('absensi').doc(doc.id);
+            batch.update(docRef, {
+              'status': absensiStatus[siswaId],
+              'updatedAt': FieldValue.serverTimestamp(),
+            });
+          }
+        }
+      } else {
+        // Mode Create: Buat data baru
+        // Cek apakah sudah ada (seharusnya tidak, tapi tetap cek untuk safety)
+        if (todayAbsensi.isNotEmpty) {
+          // Tutup loading dialog
+          if (context.mounted) Navigator.pop(context);
 
-          // Buat absensi baru dengan ID numerik
-          final docRef = firestore.collection('absensi').doc(nextId.toString());
-          batch.set(docRef, {
-            'siswa_id': siswaId,
-            'kelas_id': kelasId,
-            'tanggal': Timestamp.fromDate(
-              DateTime(tanggal.year, tanggal.month, tanggal.day),
-            ),
-            'tipe_absen': 'harian',
-            'jadwal_id': null,
-            'status': status,
-            'diabsen_oleh': guruId,
-            'createdAt': FieldValue.serverTimestamp(),
-            'updatedAt': FieldValue.serverTimestamp(),
-          });
+          // Tutup absensi dialog
+          if (context.mounted) Navigator.pop(context);
 
-          nextId++; // Increment untuk siswa berikutnya
+          // Tampilkan peringatan
+          if (context.mounted) {
+            showDialog(
+              context: context,
+              builder: (context) => AlertDialog(
+                title: Row(
+                  children: [
+                    Icon(Icons.warning, color: Colors.orange[700]),
+                    const SizedBox(width: 12),
+                    const Text('Absensi Sudah Ada'),
+                  ],
+                ),
+                content: const Text(
+                  'Absensi untuk tanggal hari ini sudah pernah dilakukan.\n\n'
+                  'Anda tidak dapat melakukan absensi lebih dari sekali dalam satu hari.',
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('OK'),
+                  ),
+                ],
+              ),
+            );
+          }
+          return;
+        }
+
+        // Dapatkan ID terakhir untuk membuat ID numerik baru
+        final allAbsensi = await firestore.collection('absensi').get();
+
+        int nextId = 1;
+        if (allAbsensi.docs.isNotEmpty) {
+          // Cari ID numerik tertinggi
+          int maxId = 0;
+          for (var doc in allAbsensi.docs) {
+            final numId = int.tryParse(doc.id);
+            if (numId != null && numId > maxId) {
+              maxId = numId;
+            }
+          }
+          nextId = maxId + 1;
+        }
+
+        for (final kelas in state.kelasWali) {
+          final kelasId = kelas['id'] as String;
+          final siswaList = state.siswaPerKelas[kelasId] ?? [];
+
+          for (final siswa in siswaList) {
+            final siswaId = siswa['id'] as String;
+            final status = absensiStatus[siswaId] ?? 'alpa';
+
+            // Buat absensi baru dengan ID numerik
+            final docRef = firestore
+                .collection('absensi')
+                .doc(nextId.toString());
+            batch.set(docRef, {
+              'siswa_id': siswaId,
+              'kelas_id': kelasId,
+              'tanggal': Timestamp.fromDate(
+                DateTime(tanggal.year, tanggal.month, tanggal.day),
+              ),
+              'tipe_absen': 'wali_kelas',
+              'jadwal_id': null,
+              'status': status,
+              'diabsen_oleh': guruId,
+              'createdAt': FieldValue.serverTimestamp(),
+              'updatedAt': FieldValue.serverTimestamp(),
+            });
+
+            nextId++; // Increment untuk siswa berikutnya
+          }
         }
       }
 
@@ -3355,8 +3542,12 @@ class HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
       // Tampilkan success message
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('✅ Absensi berhasil disimpan'),
+          SnackBar(
+            content: Text(
+              isEditMode
+                  ? '✅ Absensi berhasil diupdate'
+                  : '✅ Absensi berhasil disimpan',
+            ),
             backgroundColor: Colors.green,
             behavior: SnackBarBehavior.floating,
           ),
@@ -3377,5 +3568,53 @@ class HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
         );
       }
     }
+  }
+
+  Widget _buildStatusButton(
+    BuildContext context,
+    String label,
+    String status,
+    String currentStatus,
+    Color color,
+    IconData icon,
+    VoidCallback onTap,
+    bool isDark,
+  ) {
+    final isSelected = currentStatus == status;
+    return Expanded(
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? color.withOpacity(0.2)
+                : (isDark ? const Color(0xFF1E1E1E) : Colors.white),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: isSelected ? color : Colors.grey[300]!,
+              width: isSelected ? 2 : 1,
+            ),
+          ),
+          child: Column(
+            children: [
+              Icon(icon, size: 18, color: isSelected ? color : Colors.grey),
+              const SizedBox(height: 4),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                  color: isSelected
+                      ? color
+                      : (isDark ? Colors.grey[400] : Colors.grey[600]),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }

@@ -32,7 +32,8 @@ class _HalamanSiswaScreenState extends ConsumerState<HalamanSiswaScreen> {
     return MultiBlocProvider(
       providers: [
         BlocProvider<SiswaProfileBloc>(
-          create: (context) => SiswaProfileBloc()..add(const LoadSiswaProfile()),
+          create: (context) =>
+              SiswaProfileBloc()..add(const LoadSiswaProfile()),
         ),
         BlocProvider<SiswaStatsBloc>(create: (context) => SiswaStatsBloc()),
       ],
@@ -50,7 +51,7 @@ class _HalamanSiswaScreenState extends ConsumerState<HalamanSiswaScreen> {
             builder: (context, constraints) {
               final isDesktop = constraints.maxWidth >= 1024;
               final isTablet = constraints.maxWidth >= 768;
-              
+
               if (!isDesktop) {
                 return Scaffold(
                   appBar: AppBar(
@@ -64,14 +65,24 @@ class _HalamanSiswaScreenState extends ConsumerState<HalamanSiswaScreen> {
                     title: const Text('Dashboard Siswa'),
                   ),
                   drawer: _buildDrawer(context),
-                  body: _buildMainContent(context, isDesktop: false, isTablet: isTablet),
+                  body: _buildMainContent(
+                    context,
+                    isDesktop: false,
+                    isTablet: isTablet,
+                  ),
                 );
               }
-              
+
               return Row(
                 children: [
                   _buildSidebar(context),
-                  Expanded(child: _buildMainContent(context, isDesktop: true, isTablet: isTablet)),
+                  Expanded(
+                    child: _buildMainContent(
+                      context,
+                      isDesktop: true,
+                      isTablet: isTablet,
+                    ),
+                  ),
                 ],
               );
             },
@@ -83,7 +94,7 @@ class _HalamanSiswaScreenState extends ConsumerState<HalamanSiswaScreen> {
 
   Widget _buildSidebar(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
       width: _isSidebarCollapsed ? 70 : 250,
@@ -144,16 +155,18 @@ class _HalamanSiswaScreenState extends ConsumerState<HalamanSiswaScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'BelajarBareng',
-                                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                ),
+                                'Student Portal',
+                                style: Theme.of(context).textTheme.titleMedium
+                                    ?.copyWith(fontWeight: FontWeight.bold),
                               ),
                               Text(
-                                'Platform Siswa',
-                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  color: isDark ? Colors.grey[400] : Colors.grey[600],
-                                ),
+                                'Sekolah Menengah',
+                                style: Theme.of(context).textTheme.bodySmall
+                                    ?.copyWith(
+                                      color: isDark
+                                          ? Colors.grey[400]
+                                          : Colors.grey[600],
+                                    ),
                               ),
                             ],
                           ),
@@ -162,8 +175,7 @@ class _HalamanSiswaScreenState extends ConsumerState<HalamanSiswaScreen> {
                     ),
             ),
           ),
-          if (!_isSidebarCollapsed)
-            _buildExpandableProfileMenu(context),
+          if (!_isSidebarCollapsed) _buildExpandableProfileMenu(context),
           if (_isSidebarCollapsed)
             _buildSidebarItem(
               icon: Icons.account_circle,
@@ -175,10 +187,8 @@ class _HalamanSiswaScreenState extends ConsumerState<HalamanSiswaScreen> {
                 });
               },
             ),
-          if (!_isSidebarCollapsed)
-            const Divider(height: 1),
-          if (_isSidebarCollapsed)
-            const Divider(height: 1),
+          if (!_isSidebarCollapsed) const Divider(height: 1),
+          if (_isSidebarCollapsed) const Divider(height: 1),
           Expanded(
             child: ListView(
               padding: const EdgeInsets.symmetric(vertical: 8),
@@ -190,8 +200,20 @@ class _HalamanSiswaScreenState extends ConsumerState<HalamanSiswaScreen> {
                   onTap: () {},
                 ),
                 _buildSidebarItem(
+                  icon: Icons.calendar_today,
+                  title: 'Jadwal Kelas',
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const KalenderSiswaScreen(),
+                      ),
+                    );
+                  },
+                ),
+                _buildSidebarItem(
                   icon: Icons.assignment,
-                  title: 'Tugas',
+                  title: 'Tugas Saya',
                   onTap: () {
                     Navigator.push(
                       context,
@@ -202,20 +224,8 @@ class _HalamanSiswaScreenState extends ConsumerState<HalamanSiswaScreen> {
                   },
                 ),
                 _buildSidebarItem(
-                  icon: Icons.quiz,
-                  title: 'Quiz',
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const QuizSiswaScreen(),
-                      ),
-                    );
-                  },
-                ),
-                _buildSidebarItem(
-                  icon: Icons.class_,
-                  title: 'Kelas',
+                  icon: Icons.book,
+                  title: 'Materi Kelas',
                   onTap: () {
                     Navigator.push(
                       context,
@@ -226,22 +236,41 @@ class _HalamanSiswaScreenState extends ConsumerState<HalamanSiswaScreen> {
                   },
                 ),
                 _buildSidebarItem(
-                  icon: Icons.calendar_today,
-                  title: 'Kalender',
+                  icon: Icons.campaign,
+                  title: 'Pengumuman',
                   onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const KalenderSiswaScreen(),
-                      ),
-                    );
+                    // Navigate to announcements
                   },
                 ),
               ],
             ),
           ),
-          if (!_isSidebarCollapsed)
+          if (!_isSidebarCollapsed) ...[
+            const Divider(height: 1),
+            _buildSidebarItem(
+              icon: Icons.settings,
+              title: 'Pengaturan',
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const SettingsScreen(),
+                  ),
+                );
+              },
+            ),
+            _buildSidebarItem(
+              icon: Icons.logout,
+              title: 'Keluar',
+              onTap: () {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => const LoginScreen()),
+                );
+              },
+            ),
             _buildSidebarProfileSection(context),
+          ],
         ],
       ),
     );
@@ -249,7 +278,7 @@ class _HalamanSiswaScreenState extends ConsumerState<HalamanSiswaScreen> {
 
   Widget _buildExpandableProfileMenu(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return Column(
       children: [
         InkWell(
@@ -271,8 +300,8 @@ class _HalamanSiswaScreenState extends ConsumerState<HalamanSiswaScreen> {
                   ),
                 ),
                 Icon(
-                  _isProfileMenuExpanded 
-                      ? Icons.keyboard_arrow_up 
+                  _isProfileMenuExpanded
+                      ? Icons.keyboard_arrow_up
                       : Icons.keyboard_arrow_down,
                   color: isDark ? Colors.grey[400] : Colors.grey[600],
                 ),
@@ -287,9 +316,7 @@ class _HalamanSiswaScreenState extends ConsumerState<HalamanSiswaScreen> {
             onTap: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(
-                  builder: (context) => const ProfileScreen(),
-                ),
+                MaterialPageRoute(builder: (context) => const ProfileScreen()),
               );
             },
           ),
@@ -299,9 +326,7 @@ class _HalamanSiswaScreenState extends ConsumerState<HalamanSiswaScreen> {
             onTap: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(
-                  builder: (context) => const SettingsScreen(),
-                ),
+                MaterialPageRoute(builder: (context) => const SettingsScreen()),
               );
             },
           ),
@@ -386,14 +411,12 @@ class _HalamanSiswaScreenState extends ConsumerState<HalamanSiswaScreen> {
 
   Widget _buildDrawer(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return Drawer(
       child: Column(
         children: [
           DrawerHeader(
-            decoration: BoxDecoration(
-              color: AppTheme.primaryPurple,
-            ),
+            decoration: BoxDecoration(color: AppTheme.primaryPurple),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.end,
@@ -422,10 +445,7 @@ class _HalamanSiswaScreenState extends ConsumerState<HalamanSiswaScreen> {
                 ),
                 const Text(
                   'Platform Siswa',
-                  style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: 14,
-                  ),
+                  style: TextStyle(color: Colors.white70, fontSize: 14),
                 ),
               ],
             ),
@@ -587,11 +607,15 @@ class _HalamanSiswaScreenState extends ConsumerState<HalamanSiswaScreen> {
     VoidCallback? onTap,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return ListTile(
       leading: Icon(
         icon,
-        color: iconColor ?? (isActive ? AppTheme.primaryPurple : (isDark ? Colors.grey[400] : Colors.grey[600])),
+        color:
+            iconColor ??
+            (isActive
+                ? AppTheme.primaryPurple
+                : (isDark ? Colors.grey[400] : Colors.grey[600])),
         size: 22,
       ),
       title: Text(
@@ -602,9 +626,11 @@ class _HalamanSiswaScreenState extends ConsumerState<HalamanSiswaScreen> {
         ),
       ),
       trailing: trailing,
-      onTap: onTap ?? () {
-        Navigator.pop(context);
-      },
+      onTap:
+          onTap ??
+          () {
+            Navigator.pop(context);
+          },
     );
   }
 
@@ -618,7 +644,7 @@ class _HalamanSiswaScreenState extends ConsumerState<HalamanSiswaScreen> {
     VoidCallback? onTap,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return Tooltip(
       message: _isSidebarCollapsed ? title : '',
       child: Container(
@@ -633,7 +659,11 @@ class _HalamanSiswaScreenState extends ConsumerState<HalamanSiswaScreen> {
           dense: true,
           leading: Icon(
             icon,
-            color: iconColor ?? (isActive ? AppTheme.primaryPurple : (isDark ? Colors.grey[400] : Colors.grey[600])),
+            color:
+                iconColor ??
+                (isActive
+                    ? AppTheme.primaryPurple
+                    : (isDark ? Colors.grey[400] : Colors.grey[600])),
             size: 22,
           ),
           title: _isSidebarCollapsed
@@ -641,7 +671,8 @@ class _HalamanSiswaScreenState extends ConsumerState<HalamanSiswaScreen> {
               : Text(
                   title,
                   style: TextStyle(
-                    color: textColor ?? (isActive ? AppTheme.primaryPurple : null),
+                    color:
+                        textColor ?? (isActive ? AppTheme.primaryPurple : null),
                     fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
                     fontSize: 14,
                   ),
@@ -655,7 +686,7 @@ class _HalamanSiswaScreenState extends ConsumerState<HalamanSiswaScreen> {
 
   Widget _buildSidebarProfileSection(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return BlocBuilder<SiswaProfileBloc, SiswaProfileState>(
       builder: (context, state) {
         String userName = 'Siswa';
@@ -723,15 +754,19 @@ class _HalamanSiswaScreenState extends ConsumerState<HalamanSiswaScreen> {
     );
   }
 
-  Widget _buildMainContent(BuildContext context, {required bool isDesktop, required bool isTablet}) {
+  Widget _buildMainContent(
+    BuildContext context, {
+    required bool isDesktop,
+    required bool isTablet,
+  }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return Container(
       color: isDark ? AppTheme.backgroundDark : AppTheme.backgroundLight,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (isDesktop) 
+          if (isDesktop)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
               child: _buildTopBar(context),
@@ -749,9 +784,11 @@ class _HalamanSiswaScreenState extends ConsumerState<HalamanSiswaScreen> {
                   SizedBox(height: isDesktop ? 32 : 24),
                   _buildStatsCards(isDesktop: isDesktop, isTablet: isTablet),
                   SizedBox(height: isDesktop ? 32 : 24),
-                  _buildQuickActions(isDesktop: isDesktop, isTablet: isTablet),
+                  _buildJadwalHariIni(isDesktop: isDesktop),
                   SizedBox(height: isDesktop ? 32 : 24),
-                  _buildRecentActivities(isDesktop: isDesktop),
+                  _buildKelasSemesterIni(isDesktop: isDesktop),
+                  SizedBox(height: isDesktop ? 32 : 24),
+                  _buildPengumumanTerbaru(isDesktop: isDesktop),
                   const SizedBox(height: 24),
                 ],
               ),
@@ -767,9 +804,9 @@ class _HalamanSiswaScreenState extends ConsumerState<HalamanSiswaScreen> {
       children: [
         Text(
           'Dashboard',
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-            fontWeight: FontWeight.bold,
-          ),
+          style: Theme.of(
+            context,
+          ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
         ),
         const Spacer(),
       ],
@@ -778,36 +815,87 @@ class _HalamanSiswaScreenState extends ConsumerState<HalamanSiswaScreen> {
 
   Widget _buildWelcomeSection({required bool isDesktop}) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return BlocBuilder<SiswaProfileBloc, SiswaProfileState>(
       builder: (context, state) {
         String siswaName = 'Siswa';
+        String kelas = '';
 
         if (state is SiswaProfileLoaded) {
           siswaName = state.siswaData['nama_lengkap'] ?? 'Siswa';
+          kelas = state.siswaData['kelas'] ?? '';
         }
 
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Selamat Datang, $siswaName!',
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-                fontSize: isDesktop ? 28 : 22,
-              ),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
+        return Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: isDark
+                  ? [
+                      AppTheme.primaryPurple.withOpacity(0.3),
+                      AppTheme.secondaryTeal.withOpacity(0.2),
+                    ]
+                  : [
+                      AppTheme.primaryPurple.withOpacity(0.1),
+                      AppTheme.secondaryTeal.withOpacity(0.05),
+                    ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
             ),
-            const SizedBox(height: 8),
-            Text(
-              'Ayo semangat belajar hari ini! 📚',
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                color: isDark ? Colors.grey[400] : Colors.grey[600],
-                fontSize: isDesktop ? 16 : 14,
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Halo, $siswaName! 👋',
+                      style: Theme.of(context).textTheme.headlineMedium
+                          ?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            fontSize: isDesktop ? 28 : 22,
+                          ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Selamat datang kembali, siap untuk belajar hari ini?',
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        color: isDark ? Colors.grey[400] : Colors.grey[600],
+                        fontSize: isDesktop ? 16 : 14,
+                      ),
+                    ),
+                    if (kelas.isNotEmpty) ...[
+                      const SizedBox(height: 12),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppTheme.primaryPurple.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          'Kelas $kelas',
+                          style: TextStyle(
+                            color: isDark
+                                ? AppTheme.primaryPurple.withOpacity(0.9)
+                                : AppTheme.primaryPurple,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         );
       },
     );
@@ -817,123 +905,154 @@ class _HalamanSiswaScreenState extends ConsumerState<HalamanSiswaScreen> {
     return BlocBuilder<SiswaStatsBloc, SiswaStatsState>(
       builder: (context, state) {
         if (state is SiswaStatsLoaded) {
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Statistik Belajar',
-                style: TextStyle(
-                  fontSize: isDesktop ? 20 : 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 16),
-              LayoutBuilder(
-                builder: (context, constraints) {
-                  if (isDesktop) {
-                    return Row(
-                      children: [
-                        Expanded(
-                          child: _buildStatCard(
-                            title: 'Total Tugas',
-                            value: '${state.tugasSelesai}/${state.totalTugas}',
-                            icon: Icons.assignment,
-                            color: AppTheme.primaryPurple,
-                            isDesktop: true,
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: _buildStatCard(
-                            title: 'Total Quiz',
-                            value: '${state.quizSelesai}/${state.totalQuiz}',
-                            icon: Icons.quiz,
-                            color: AppTheme.secondaryTeal,
-                            isDesktop: true,
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: _buildStatCard(
-                            title: 'Total Kelas',
-                            value: state.totalKelas.toString(),
-                            icon: Icons.class_,
-                            color: AppTheme.accentGreen,
-                            isDesktop: true,
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: _buildStatCard(
-                            title: 'Rata-rata Nilai',
-                            value: state.rataRataNilai.toStringAsFixed(1),
-                            icon: Icons.star,
-                            color: AppTheme.accentOrange,
-                            isDesktop: true,
-                          ),
-                        ),
-                      ],
-                    );
-                  } else {
-                    return Column(
-                      children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _buildStatCard(
-                                title: 'Total Tugas',
-                                value: '${state.tugasSelesai}/${state.totalTugas}',
-                                icon: Icons.assignment,
-                                color: AppTheme.primaryPurple,
-                                isDesktop: false,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: _buildStatCard(
-                                title: 'Total Quiz',
-                                value: '${state.quizSelesai}/${state.totalQuiz}',
-                                icon: Icons.quiz,
-                                color: AppTheme.secondaryTeal,
-                                isDesktop: false,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _buildStatCard(
-                                title: 'Total Kelas',
-                                value: state.totalKelas.toString(),
-                                icon: Icons.class_,
-                                color: AppTheme.accentGreen,
-                                isDesktop: false,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: _buildStatCard(
-                                title: 'Rata-rata Nilai',
-                                value: state.rataRataNilai.toStringAsFixed(1),
-                                icon: Icons.star,
-                                color: AppTheme.accentOrange,
-                                isDesktop: false,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    );
-                  }
-                },
-              ),
-            ],
+          final tugasPending = state.totalTugas - state.tugasSelesai;
+          final nilaiPersentase = state.rataRataNilai;
+          final kehadiranPersentase =
+              95.0; // Placeholder, bisa diambil dari state nanti
+
+          return LayoutBuilder(
+            builder: (context, constraints) {
+              if (isDesktop) {
+                return Row(
+                  children: [
+                    Expanded(
+                      child: _buildModernStatCard(
+                        title: 'Tugas Tertunda',
+                        value: tugasPending.toString(),
+                        subtitle: '2 jatuh tempo besok',
+                        icon: Icons.assignment_outlined,
+                        color: const Color(0xFFFF6B6B),
+                        isDesktop: true,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: _buildModernStatCard(
+                        title: 'Rata-rata Nilai',
+                        value: '${nilaiPersentase.toInt()}%',
+                        subtitle: '+2% dari bulan lalu',
+                        icon: Icons.trending_up,
+                        color: const Color(0xFF4CAF50),
+                        isDesktop: true,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: _buildModernStatCard(
+                        title: 'Kehadiran',
+                        value: '${kehadiranPersentase.toInt()}%',
+                        subtitle: 'Sangat baik',
+                        icon: Icons.people_outline,
+                        color: AppTheme.primaryPurple,
+                        isDesktop: true,
+                      ),
+                    ),
+                  ],
+                );
+              } else {
+                return Column(
+                  children: [
+                    _buildModernStatCard(
+                      title: 'Tugas Tertunda',
+                      value: tugasPending.toString(),
+                      subtitle: '2 jatuh tempo besok',
+                      icon: Icons.assignment_outlined,
+                      color: const Color(0xFFFF6B6B),
+                      isDesktop: false,
+                    ),
+                    const SizedBox(height: 12),
+                    _buildModernStatCard(
+                      title: 'Rata-rata Nilai',
+                      value: '${nilaiPersentase.toInt()}%',
+                      subtitle: '+2% dari bulan lalu',
+                      icon: Icons.trending_up,
+                      color: const Color(0xFF4CAF50),
+                      isDesktop: false,
+                    ),
+                    const SizedBox(height: 12),
+                    _buildModernStatCard(
+                      title: 'Kehadiran',
+                      value: '${kehadiranPersentase.toInt()}%',
+                      subtitle: 'Sangat baik',
+                      icon: Icons.people_outline,
+                      color: AppTheme.primaryPurple,
+                      isDesktop: false,
+                    ),
+                  ],
+                );
+              }
+            },
           );
         }
+
         return const Center(child: CircularProgressIndicator());
       },
+    );
+  }
+
+  Widget _buildModernStatCard({
+    required String title,
+    required String value,
+    required String subtitle,
+    required IconData icon,
+    required Color color,
+    required bool isDesktop,
+  }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF2A2A2A) : Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isDark ? Colors.grey[800]! : Colors.grey[200]!,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(icon, color: color, size: 24),
+              ),
+              const Spacer(),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 14,
+              color: isDark ? Colors.grey[400] : Colors.grey[600],
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+              color: isDark ? Colors.white : Colors.black,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            subtitle,
+            style: TextStyle(
+              fontSize: 12,
+              color: color,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -945,7 +1064,7 @@ class _HalamanSiswaScreenState extends ConsumerState<HalamanSiswaScreen> {
     required bool isDesktop,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return Container(
       padding: EdgeInsets.all(isDesktop ? 20 : 16),
       decoration: BoxDecoration(
@@ -1153,7 +1272,7 @@ class _HalamanSiswaScreenState extends ConsumerState<HalamanSiswaScreen> {
     required VoidCallback onTap,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       child: GestureDetector(
@@ -1206,7 +1325,7 @@ class _HalamanSiswaScreenState extends ConsumerState<HalamanSiswaScreen> {
 
   Widget _buildRecentActivities({required bool isDesktop}) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     final activities = [
       {
         'title': 'Tugas Matematika dikumpulkan',
@@ -1296,6 +1415,391 @@ class _HalamanSiswaScreenState extends ConsumerState<HalamanSiswaScreen> {
             },
           ),
         ),
+      ],
+    );
+  }
+
+  Widget _buildJadwalHariIni({required bool isDesktop}) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    // Data jadwal dummy - nanti bisa diganti dengan data dari Firestore
+    final jadwal = [
+      {
+        'waktu': '08:00 - 09:30',
+        'mataPelajaran': 'Matematika Wajib',
+        'ruang': 'Ruang 304 • Pak Bambang',
+        'status': 'Sedang Berlangsung',
+        'color': const Color(0xFF4CAF50),
+      },
+      {
+        'waktu': '10:00 - 11:30',
+        'mataPelajaran': 'Bahasa Inggris',
+        'ruang': 'Lab Bahasa 1 • Mrs. Sarah',
+        'status': '',
+        'color': AppTheme.primaryPurple,
+      },
+      {
+        'waktu': '13:00 - 14:30',
+        'mataPelajaran': 'Fisika Dasar',
+        'ruang': 'Ruang 202 • Bu Rina',
+        'status': '',
+        'color': AppTheme.secondaryTeal,
+      },
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Jadwal Hari Ini',
+              style: TextStyle(
+                fontSize: isDesktop ? 20 : 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            TextButton(
+              onPressed: () {
+                // Navigate to full schedule
+              },
+              child: const Text('Lihat Semua'),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        ...jadwal
+            .map(
+              (item) => _buildJadwalCard(
+                waktu: item['waktu'] as String,
+                mataPelajaran: item['mataPelajaran'] as String,
+                ruang: item['ruang'] as String,
+                status: item['status'] as String,
+                color: item['color'] as Color,
+                isDark: isDark,
+              ),
+            )
+            .toList(),
+      ],
+    );
+  }
+
+  Widget _buildJadwalCard({
+    required String waktu,
+    required String mataPelajaran,
+    required String ruang,
+    required String status,
+    required Color color,
+    required bool isDark,
+  }) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF2A2A2A) : Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isDark ? Colors.grey[800]! : Colors.grey[200]!,
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Container(
+              width: 4,
+              height: 60,
+              decoration: BoxDecoration(
+                color: color,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Text(
+                        waktu,
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: color,
+                        ),
+                      ),
+                      if (status.isNotEmpty) ...[
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF4CAF50).withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            status,
+                            style: const TextStyle(
+                              fontSize: 10,
+                              color: Color(0xFF4CAF50),
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    mataPelajaran,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? Colors.white : Colors.black,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    ruang,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: isDark ? Colors.grey[400] : Colors.grey[600],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 16),
+            ElevatedButton(
+              onPressed: () {
+                // Join class action
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primaryPurple,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 12,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: const Text('Masuk Kelas'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildKelasSemesterIni({required bool isDesktop}) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    // Data kelas dummy
+    final kelas = [
+      {
+        'nama': 'Matematika Lanjut',
+        'guru': 'Bu Bambang',
+        'image':
+            'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=400',
+      },
+      {
+        'nama': 'Fisika Terapan',
+        'guru': 'Bu Risa',
+        'image':
+            'https://images.unsplash.com/photo-1636466497217-26a8cbeaf0aa?w=400',
+      },
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Kelas Semester Ini',
+          style: TextStyle(
+            fontSize: isDesktop ? 20 : 18,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 16),
+        GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: isDesktop ? 2 : 1,
+            crossAxisSpacing: 16,
+            mainAxisSpacing: 16,
+            childAspectRatio: isDesktop ? 3 : 2.5,
+          ),
+          itemCount: kelas.length,
+          itemBuilder: (context, index) {
+            final item = kelas[index];
+            return _buildKelasCard(
+              nama: item['nama'] as String,
+              guru: item['guru'] as String,
+              image: item['image'] as String,
+              isDark: isDark,
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildKelasCard({
+    required String nama,
+    required String guru,
+    required String image,
+    required bool isDark,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF2A2A2A) : Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isDark ? Colors.grey[800]! : Colors.grey[200]!,
+        ),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: Row(
+          children: [
+            Container(
+              width: 120,
+              height: double.infinity,
+              decoration: BoxDecoration(
+                color: AppTheme.primaryPurple.withOpacity(0.1),
+              ),
+              child: const Icon(Icons.image, size: 40, color: Colors.grey),
+            ),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      nama,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: isDark ? Colors.white : Colors.black,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      guru,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: isDark ? Colors.grey[400] : Colors.grey[600],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPengumumanTerbaru({required bool isDesktop}) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    // Data pengumuman dummy
+    final pengumuman = [
+      {
+        'icon': Icons.campaign,
+        'title': 'Ujian Tengah Semester',
+        'subtitle':
+            'Jadwal UTS dimulai pada hari Senin Tanggal 17 Agustus dengan...',
+      },
+      {
+        'icon': Icons.celebration,
+        'title': 'Libur Nasional',
+        'subtitle':
+            'Sekolah ditutup pada hari Jum\'at Tanggal 13 Juni\'21 Agustus dalam...',
+      },
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Pengumuman Terbaru',
+          style: TextStyle(
+            fontSize: isDesktop ? 20 : 18,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 16),
+        ...pengumuman
+            .map(
+              (item) => Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF2A2A2A) : Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: isDark ? Colors.grey[800]! : Colors.grey[200]!,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppTheme.primaryPurple.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(
+                        item['icon'] as IconData,
+                        color: AppTheme.primaryPurple,
+                        size: 24,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            item['title'] as String,
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: isDark ? Colors.white : Colors.black,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            item['subtitle'] as String,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: isDark
+                                  ? Colors.grey[400]
+                                  : Colors.grey[600],
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            )
+            .toList(),
       ],
     );
   }

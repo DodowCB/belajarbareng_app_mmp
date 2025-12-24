@@ -112,7 +112,7 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
           // Jika tidak ditemukan di guru, cek di collection 'siswa'
           final siswaQuerySnapshot = await FirebaseFirestore.instance
               .collection('siswa')
-              .where('email', isEqualTo: event.email.trim().toLowerCase())
+              .where('email', isEqualTo: event.email.trim())
               .where('password', isEqualTo: event.password)
               .get();
 

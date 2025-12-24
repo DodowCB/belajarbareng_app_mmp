@@ -271,17 +271,36 @@ class GoogleDriveService {
   /// Delete file dari Google Drive
   Future<bool> deleteFile(String fileId) async {
     try {
+      print('🗑️ Attempting to delete file from Google Drive: $fileId');
+
       await _updateAuthHeaders();
       if (_authHeaders == null) {
-        throw Exception('Not authenticated');
+        throw Exception('Not authenticated. Please sign in first.');
       }
 
       final uri = Uri.parse('$_driveApiBaseUrl/files/$fileId');
+      print('DELETE request to: $uri');
+
       final response = await http.delete(uri, headers: _authHeaders);
 
-      return response.statusCode == 204;
+      print('Delete response status: ${response.statusCode}');
+
+      if (response.statusCode == 204) {
+        print('✓ File deleted successfully from Google Drive');
+        return true;
+      } else if (response.statusCode == 404) {
+        print('⚠ File not found in Google Drive (may already be deleted)');
+        return false; // File doesn't exist
+      } else {
+        final errorBody = response.body;
+        print('✗ Delete failed: ${response.statusCode} - $errorBody');
+        throw Exception(
+          'Failed to delete file from Google Drive: ${response.statusCode}\n'
+          'Error: $errorBody',
+        );
+      }
     } catch (e) {
-      print('Error deleting file: $e');
+      print('❌ Error deleting file: $e');
       rethrow;
     }
   }
@@ -332,7 +351,7 @@ class GoogleDriveService {
     try {
       await _updateAuthHeaders();
       if (_authHeaders == null) {
-        throw Exception('Not authenticated');
+        throw Exception('Not authenticated. Please sign in first.');
       }
 
       final metadata = {
@@ -352,7 +371,13 @@ class GoogleDriveService {
       if (response.statusCode == 200) {
         return json.decode(response.body);
       } else {
-        throw Exception('Create folder failed: ${response.statusCode}');
+        final errorBody = response.body;
+        print('Create folder error response: $errorBody');
+        throw Exception(
+          'Create folder failed: ${response.statusCode}\n'
+          'Error: $errorBody\n'
+          'Hint: Make sure you have proper Drive API permissions (scope: drive)',
+        );
       }
     } catch (e) {
       print('Error creating folder: $e');

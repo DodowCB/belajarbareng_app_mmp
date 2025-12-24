@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../../core/services/google_drive_service.dart';
 import '../../../../../core/config/theme.dart';
 import '../../../../../core/providers/user_provider.dart';
+import 'dart:html' as html;
+import 'dart:typed_data';
 
 class UploadMateriScreen extends ConsumerStatefulWidget {
   const UploadMateriScreen({super.key});
@@ -21,10 +23,12 @@ class _UploadMateriScreenState extends ConsumerState<UploadMateriScreen> {
   bool _isLoading = false;
   bool _isSignedIn = false;
   final List<Map<String, dynamic>> _uploadedFiles = [];
+  final Map<String, double> _uploadProgress = {}; // Track progress per file
   String? _selectedKelasId;
   String? _selectedMapelId;
   List<Map<String, dynamic>> _kelasList = [];
   List<Map<String, dynamic>> _mapelList = [];
+  bool _isDraggingOver = false;
 
   final _judulController = TextEditingController();
   final _deskripsiController = TextEditingController();
@@ -34,6 +38,7 @@ class _UploadMateriScreenState extends ConsumerState<UploadMateriScreen> {
     super.initState();
     _initializeGoogleDrive();
     _loadKelasAndMapel();
+    _setupDragAndDrop();
   }
 
   @override
@@ -41,6 +46,120 @@ class _UploadMateriScreenState extends ConsumerState<UploadMateriScreen> {
     _judulController.dispose();
     _deskripsiController.dispose();
     super.dispose();
+  }
+
+  void _setupDragAndDrop() {
+    // Setup drag and drop for web
+    final dropZone = html.document.body;
+
+    dropZone?.onDragOver.listen((event) {
+      event.preventDefault();
+      if (mounted && _isSignedIn) {
+        setState(() => _isDraggingOver = true);
+      }
+    });
+
+    dropZone?.onDragLeave.listen((event) {
+      if (mounted) {
+        setState(() => _isDraggingOver = false);
+      }
+    });
+
+    dropZone?.onDrop.listen((event) async {
+      event.preventDefault();
+      if (mounted) {
+        setState(() => _isDraggingOver = false);
+      }
+
+      if (!_isSignedIn) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please sign in to Google Drive first'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        return;
+      }
+
+      final files = event.dataTransfer?.files;
+      if (files != null && files.isNotEmpty) {
+        await _handleDroppedFiles(files);
+      }
+    });
+  }
+
+  Future<void> _handleDroppedFiles(List<html.File> files) async {
+    try {
+      for (final file in files) {
+        // Check file extension
+        final allowedExtensions = [
+          'pdf',
+          'doc',
+          'docx',
+          'ppt',
+          'pptx',
+          'xls',
+          'xlsx',
+          'jpg',
+          'jpeg',
+          'png',
+          'mp4',
+          'zip',
+          'txt',
+        ];
+
+        final fileName = file.name.toLowerCase();
+        final isAllowed = allowedExtensions.any(
+          (ext) => fileName.endsWith('.$ext'),
+        );
+
+        if (!isAllowed) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('File type not supported: ${file.name}'),
+                backgroundColor: Colors.orange,
+              ),
+            );
+          }
+          continue;
+        }
+
+        // Read file as bytes
+        final reader = html.FileReader();
+        reader.readAsArrayBuffer(file);
+        await reader.onLoadEnd.first;
+
+        final bytes = reader.result as Uint8List;
+
+        // Create PlatformFile object
+        final platformFile = PlatformFile(
+          name: file.name,
+          size: file.size,
+          bytes: bytes,
+        );
+
+        await _uploadSingleFile(platformFile);
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${files.length} file(s) uploaded successfully!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to upload files: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _initializeGoogleDrive() async {
@@ -178,6 +297,277 @@ class _UploadMateriScreenState extends ConsumerState<UploadMateriScreen> {
 
   Future<void> _pickAndUploadFile() async {
     try {
+      debugPrint('=== PICK AND UPLOAD FILE STARTED ===');
+
+      if (!_isSignedIn) {
+        debugPrint('❌ User not signed in');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please sign in to Google Drive first'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        return;
+      }
+
+      debugPrint('Showing file picker...');
+
+      // For Flutter Web, use HTML file input as it's more reliable
+      final uploadInput = html.FileUploadInputElement();
+      uploadInput.multiple = true;
+      uploadInput.accept =
+          '.pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.jpg,.jpeg,.png,.mp4,.zip,.txt';
+
+      uploadInput.click();
+
+      await uploadInput.onChange.first;
+
+      final files = uploadInput.files;
+      if (files == null || files.isEmpty) {
+        debugPrint('No files selected');
+        return;
+      }
+
+      debugPrint('Files selected: ${files.length}');
+
+      // Upload files one by one with progress tracking
+      int successCount = 0;
+      int failCount = 0;
+
+      for (final file in files) {
+        debugPrint('Processing: ${file.name}');
+        debugPrint('File size: ${file.size} bytes');
+
+        // Check file extension
+        final allowedExtensions = [
+          'pdf',
+          'doc',
+          'docx',
+          'ppt',
+          'pptx',
+          'xls',
+          'xlsx',
+          'jpg',
+          'jpeg',
+          'png',
+          'mp4',
+          'zip',
+          'txt',
+        ];
+
+        final fileName = file.name.toLowerCase();
+        final isAllowed = allowedExtensions.any(
+          (ext) => fileName.endsWith('.$ext'),
+        );
+
+        if (!isAllowed) {
+          debugPrint('❌ File type not supported: ${file.name}');
+          failCount++;
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('File type not supported: ${file.name}'),
+                backgroundColor: Colors.orange,
+              ),
+            );
+          }
+          continue;
+        }
+
+        // Read file as bytes using FileReader
+        final reader = html.FileReader();
+        reader.readAsArrayBuffer(file);
+
+        // Wait for the file to be read
+        await reader.onLoadEnd.first;
+
+        if (reader.result == null) {
+          debugPrint('❌ Failed to read file bytes: ${file.name}');
+          failCount++;
+          continue;
+        }
+
+        final bytes = reader.result as Uint8List;
+        debugPrint('✓ File bytes loaded: ${bytes.length} bytes');
+
+        // Create PlatformFile for compatibility
+        final platformFile = PlatformFile(
+          name: file.name,
+          size: file.size,
+          bytes: bytes,
+        );
+
+        try {
+          await _uploadSingleFile(platformFile);
+          successCount++;
+          debugPrint('✓ Successfully uploaded: ${file.name}');
+        } catch (e) {
+          debugPrint('❌ Failed to upload ${file.name}: $e');
+          failCount++;
+
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Failed to upload ${file.name}: $e'),
+                backgroundColor: Colors.red,
+                duration: const Duration(seconds: 3),
+              ),
+            );
+          }
+        }
+      }
+
+      if (mounted && successCount > 0) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              '$successCount file(s) uploaded successfully!' +
+                  (failCount > 0 ? ' ($failCount failed)' : '') +
+                  ' Jangan lupa isi form dan klik "Simpan Materi"',
+            ),
+            backgroundColor: failCount > 0 ? Colors.orange : Colors.green,
+            duration: const Duration(seconds: 5),
+            action: SnackBarAction(
+              label: 'OK',
+              textColor: Colors.white,
+              onPressed: () {},
+            ),
+          ),
+        );
+      } else if (mounted && failCount > 0) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('All $failCount file(s) failed to upload'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint('❌ Error in _pickAndUploadFile: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to upload files: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _uploadSingleFile(PlatformFile file) async {
+    try {
+      debugPrint('=== UPLOAD SINGLE FILE ===');
+      debugPrint('File name: ${file.name}');
+      debugPrint('File size: ${file.size}');
+      debugPrint('File bytes null?: ${file.bytes == null}');
+      // IMPORTANT: Don't access file.path on web - it will throw an exception
+      debugPrint('Platform: Web');
+
+      // Check if bytes are available (web platform)
+      if (file.bytes == null) {
+        debugPrint('❌ File bytes is NULL!');
+
+        // For web, bytes should always be available
+        // If null, it means file picker failed to read the file
+        throw Exception(
+          'File data not available. This may happen if:\n'
+          '1. File is too large\n'
+          '2. Browser blocked file access\n'
+          '3. File picker was cancelled\n'
+          '\nPlease try:\n'
+          '- Using a smaller file\n'
+          '- Drag & drop instead of browse\n'
+          '- Refreshing the page',
+        );
+      }
+
+      debugPrint('✓ File bytes available: ${file.bytes!.length} bytes');
+
+      // Initialize progress for this file
+      setState(() {
+        _uploadProgress[file.name] = 0.0;
+      });
+
+      // Simulate progress updates (dalam real implementation, bisa dari Drive API)
+      _updateProgress(file.name, 0.2);
+
+      // Get or create folder: BelajarBareng MMP/{email}/
+      final folderId = await _driveService.getOrCreateAppFolder();
+      _updateProgress(file.name, 0.4);
+
+      // Upload to Google Drive in user's folder
+      final uploadedFile = await _driveService.uploadFile(
+        fileBytes: file.bytes!,
+        fileName: file.name,
+        folderId: folderId,
+        description: 'Uploaded from BelajarBareng App - ${DateTime.now()}',
+      );
+      _updateProgress(file.name, 0.7);
+
+      if (uploadedFile != null) {
+        // Get max ID for new file in 'files' collection
+        final filesSnapshot = await _firestore.collection('files').get();
+        int maxFileId = 0;
+        for (final doc in filesSnapshot.docs) {
+          final id = int.tryParse(doc.id) ?? 0;
+          if (id > maxFileId) maxFileId = id;
+        }
+        final newFileId = (maxFileId + 1).toString();
+
+        final driveFileId = uploadedFile['id'] as String;
+        debugPrint('=== FILE UPLOADED ===');
+        debugPrint('File name: ${uploadedFile['name']}');
+        debugPrint('Firestore file_id: $newFileId');
+        debugPrint('Google Drive file_id: $driveFileId');
+        debugPrint('WebViewLink: ${uploadedFile['webViewLink']}');
+
+        // Save file metadata to 'files' collection
+        await _firestore.collection('files').doc(newFileId).set({
+          'drive_file_id': driveFileId,
+          'name': uploadedFile['name'],
+          'mimeType': uploadedFile['mimeType'],
+          'size': file.size,
+          'webViewLink': uploadedFile['webViewLink'],
+          'uploadedBy': userProvider.userId,
+          'uploadedAt': FieldValue.serverTimestamp(),
+        });
+        _updateProgress(file.name, 0.9);
+
+        setState(() {
+          _uploadedFiles.add({
+            'file_id': newFileId,
+            'drive_file_id': driveFileId, // Store drive_file_id for deletion
+            'name': uploadedFile['name'],
+            'mimeType': uploadedFile['mimeType'],
+            'size': file.size,
+            'bytes': file.bytes, // Store for preview
+          });
+          _updateProgress(file.name, 1.0);
+        });
+
+        // Remove progress after a short delay
+        await Future.delayed(const Duration(milliseconds: 500));
+        setState(() {
+          _uploadProgress.remove(file.name);
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _uploadProgress.remove(file.name);
+      });
+      rethrow;
+    }
+  }
+
+  void _updateProgress(String fileName, double progress) {
+    setState(() {
+      _uploadProgress[fileName] = progress;
+    });
+  }
+
+  Future<void> _replaceFile(int index) async {
+    try {
       if (!_isSignedIn) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -188,7 +578,7 @@ class _UploadMateriScreenState extends ConsumerState<UploadMateriScreen> {
         return;
       }
 
-      // Pick file
+      // Pick replacement file
       final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
         allowedExtensions: [
@@ -210,70 +600,221 @@ class _UploadMateriScreenState extends ConsumerState<UploadMateriScreen> {
 
       if (result == null) return;
 
+      final file = result.files.first;
+      final oldFile = _uploadedFiles[index];
+
+      // Remove old file from list
+      setState(() {
+        _uploadedFiles.removeAt(index);
+      });
+
+      // Upload new file
+      await _uploadSingleFile(file);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('File "${oldFile['name']}" replaced successfully!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to replace file: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  void _showFilePreview(Map<String, dynamic> file) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 600, maxHeight: 800),
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Text(
+                      file['name'],
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Expanded(child: _buildPreviewContent(file)),
+              const SizedBox(height: 16),
+              Text(
+                'Size: ${GoogleDriveService.formatFileSize(file['size'])}',
+                style: TextStyle(color: Colors.grey[600]),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _deleteFile(int index, Map<String, dynamic> file) async {
+    // Show confirmation dialog
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Hapus File'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Yakin ingin menghapus \"${file['name']}\"?'),
+            const SizedBox(height: 12),
+            const Text(
+              'File akan dihapus dari Google Drive dan tidak bisa dikembalikan.',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.red,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Batal'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Hapus', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    try {
       setState(() => _isLoading = true);
 
-      final file = result.files.first;
+      final fileId = file['file_id'] as String;
+      final driveFileId = file['drive_file_id'] as String?;
 
-      // Check if bytes are available (web platform)
-      if (file.bytes == null) {
-        throw Exception('File data not available');
+      debugPrint('=== DELETE FILE DEBUG ===');
+      debugPrint('File ID (Firestore): $fileId');
+      debugPrint('Drive File ID: $driveFileId');
+      debugPrint('File name: ${file['name']}');
+
+      // Variables to track deletion status
+      bool firestoreDeleted = false;
+      bool driveDeleted = false;
+      String? firestoreError;
+      String? driveError;
+
+      // Delete from Google Drive FIRST (if drive_file_id exists)
+      if (driveFileId != null && driveFileId.isNotEmpty) {
+        try {
+          debugPrint('Attempting to delete from Google Drive...');
+          final success = await _driveService.deleteFile(driveFileId);
+          if (success) {
+            driveDeleted = true;
+            debugPrint('✓ Deleted from Google Drive');
+          } else {
+            driveError = 'Delete returned false';
+            debugPrint('✗ Drive delete returned false');
+          }
+        } catch (e) {
+          driveError = e.toString();
+          debugPrint('✗ Failed to delete from Google Drive: $e');
+          // Continue with Firestore deletion even if Drive fails
+        }
+      } else {
+        debugPrint('⚠ No drive_file_id found, skipping Drive deletion');
       }
 
-      // Get or create folder: BelajarBareng MMP/{email}/
-      final folderId = await _driveService.getOrCreateAppFolder();
+      // Delete from Firestore ALWAYS (even if Drive failed)
+      try {
+        debugPrint('Attempting to delete from Firestore...');
+        await _firestore.collection('files').doc(fileId).delete();
+        firestoreDeleted = true;
+        debugPrint('✓ Deleted from Firestore');
+      } catch (e) {
+        firestoreError = e.toString();
+        debugPrint('✗ Failed to delete from Firestore: $e');
+        // Continue to remove from local list
+      }
 
-      // Upload to Google Drive in user's folder
-      final uploadedFile = await _driveService.uploadFile(
-        fileBytes: file.bytes!,
-        fileName: file.name,
-        folderId: folderId,
-        description: 'Uploaded from BelajarBareng App - ${DateTime.now()}',
-      );
+      // Remove from local list ALWAYS
+      setState(() {
+        _uploadedFiles.removeAt(index);
+        _isLoading = false;
+      });
 
-      if (uploadedFile != null) {
-        // Get max ID for new file in 'files' collection
-        final filesSnapshot = await _firestore.collection('files').get();
-        int maxFileId = 0;
-        for (final doc in filesSnapshot.docs) {
-          final id = int.tryParse(doc.id) ?? 0;
-          if (id > maxFileId) maxFileId = id;
-        }
-        final newFileId = (maxFileId + 1).toString();
-
-        // Save file metadata to 'files' collection
-        await _firestore.collection('files').doc(newFileId).set({
-          'drive_file_id': uploadedFile['id'],
-          'name': uploadedFile['name'],
-          'mimeType': uploadedFile['mimeType'],
-          'size': file.size,
-          'webViewLink': uploadedFile['webViewLink'],
-          'uploadedBy': userProvider.userId,
-          'uploadedAt': FieldValue.serverTimestamp(),
-        });
-
-        setState(() {
-          _uploadedFiles.add({
-            'file_id': newFileId, // Firestore files collection ID
-            'name': uploadedFile['name'],
-            'mimeType': uploadedFile['mimeType'],
-            'size': file.size,
-          });
-          _isLoading = false;
-        });
-
-        if (mounted) {
+      // Show appropriate message
+      if (mounted) {
+        if (firestoreDeleted && driveDeleted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: const Text(
-                'File uploaded successfully! Jangan lupa isi form dan klik "Simpan Materi"',
+              content: Text(
+                'File "${file['name']}" deleted successfully from all locations',
               ),
               backgroundColor: Colors.green,
-              duration: const Duration(seconds: 5),
-              action: SnackBarAction(
-                label: 'OK',
-                textColor: Colors.white,
-                onPressed: () {},
+            ),
+          );
+        } else if (firestoreDeleted && driveError != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'File deleted from database, but Google Drive error: $driveError',
               ),
+              backgroundColor: Colors.orange,
+              duration: const Duration(seconds: 4),
+            ),
+          );
+        } else if (driveDeleted && firestoreError != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'File deleted from Google Drive, but Firestore error: $firestoreError',
+              ),
+              backgroundColor: Colors.orange,
+              duration: const Duration(seconds: 4),
+            ),
+          );
+        } else if (firestoreError != null || driveError != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Partial deletion:\n'
+                'Firestore: ${firestoreError ?? "OK"}\n'
+                'Drive: ${driveError ?? "OK"}',
+              ),
+              backgroundColor: Colors.red,
+              duration: const Duration(seconds: 5),
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('File "${file['name']}" removed from list'),
+              backgroundColor: Colors.blue,
             ),
           );
         }
@@ -283,12 +824,51 @@ class _UploadMateriScreenState extends ConsumerState<UploadMateriScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to upload file: $e'),
+            content: Text('Failed to delete file: $e'),
             backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
           ),
         );
       }
     }
+  }
+
+  Widget _buildPreviewContent(Map<String, dynamic> file) {
+    final mimeType = file['mimeType'] as String;
+    final bytes = file['bytes'] as List<int>?;
+
+    // Preview untuk gambar
+    if (mimeType.contains('image') && bytes != null) {
+      return Image.memory(bytes as dynamic, fit: BoxFit.contain);
+    }
+
+    // Preview untuk PDF, DOC, dll (hanya info)
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            _getFileIcon(mimeType),
+            size: 100,
+            color: AppTheme.primaryPurple,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            file['name'],
+            style: const TextStyle(fontSize: 16),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 8),
+          Text(mimeType, style: TextStyle(color: Colors.grey[600])),
+          const SizedBox(height: 16),
+          const Text(
+            'Preview not available for this file type.\nFile will be viewable after upload.',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontStyle: FontStyle.italic),
+          ),
+        ],
+      ),
+    );
   }
 
   /// Simpan metadata materi ke Firestore
@@ -638,20 +1218,120 @@ class _UploadMateriScreenState extends ConsumerState<UploadMateriScreen> {
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
-            OutlinedButton.icon(
-              onPressed: _pickAndUploadFile,
-              icon: const Icon(Icons.upload_file),
-              label: const Text('Pilih File untuk Upload'),
-              style: OutlinedButton.styleFrom(
-                padding: const EdgeInsets.all(16),
-                side: BorderSide(color: AppTheme.primaryPurple),
+
+            // Upload Zone
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(32),
+              decoration: BoxDecoration(
+                border: Border.all(
+                  color: _isDraggingOver
+                      ? AppTheme.primaryPurple
+                      : Colors.grey.shade300,
+                  width: 2,
+                  style: BorderStyle.solid,
+                ),
+                borderRadius: BorderRadius.circular(8),
+                color: _isDraggingOver
+                    ? AppTheme.primaryPurple.withOpacity(0.1)
+                    : Colors.grey.shade50,
+              ),
+              child: Column(
+                children: [
+                  Icon(
+                    Icons.cloud_upload,
+                    size: 48,
+                    color: _isDraggingOver
+                        ? AppTheme.primaryPurple
+                        : Colors.grey[600],
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    _isDraggingOver
+                        ? 'Drop files here'
+                        : 'Drag & drop files here or click to browse',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: _isDraggingOver
+                          ? AppTheme.primaryPurple
+                          : Colors.grey[700],
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'You can select multiple files at once',
+                    style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton.icon(
+                    onPressed: _pickAndUploadFile,
+                    icon: const Icon(Icons.folder_open),
+                    label: const Text('Browse Files'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.primaryPurple,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 32,
+                        vertical: 16,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 8),
+
+            const SizedBox(height: 12),
             Text(
-              'Supported: PDF, DOC, PPT, XLS, JPG, PNG, MP4, ZIP',
+              'Supported: PDF, DOC, PPT, XLS, JPG, PNG, MP4, ZIP, TXT',
               style: TextStyle(color: Colors.grey[600], fontSize: 12),
             ),
+
+            // Show upload progress
+            if (_uploadProgress.isNotEmpty) ...[
+              const SizedBox(height: 20),
+              const Text(
+                'Uploading...',
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 12),
+              ..._uploadProgress.entries.map((entry) {
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              entry.key,
+                              style: const TextStyle(fontSize: 12),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          Text(
+                            '${(entry.value * 100).toInt()}%',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      LinearProgressIndicator(
+                        value: entry.value,
+                        backgroundColor: Colors.grey[300],
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          AppTheme.primaryPurple,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }).toList(),
+            ],
           ],
         ),
       ),
@@ -666,9 +1346,18 @@ class _UploadMateriScreenState extends ConsumerState<UploadMateriScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'File yang Diupload',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'File yang Diupload',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                Text(
+                  '${_uploadedFiles.length} file(s)',
+                  style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                ),
+              ],
             ),
             const SizedBox(height: 16),
             ListView.builder(
@@ -677,22 +1366,57 @@ class _UploadMateriScreenState extends ConsumerState<UploadMateriScreen> {
               itemCount: _uploadedFiles.length,
               itemBuilder: (context, index) {
                 final file = _uploadedFiles[index];
-                return ListTile(
-                  leading: Icon(
-                    _getFileIcon(file['mimeType']),
-                    color: AppTheme.primaryPurple,
-                  ),
-                  title: Text(file['name']),
-                  subtitle: Text(
-                    GoogleDriveService.formatFileSize(file['size']),
-                  ),
-                  trailing: IconButton(
-                    icon: const Icon(Icons.delete, color: Colors.red),
-                    onPressed: () {
-                      setState(() {
-                        _uploadedFiles.removeAt(index);
-                      });
-                    },
+                final isImage = (file['mimeType'] as String).contains('image');
+
+                return Card(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  elevation: 1,
+                  child: ListTile(
+                    leading: isImage && file['bytes'] != null
+                        ? ClipRRect(
+                            borderRadius: BorderRadius.circular(4),
+                            child: Image.memory(
+                              file['bytes'] as dynamic,
+                              width: 50,
+                              height: 50,
+                              fit: BoxFit.cover,
+                            ),
+                          )
+                        : Icon(
+                            _getFileIcon(file['mimeType']),
+                            color: AppTheme.primaryPurple,
+                            size: 32,
+                          ),
+                    title: Text(file['name'], overflow: TextOverflow.ellipsis),
+                    subtitle: Text(
+                      GoogleDriveService.formatFileSize(file['size']),
+                    ),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Preview button
+                        IconButton(
+                          icon: const Icon(Icons.visibility, size: 20),
+                          onPressed: () => _showFilePreview(file),
+                          tooltip: 'Preview',
+                          color: Colors.blue,
+                        ),
+                        // Replace button
+                        IconButton(
+                          icon: const Icon(Icons.swap_horiz, size: 20),
+                          onPressed: () => _replaceFile(index),
+                          tooltip: 'Replace',
+                          color: Colors.orange,
+                        ),
+                        // Delete button
+                        IconButton(
+                          icon: const Icon(Icons.delete, size: 20),
+                          onPressed: () => _deleteFile(index, file),
+                          tooltip: 'Delete',
+                          color: Colors.red,
+                        ),
+                      ],
+                    ),
                   ),
                 );
               },

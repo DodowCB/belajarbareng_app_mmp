@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../../../core/config/theme.dart';
 import '../../../../../core/providers/theme_provider.dart';
 import '../../../../../core/providers/user_provider.dart';
@@ -163,9 +164,10 @@ extension GuruSidebarWidgets on HalamanGuruScreenState {
                     );
                   },
                 ),
-                buildSidebarItem(
+                buildSidebarItemWithCount(
                   icon: Icons.book,
                   title: 'Materi Pembelajaran',
+                  countStream: _getMateriCountStream(),
                   onTap: () {
                     Navigator.push(
                       context,
@@ -175,9 +177,10 @@ extension GuruSidebarWidgets on HalamanGuruScreenState {
                     );
                   },
                 ),
-                buildSidebarItem(
+                buildSidebarItemWithCount(
                   icon: Icons.fact_check,
                   title: 'Absensi',
+                  countStream: _getAbsensiCountStream(),
                   onTap: () {
                     Navigator.push(
                       context,
@@ -355,9 +358,10 @@ extension GuruSidebarWidgets on HalamanGuruScreenState {
                     );
                   },
                 ),
-                buildDrawerItem(
+                buildDrawerItemWithCount(
                   icon: Icons.book,
                   title: 'Materi Pembelajaran',
+                  countStream: _getMateriCountStream(),
                   onTap: () {
                     Navigator.pop(context);
                     Navigator.push(
@@ -368,9 +372,10 @@ extension GuruSidebarWidgets on HalamanGuruScreenState {
                     );
                   },
                 ),
-                buildDrawerItem(
+                buildDrawerItemWithCount(
                   icon: Icons.fact_check,
                   title: 'Absensi',
+                  countStream: _getAbsensiCountStream(),
                   onTap: () {
                     Navigator.pop(context);
                     Navigator.push(
@@ -719,6 +724,186 @@ extension GuruSidebarWidgets on HalamanGuruScreenState {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  // Helper methods untuk Firestore Streams
+  Stream<int> _getMateriCountStream() {
+    final guruId = userProvider.userId;
+    if (guruId == null) return Stream.value(0);
+
+    return FirebaseFirestore.instance
+        .collection('materi')
+        .where('id_guru', isEqualTo: guruId)
+        .snapshots()
+        .map((snapshot) => snapshot.docs.length);
+  }
+
+  Stream<int> _getAbsensiCountStream() {
+    final guruId = userProvider.userId;
+    if (guruId == null) return Stream.value(0);
+
+    // Hitung jumlah absensi yang dibuat oleh guru ini hari ini
+    final now = DateTime.now();
+    final startOfDay = DateTime(now.year, now.month, now.day);
+    final endOfDay = DateTime(now.year, now.month, now.day, 23, 59, 59);
+
+    return FirebaseFirestore.instance
+        .collection('absensi')
+        .where('diabsen_oleh', isEqualTo: guruId)
+        .where(
+          'tanggal',
+          isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay),
+        )
+        .where('tanggal', isLessThanOrEqualTo: Timestamp.fromDate(endOfDay))
+        .snapshots()
+        .map((snapshot) => snapshot.docs.length);
+  }
+
+  Widget buildSidebarItemWithCount({
+    required IconData icon,
+    required String title,
+    required Stream<int> countStream,
+    bool isActive = false,
+    Color? iconColor,
+    Color? textColor,
+    VoidCallback? onTap,
+  }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Tooltip(
+      message: isSidebarCollapsed ? title : '',
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+        decoration: BoxDecoration(
+          color: isActive
+              ? AppTheme.primaryPurple.withOpacity(0.1)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: ListTile(
+          leading: Icon(
+            icon,
+            color:
+                iconColor ??
+                (isActive
+                    ? AppTheme.primaryPurple
+                    : (isDark ? Colors.grey[400] : Colors.grey[600])),
+            size: 22,
+          ),
+          title: isSidebarCollapsed
+              ? null
+              : Text(
+                  title,
+                  style: TextStyle(
+                    color:
+                        textColor ?? (isActive ? AppTheme.primaryPurple : null),
+                    fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
+                    fontSize: 14,
+                  ),
+                ),
+          trailing: isSidebarCollapsed
+              ? null
+              : StreamBuilder<int>(
+                  stream: countStream,
+                  builder: (context, snapshot) {
+                    if (!snapshot.hasData || snapshot.data == 0) {
+                      return const SizedBox.shrink();
+                    }
+
+                    return Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppTheme.primaryPurple,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        '${snapshot.data}',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+          dense: true,
+          contentPadding: EdgeInsets.symmetric(
+            horizontal: isSidebarCollapsed ? 20 : 16,
+            vertical: 4,
+          ),
+          onTap: onTap,
+        ),
+      ),
+    );
+  }
+
+  Widget buildDrawerItemWithCount({
+    required IconData icon,
+    required String title,
+    required Stream<int> countStream,
+    bool isActive = false,
+    Color? iconColor,
+    Color? textColor,
+    VoidCallback? onTap,
+  }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: isActive
+            ? AppTheme.primaryPurple.withOpacity(0.1)
+            : Colors.transparent,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: ListTile(
+        leading: Icon(
+          icon,
+          color:
+              iconColor ??
+              (isActive
+                  ? AppTheme.primaryPurple
+                  : (isDark ? Colors.grey[400] : Colors.grey[600])),
+          size: 22,
+        ),
+        title: Text(
+          title,
+          style: TextStyle(
+            color: textColor ?? (isActive ? AppTheme.primaryPurple : null),
+            fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
+          ),
+        ),
+        trailing: StreamBuilder<int>(
+          stream: countStream,
+          builder: (context, snapshot) {
+            if (!snapshot.hasData || snapshot.data == 0) {
+              return const SizedBox.shrink();
+            }
+
+            return Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: AppTheme.primaryPurple,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                '${snapshot.data}',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            );
+          },
+        ),
+        onTap: onTap,
       ),
     );
   }
