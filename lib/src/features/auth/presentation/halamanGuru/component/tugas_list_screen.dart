@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'dart:html' as html;
 import '../../../../../core/config/theme.dart';
 import '../../../../../core/providers/user_provider.dart';
 import 'create_tugas_screen.dart';
@@ -64,11 +65,40 @@ class _TugasListScreenState extends State<TugasListScreen>
           }
         }
 
-        // Get jumlah pengumpulan
-        final pengumpulanSnapshot = await _firestore
-            .collection('pengumpulan_tugas')
-            .where('id_tugas', isEqualTo: doc.id)
+        // Get jumlah pengumpulan - try both string and integer
+        var pengumpulanSnapshot = await _firestore
+            .collection('pengumpulan')
+            .where('tugas_id', isEqualTo: int.parse(doc.id))
             .get();
+
+        // If no results, try with string
+        if (pengumpulanSnapshot.docs.isEmpty) {
+          pengumpulanSnapshot = await _firestore
+              .collection('pengumpulan')
+              .where('tugas_id', isEqualTo: doc.id)
+              .get();
+        }
+
+        // Count total files from pengumpulan_files
+        int totalFiles = 0;
+
+        for (final pengumpulanDoc in pengumpulanSnapshot.docs) {
+          final pengumpulanData = pengumpulanDoc.data();
+
+          // Get file_id from pengumpulan document
+          final fileIds = pengumpulanData['file_id'];
+
+          if (fileIds != null) {
+            // file_id could be a single string, int, or array of strings/ints
+            if (fileIds is List) {
+              totalFiles += fileIds.length;
+            } else if (fileIds is String && fileIds.isNotEmpty) {
+              totalFiles += 1;
+            } else if (fileIds is int) {
+              totalFiles += 1;
+            }
+          }
+        }
 
         tugasList.add({
           'id': doc.id,
@@ -80,6 +110,7 @@ class _TugasListScreenState extends State<TugasListScreen>
           'status': currentStatus,
           'jumlahSiswa': data['jumlahSiswa'] ?? 0,
           'sudahMengumpulkan': pengumpulanSnapshot.docs.length,
+          'totalFiles': totalFiles,
         });
       }
 
@@ -171,6 +202,134 @@ class _TugasListScreenState extends State<TugasListScreen>
             SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
           );
         }
+      }
+    }
+  }
+
+  Future<void> _downloadAllFiles(String tugasId) async {
+    try {
+      // Show loading
+      if (mounted) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (c) => const AlertDialog(
+            content: Row(
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(width: 20),
+                Text('Mengunduh file...'),
+              ],
+            ),
+          ),
+        );
+      }
+
+      // Get all pengumpulan for this tugas
+      var pengumpulanSnapshot = await _firestore
+          .collection('pengumpulan')
+          .where('tugas_id', isEqualTo: int.parse(tugasId))
+          .get();
+
+      // If no results, try with string
+      if (pengumpulanSnapshot.docs.isEmpty) {
+        pengumpulanSnapshot = await _firestore
+            .collection('pengumpulan')
+            .where('tugas_id', isEqualTo: tugasId)
+            .get();
+      }
+
+      if (pengumpulanSnapshot.docs.isEmpty) {
+        if (mounted) {
+          Navigator.pop(context);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Tidak ada file yang dikumpulkan'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+        return;
+      }
+
+      int downloadedCount = 0;
+
+      // Get files for each pengumpulan using file_id
+      for (final pengumpulanDoc in pengumpulanSnapshot.docs) {
+        final pengumpulanData = pengumpulanDoc.data();
+        final fileIds = pengumpulanData['file_id'];
+
+        if (fileIds != null) {
+          List<String> fileIdList = [];
+
+          // Handle single string, int, or array of strings/ints
+          if (fileIds is List) {
+            fileIdList = fileIds.map((id) => id.toString()).toList();
+          } else if (fileIds is String && fileIds.isNotEmpty) {
+            fileIdList = [fileIds];
+          } else if (fileIds is int) {
+            fileIdList = [fileIds.toString()];
+          }
+
+          // Download each file by document ID
+          for (final fileId in fileIdList) {
+            try {
+              final fileDoc = await _firestore
+                  .collection('pengumpulan_files')
+                  .doc(fileId)
+                  .get();
+
+              if (fileDoc.exists) {
+                final fileData = fileDoc.data()!;
+
+                // Get file URL and name
+                final fileUrl =
+                    fileData['url'] ??
+                    fileData['file_url'] ??
+                    fileData['drive_file_id'] ??
+                    '';
+                final fileName =
+                    fileData['name'] ??
+                    fileData['file_name'] ??
+                    'file_${fileDoc.id}';
+
+                if (fileUrl.isNotEmpty) {
+                  // Trigger download using anchor element
+                  final anchor = html.AnchorElement(href: fileUrl)
+                    ..setAttribute('download', fileName)
+                    ..style.display = 'none';
+                  html.document.body?.append(anchor);
+                  anchor.click();
+                  anchor.remove();
+
+                  downloadedCount++;
+
+                  // Small delay between downloads
+                  await Future.delayed(const Duration(milliseconds: 500));
+                }
+              }
+            } catch (e) {
+              // Silent error handling
+            }
+          }
+        }
+      }
+
+      if (mounted) {
+        Navigator.pop(context); // Close loading dialog
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Berhasil mengunduh $downloadedCount file'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        Navigator.pop(context); // Close loading dialog
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+        );
       }
     }
   }
@@ -406,6 +565,8 @@ class _TugasListScreenState extends State<TugasListScreen>
                         }
                       } else if (value == 'delete') {
                         _deleteTugas(tugas['id']);
+                      } else if (value == 'download') {
+                        _downloadAllFiles(tugas['id']);
                       }
                     },
                     itemBuilder: (context) => [
@@ -416,6 +577,19 @@ class _TugasListScreenState extends State<TugasListScreen>
                             Icon(Icons.edit, size: 18),
                             SizedBox(width: 8),
                             Text('Edit'),
+                          ],
+                        ),
+                      ),
+                      const PopupMenuItem(
+                        value: 'download',
+                        child: Row(
+                          children: [
+                            Icon(Icons.download, size: 18, color: Colors.blue),
+                            SizedBox(width: 8),
+                            Text(
+                              'Download Semua File',
+                              style: TextStyle(color: Colors.blue),
+                            ),
                           ],
                         ),
                       ),
@@ -471,6 +645,19 @@ class _TugasListScreenState extends State<TugasListScreen>
                       'Mengumpulkan',
                       sudahMengumpulkan.toString(),
                       progress == 1.0 ? Colors.green : AppTheme.accentOrange,
+                    ),
+                  ),
+                  Container(
+                    width: 1,
+                    height: 40,
+                    color: isDark ? Colors.grey[800] : Colors.grey[300],
+                  ),
+                  Expanded(
+                    child: _buildStatItem(
+                      Icons.attach_file,
+                      'Total File',
+                      tugas['totalFiles']?.toString() ?? '0',
+                      Colors.blue,
                     ),
                   ),
                 ],
@@ -759,6 +946,19 @@ class _TugasListScreenState extends State<TugasListScreen>
                   TextButton(
                     onPressed: () => Navigator.pop(context),
                     child: const Text('Tutup'),
+                  ),
+                  const SizedBox(width: 8),
+                  ElevatedButton.icon(
+                    onPressed: () async {
+                      Navigator.pop(context);
+                      _downloadAllFiles(tugas['id']);
+                    },
+                    icon: const Icon(Icons.download, size: 18),
+                    label: const Text('Download File'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue,
+                      foregroundColor: Colors.white,
+                    ),
                   ),
                   const SizedBox(width: 8),
                   ElevatedButton.icon(

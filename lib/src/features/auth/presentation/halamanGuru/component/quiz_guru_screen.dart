@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../../../../core/config/theme.dart';
 import '../../../../../core/providers/user_provider.dart';
 import '../../widgets/guru_app_scaffold.dart';
+import 'quiz_detail_screen.dart';
 
 class QuizGuruScreen extends ConsumerStatefulWidget {
   const QuizGuruScreen({super.key});
@@ -171,9 +172,10 @@ class _QuizGuruScreenState extends ConsumerState<QuizGuruScreen> {
 
   Stream<QuerySnapshot> _getQuizStream(String? guruId) {
     if (guruId == null) return const Stream.empty();
+
     return _firestore
         .collection('quiz')
-        .where('id_guru', isEqualTo: guruId)
+        .where('id_guru', isEqualTo: int.parse(guruId))
         .snapshots();
   }
 
@@ -191,7 +193,8 @@ class _QuizGuruScreenState extends ConsumerState<QuizGuruScreen> {
           (k) => k['nama'] == _selectedKelas,
           orElse: () => {},
         )['id'];
-        if (kelasId != null && idKelas != kelasId) continue;
+        if (kelasId != null && idKelas != int.parse(kelasId.toString()))
+          continue;
       }
 
       if (_selectedMapel != 'Semua Mapel') {
@@ -199,7 +202,8 @@ class _QuizGuruScreenState extends ConsumerState<QuizGuruScreen> {
           (m) => m['nama'] == _selectedMapel,
           orElse: () => {},
         )['id'];
-        if (mapelId != null && idMapel != mapelId) continue;
+        if (mapelId != null && idMapel != int.parse(mapelId.toString()))
+          continue;
       }
 
       if (_searchQuery.isNotEmpty &&
@@ -254,9 +258,14 @@ class _QuizGuruScreenState extends ConsumerState<QuizGuruScreen> {
           cursor: SystemMouseCursors.click,
           child: GestureDetector(
             onTap: () {
-              // TODO: Show quiz details
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Fitur detail quiz segera hadir')),
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (c) => QuizDetailScreen(
+                    quizId: quiz['id'],
+                    judul: quiz['judul'] ?? '',
+                  ),
+                ),
               );
             },
             child: Container(
@@ -430,7 +439,7 @@ class _QuizGuruScreenState extends ConsumerState<QuizGuruScreen> {
     if (quiz['id_kelas'] != null) {
       final kelasDoc = await _firestore
           .collection('kelas')
-          .doc(quiz['id_kelas'])
+          .doc(quiz['id_kelas'].toString())
           .get();
       if (kelasDoc.exists)
         kelasName = kelasDoc.data()?['nama_kelas'] ?? 'Kelas';
@@ -440,7 +449,7 @@ class _QuizGuruScreenState extends ConsumerState<QuizGuruScreen> {
     if (quiz['id_mapel'] != null) {
       final mapelDoc = await _firestore
           .collection('mapel')
-          .doc(quiz['id_mapel'])
+          .doc(quiz['id_mapel'].toString())
           .get();
       if (mapelDoc.exists) mapelName = mapelDoc.data()?['namaMapel'] ?? 'Mapel';
     }
@@ -452,6 +461,7 @@ class _QuizGuruScreenState extends ConsumerState<QuizGuruScreen> {
     final soalCount = soalSnap.docs.length;
 
     String tanggal = '';
+    ;
     if (quiz['createdAt'] != null) {
       final date = (quiz['createdAt'] as Timestamp).toDate();
       tanggal = DateFormat('dd MMM yyyy').format(date);
@@ -549,9 +559,9 @@ class _QuizGuruScreenState extends ConsumerState<QuizGuruScreen> {
 
     // Simpan quiz
     await _firestore.collection('quiz').doc(nextQuizId).set({
-      'id_guru': idGuru,
-      'id_kelas': data['id_kelas'],
-      'id_mapel': data['id_mapel'],
+      'id_guru': int.parse(idGuru),
+      'id_kelas': int.parse(data['id_kelas'].toString()),
+      'id_mapel': int.parse(data['id_mapel'].toString()),
       'judul': data['judul'],
       'createdAt': FieldValue.serverTimestamp(),
     });

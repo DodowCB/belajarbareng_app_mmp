@@ -57,6 +57,7 @@ dependencies:
   dio: ^5.4.0 # Untuk API call ke AI Helper
   http: ^1.2.2 # Untuk YouTube API calls dan connectivity test
   http_parser: ^4.0.2 # Untuk parsing MIME types di Google Drive API
+  google_generative_ai: ^0.4.0 # Untuk Gemini AI
 
   # 5. Local Storage (Sesuai proposal: Drift & Encrypted Box)
   drift: ^2.13.0 # Database lokal
