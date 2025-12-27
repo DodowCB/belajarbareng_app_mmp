@@ -86,16 +86,22 @@ class _ReportsScreenState extends State<ReportsScreen>
 
         final absensiDocs = snapshot.data!.docs;
         final totalAbsensi = absensiDocs.length;
-        final hadir = absensiDocs
-            .where((doc) => doc['status'] == 'Hadir')
-            .length;
-        final sakit = absensiDocs
-            .where((doc) => doc['status'] == 'Sakit')
-            .length;
-        final izin = absensiDocs.where((doc) => doc['status'] == 'Izin').length;
-        final alpha = absensiDocs
-            .where((doc) => doc['status'] == 'Alpha')
-            .length;
+        final hadir = absensiDocs.where((doc) {
+          final data = doc.data() as Map<String, dynamic>?;
+          return data != null && data['status'] == 'hadir';
+        }).length;
+        final sakit = absensiDocs.where((doc) {
+          final data = doc.data() as Map<String, dynamic>?;
+          return data != null && data['status'] == 'sakit';
+        }).length;
+        final izin = absensiDocs.where((doc) {
+          final data = doc.data() as Map<String, dynamic>?;
+          return data != null && data['status'] == 'izin';
+        }).length;
+        final alpha = absensiDocs.where((doc) {
+          final data = doc.data() as Map<String, dynamic>?;
+          return data != null && data['status'] == 'alpha';
+        }).length;
 
         return SingleChildScrollView(
           padding: const EdgeInsets.all(16),
@@ -164,9 +170,10 @@ class _ReportsScreenState extends State<ReportsScreen>
 
         final pengumpulanDocs = snapshot.data!.docs;
         final totalPengumpulan = pengumpulanDocs.length;
-        final terkumpul = pengumpulanDocs
-            .where((doc) => doc['status'] == 'Terkumpul')
-            .length;
+        final terkumpul = pengumpulanDocs.where((doc) {
+          final data = doc.data() as Map<String, dynamic>?;
+          return data != null && data['status'] == 'Terkumpul';
+        }).length;
 
         return SingleChildScrollView(
           padding: const EdgeInsets.all(16),
@@ -421,24 +428,31 @@ class _ReportsScreenState extends State<ReportsScreen>
   Widget _buildAbsensiItem(Map<String, dynamic> data) {
     final status = data['status'] ?? 'Unknown';
     Color statusColor;
-    switch (status) {
-      case 'Hadir':
+    String displayStatus;
+
+    switch (status.toString().toLowerCase()) {
+      case 'hadir':
         statusColor = Colors.green;
+        displayStatus = 'Hadir';
         break;
-      case 'Sakit':
+      case 'sakit':
         statusColor = Colors.orange;
+        displayStatus = 'Sakit';
         break;
-      case 'Izin':
+      case 'izin':
         statusColor = Colors.purple;
+        displayStatus = 'Izin';
         break;
-      case 'Alpha':
+      case 'alpha':
         statusColor = Colors.red;
+        displayStatus = 'Alpha';
         break;
       default:
         statusColor = Colors.grey;
+        displayStatus = status.toString();
     }
 
-    final timestamp = data['timestamp'] as Timestamp?;
+    final timestamp = data['tanggal'] as Timestamp?;
     final dateStr = timestamp != null
         ? DateFormat('dd MMM yyyy, HH:mm').format(timestamp.toDate())
         : '-';
@@ -459,7 +473,7 @@ class _ReportsScreenState extends State<ReportsScreen>
             borderRadius: BorderRadius.circular(20),
           ),
           child: Text(
-            status,
+            displayStatus,
             style: TextStyle(color: statusColor, fontWeight: FontWeight.bold),
           ),
         ),
@@ -468,7 +482,7 @@ class _ReportsScreenState extends State<ReportsScreen>
   }
 
   Widget _buildPengumpulanItem(Map<String, dynamic> data) {
-    final timestamp = data['created_at'] as Timestamp?;
+    final timestamp = data['createdAt'] as Timestamp?;
     final dateStr = timestamp != null
         ? DateFormat('dd MMM yyyy, HH:mm').format(timestamp.toDate())
         : '-';
@@ -498,10 +512,12 @@ class _ReportsScreenState extends State<ReportsScreen>
   }
 
   Widget _buildMateriItem(Map<String, dynamic> data) {
-    final timestamp = data['uploadedAt'] as Timestamp?;
+    final timestamp = data['createdAt'] as Timestamp?;
     final dateStr = timestamp != null
         ? DateFormat('dd MMM yyyy').format(timestamp.toDate())
         : '-';
+
+    final idGuru = data['id_guru'];
 
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
@@ -511,9 +527,35 @@ class _ReportsScreenState extends State<ReportsScreen>
           child: Icon(Icons.library_books, color: Colors.white),
         ),
         title: Text(data['judul'] ?? 'Materi'),
-        subtitle: Text(
-          'Kelas ID: ${data['id_kelas'] ?? '-'}\nUpload: $dateStr',
-        ),
+        subtitle: idGuru != null
+            ? FutureBuilder<DocumentSnapshot>(
+                future: _firestore.collection('guru').doc(idGuru).get(),
+                builder: (context, guruSnapshot) {
+                  String namaGuru = 'Loading...';
+
+                  if (guruSnapshot.connectionState == ConnectionState.done) {
+                    if (guruSnapshot.hasData && guruSnapshot.data!.exists) {
+                      final guruData =
+                          guruSnapshot.data!.data() as Map<String, dynamic>?;
+                      namaGuru =
+                          guruData?['nama_lengkap'] ?? 'Guru tidak ditemukan';
+                    } else {
+                      namaGuru = 'Guru tidak ditemukan';
+                    }
+                  }
+
+                  return Text(
+                    'Kelas ID: ${data['id_kelas'] ?? '-'}\n'
+                    'Upload: $dateStr\n'
+                    'Oleh: $namaGuru',
+                  );
+                },
+              )
+            : Text(
+                'Kelas ID: ${data['id_kelas'] ?? '-'}\n'
+                'Upload: $dateStr\n'
+                'Oleh: -',
+              ),
       ),
     );
   }

@@ -121,22 +121,96 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
         }
 
         final absensiDocs = snapshot.data!.docs;
+
+        // Debug: Print total documents and sample data
+        print('Total absensi docs: ${absensiDocs.length}');
+        if (absensiDocs.isNotEmpty) {
+          final sampleData = absensiDocs.first.data() as Map<String, dynamic>?;
+          print('Sample data: $sampleData');
+        }
+
         final hadir = absensiDocs
-            .where((doc) => doc['status'] == 'Hadir')
+            .where((doc) {
+              final data = doc.data() as Map<String, dynamic>?;
+              return data != null && data['status'] == 'hadir';
+            })
             .length
             .toDouble();
         final sakit = absensiDocs
-            .where((doc) => doc['status'] == 'Sakit')
+            .where((doc) {
+              final data = doc.data() as Map<String, dynamic>?;
+              return data != null && data['status'] == 'sakit';
+            })
             .length
             .toDouble();
         final izin = absensiDocs
-            .where((doc) => doc['status'] == 'Izin')
+            .where((doc) {
+              final data = doc.data() as Map<String, dynamic>?;
+              return data != null && data['status'] == 'izin';
+            })
             .length
             .toDouble();
         final alpha = absensiDocs
-            .where((doc) => doc['status'] == 'Alpha')
+            .where((doc) {
+              final data = doc.data() as Map<String, dynamic>?;
+              return data != null && data['status'] == 'alpha';
+            })
             .length
             .toDouble();
+
+        // Debug: Print counts
+        print('Hadir: $hadir, Sakit: $sakit, Izin: $izin, Alpha: $alpha');
+
+        final totalStatus = hadir + sakit + izin + alpha;
+
+        // If no valid status data found, show info message
+        if (totalStatus == 0 && absensiDocs.isNotEmpty) {
+          return Card(
+            elevation: 2,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.green.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(
+                          Icons.check_circle,
+                          color: Colors.green,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      const Text(
+                        'Statistik Kehadiran',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  Center(
+                    child: Text(
+                      'Ada ${absensiDocs.length} dokumen absensi, tetapi tidak ada field "status" yang valid',
+                      style: TextStyle(color: Colors.grey[600]),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
 
         return Card(
           elevation: 2,
@@ -172,70 +246,273 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                   ],
                 ),
                 const SizedBox(height: 24),
-                SizedBox(
-                  height: 200,
-                  child: PieChart(
-                    PieChartData(
-                      sections: [
-                        if (hadir > 0)
-                          PieChartSectionData(
-                            value: hadir,
-                            title: '${hadir.toInt()}',
-                            color: Colors.green,
-                            titleStyle: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                            ),
-                            radius: 80,
-                          ),
-                        if (sakit > 0)
-                          PieChartSectionData(
-                            value: sakit,
-                            title: '${sakit.toInt()}',
-                            color: Colors.orange,
-                            titleStyle: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                            ),
-                            radius: 80,
-                          ),
-                        if (izin > 0)
-                          PieChartSectionData(
-                            value: izin,
-                            title: '${izin.toInt()}',
-                            color: Colors.purple,
-                            titleStyle: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                            ),
-                            radius: 80,
-                          ),
-                        if (alpha > 0)
-                          PieChartSectionData(
-                            value: alpha,
-                            title: '${alpha.toInt()}',
-                            color: Colors.red,
-                            titleStyle: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                            ),
-                            radius: 80,
-                          ),
-                      ],
-                      sectionsSpace: 2,
-                      centerSpaceRadius: 40,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 20),
-                Wrap(
-                  spacing: 16,
-                  runSpacing: 8,
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildLegendItem('Hadir', Colors.green, hadir.toInt()),
-                    _buildLegendItem('Sakit', Colors.orange, sakit.toInt()),
-                    _buildLegendItem('Izin', Colors.purple, izin.toInt()),
-                    _buildLegendItem('Alpha', Colors.red, alpha.toInt()),
+                    // Pie Chart
+                    Expanded(
+                      flex: 2,
+                      child: SizedBox(
+                        height: 250,
+                        child: PieChart(
+                          PieChartData(
+                            pieTouchData: PieTouchData(
+                              touchCallback:
+                                  (FlTouchEvent event, pieTouchResponse) {
+                                    // Add touch interaction
+                                  },
+                            ),
+                            borderData: FlBorderData(show: false),
+                            sectionsSpace: 3,
+                            centerSpaceRadius: 50,
+                            sections: [
+                              if (hadir > 0)
+                                PieChartSectionData(
+                                  value: hadir,
+                                  title:
+                                      '${((hadir / totalStatus) * 100).toStringAsFixed(1)}%',
+                                  color: Colors.green.shade400,
+                                  titleStyle: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                    shadows: [
+                                      Shadow(
+                                        color: Colors.black26,
+                                        blurRadius: 2,
+                                      ),
+                                    ],
+                                  ),
+                                  radius: 100,
+                                  titlePositionPercentageOffset: 0.55,
+                                  badgeWidget: Container(
+                                    padding: const EdgeInsets.all(4),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      shape: BoxShape.circle,
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.green.withOpacity(0.3),
+                                          blurRadius: 4,
+                                          spreadRadius: 2,
+                                        ),
+                                      ],
+                                    ),
+                                    child: const Icon(
+                                      Icons.check_circle,
+                                      color: Colors.green,
+                                      size: 16,
+                                    ),
+                                  ),
+                                  badgePositionPercentageOffset: 1.2,
+                                ),
+                              if (sakit > 0)
+                                PieChartSectionData(
+                                  value: sakit,
+                                  title:
+                                      '${((sakit / totalStatus) * 100).toStringAsFixed(1)}%',
+                                  color: Colors.orange.shade400,
+                                  titleStyle: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                    shadows: [
+                                      Shadow(
+                                        color: Colors.black26,
+                                        blurRadius: 2,
+                                      ),
+                                    ],
+                                  ),
+                                  radius: 100,
+                                  titlePositionPercentageOffset: 0.55,
+                                  badgeWidget: Container(
+                                    padding: const EdgeInsets.all(4),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      shape: BoxShape.circle,
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.orange.withOpacity(0.3),
+                                          blurRadius: 4,
+                                          spreadRadius: 2,
+                                        ),
+                                      ],
+                                    ),
+                                    child: const Icon(
+                                      Icons.medical_services,
+                                      color: Colors.orange,
+                                      size: 16,
+                                    ),
+                                  ),
+                                  badgePositionPercentageOffset: 1.2,
+                                ),
+                              if (izin > 0)
+                                PieChartSectionData(
+                                  value: izin,
+                                  title:
+                                      '${((izin / totalStatus) * 100).toStringAsFixed(1)}%',
+                                  color: Colors.purple.shade400,
+                                  titleStyle: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                    shadows: [
+                                      Shadow(
+                                        color: Colors.black26,
+                                        blurRadius: 2,
+                                      ),
+                                    ],
+                                  ),
+                                  radius: 100,
+                                  titlePositionPercentageOffset: 0.55,
+                                  badgeWidget: Container(
+                                    padding: const EdgeInsets.all(4),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      shape: BoxShape.circle,
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.purple.withOpacity(0.3),
+                                          blurRadius: 4,
+                                          spreadRadius: 2,
+                                        ),
+                                      ],
+                                    ),
+                                    child: const Icon(
+                                      Icons.info_outline,
+                                      color: Colors.purple,
+                                      size: 16,
+                                    ),
+                                  ),
+                                  badgePositionPercentageOffset: 1.2,
+                                ),
+                              if (alpha > 0)
+                                PieChartSectionData(
+                                  value: alpha,
+                                  title:
+                                      '${((alpha / totalStatus) * 100).toStringAsFixed(1)}%',
+                                  color: Colors.red.shade400,
+                                  titleStyle: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                    shadows: [
+                                      Shadow(
+                                        color: Colors.black26,
+                                        blurRadius: 2,
+                                      ),
+                                    ],
+                                  ),
+                                  radius: 100,
+                                  titlePositionPercentageOffset: 0.55,
+                                  badgeWidget: Container(
+                                    padding: const EdgeInsets.all(4),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      shape: BoxShape.circle,
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.red.withOpacity(0.3),
+                                          blurRadius: 4,
+                                          spreadRadius: 2,
+                                        ),
+                                      ],
+                                    ),
+                                    child: const Icon(
+                                      Icons.cancel,
+                                      color: Colors.red,
+                                      size: 16,
+                                    ),
+                                  ),
+                                  badgePositionPercentageOffset: 1.2,
+                                ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 20),
+                    // Legend with details
+                    Expanded(
+                      flex: 1,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Detail',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          _buildEnhancedLegendItem(
+                            'Hadir',
+                            Colors.green,
+                            hadir.toInt(),
+                            totalStatus,
+                            Icons.check_circle,
+                          ),
+                          const SizedBox(height: 12),
+                          _buildEnhancedLegendItem(
+                            'Sakit',
+                            Colors.orange,
+                            sakit.toInt(),
+                            totalStatus,
+                            Icons.medical_services,
+                          ),
+                          const SizedBox(height: 12),
+                          _buildEnhancedLegendItem(
+                            'Izin',
+                            Colors.purple,
+                            izin.toInt(),
+                            totalStatus,
+                            Icons.info_outline,
+                          ),
+                          const SizedBox(height: 12),
+                          _buildEnhancedLegendItem(
+                            'Alpha',
+                            Colors.red,
+                            alpha.toInt(),
+                            totalStatus,
+                            Icons.cancel,
+                          ),
+                          const Divider(height: 24),
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  Colors.blue.shade50,
+                                  Colors.blue.shade100,
+                                ],
+                              ),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text(
+                                  'Total',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                                Text(
+                                  '${totalStatus.toInt()}',
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 18,
+                                    color: Colors.blue,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ],
                 ),
               ],
@@ -248,9 +525,9 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
 
   Widget _buildPengumpulanStats() {
     return StreamBuilder<QuerySnapshot>(
-      stream: _firestore.collection('pengumpulan').snapshots(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
+      stream: _firestore.collection('tugas').snapshots(),
+      builder: (context, tugasSnapshot) {
+        if (tugasSnapshot.connectionState == ConnectionState.waiting) {
           return const Card(
             child: Padding(
               padding: EdgeInsets.all(20),
@@ -259,78 +536,91 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
           );
         }
 
-        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-          return _buildEmptyCard('Belum ada pengumpulan tugas');
+        if (!tugasSnapshot.hasData || tugasSnapshot.data!.docs.isEmpty) {
+          return _buildEmptyCard('Belum ada tugas');
         }
 
-        final pengumpulanDocs = snapshot.data!.docs;
-        final total = pengumpulanDocs.length;
-        final terkumpul = pengumpulanDocs
-            .where((doc) => doc['status'] == 'Terkumpul')
-            .length;
-        final persentase = total > 0 ? ((terkumpul / total) * 100).toInt() : 0;
+        final totalTugas = tugasSnapshot.data!.docs.length;
 
-        return Card(
-          elevation: 2,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
+        return StreamBuilder<QuerySnapshot>(
+          stream: _firestore.collection('pengumpulan').snapshots(),
+          builder: (context, pengumpulanSnapshot) {
+            int terkumpul = 0;
+
+            if (pengumpulanSnapshot.hasData) {
+              terkumpul = pengumpulanSnapshot.data!.docs.length;
+            }
+
+            final persentase = totalTugas > 0
+                ? ((terkumpul / totalTugas) * 100).toInt()
+                : 0;
+
+            return Card(
+              elevation: 2,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.orange.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Icon(Icons.assignment, color: Colors.orange),
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.orange.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Icon(
+                            Icons.assignment,
+                            color: Colors.orange,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        const Text(
+                          'Statistik Pengumpulan Tugas',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 12),
-                    const Text(
-                      'Statistik Pengumpulan Tugas',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
+                    const SizedBox(height: 24),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _buildStatBox(
+                            'Total Tugas',
+                            totalTugas.toString(),
+                            Colors.blue,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _buildStatBox(
+                            'Terkumpul',
+                            terkumpul.toString(),
+                            Colors.green,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _buildStatBox(
+                            'Tingkat',
+                            '$persentase%',
+                            Colors.orange,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
-                const SizedBox(height: 24),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildStatBox(
-                        'Total Tugas',
-                        total.toString(),
-                        Colors.blue,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _buildStatBox(
-                        'Terkumpul',
-                        terkumpul.toString(),
-                        Colors.green,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _buildStatBox(
-                        'Tingkat',
-                        '$persentase%',
-                        Colors.orange,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
+              ),
+            );
+          },
         );
       },
     );
@@ -531,18 +821,63 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     );
   }
 
-  Widget _buildLegendItem(String label, Color color, int count) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 16,
-          height: 16,
-          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-        ),
-        const SizedBox(width: 8),
-        Text('$label: $count', style: const TextStyle(fontSize: 14)),
-      ],
+  Widget _buildEnhancedLegendItem(
+    String label,
+    Color color,
+    int count,
+    double total,
+    IconData icon,
+  ) {
+    final percentage = total > 0 ? (count / total) * 100 : 0;
+
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withOpacity(0.3), width: 1),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: color,
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Icon(icon, color: Colors.white, size: 16),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: color,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '$count siswa',
+                  style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+                ),
+              ],
+            ),
+          ),
+          Text(
+            '${percentage.toStringAsFixed(1)}%',
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
