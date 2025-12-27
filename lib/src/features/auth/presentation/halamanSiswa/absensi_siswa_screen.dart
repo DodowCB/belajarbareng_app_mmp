@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../../core/config/theme.dart';
 import '../../../../core/providers/user_provider.dart';
-import 'detail_materi_kelas_screen.dart';
+import 'detail_absensi_screen.dart';
 
-class KelasSiswaScreen extends StatelessWidget {
-  const KelasSiswaScreen({super.key});
+class AbsensiSiswaScreen extends StatelessWidget {
+  const AbsensiSiswaScreen({super.key});
 
   Color _getColorForIndex(int index) {
     final colors = [
@@ -42,7 +42,7 @@ class KelasSiswaScreen extends StatelessWidget {
     final siswaId = userProvider.userId;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Materi Kelas'), elevation: 0),
+      appBar: AppBar(title: const Text('Absensi Saya'), elevation: 0),
       body: siswaId == null
           ? const Center(child: Text('User ID tidak ditemukan'))
           : StreamBuilder<QuerySnapshot>(
@@ -89,7 +89,11 @@ class KelasSiswaScreen extends StatelessWidget {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.class_, size: 64, color: Colors.grey[400]),
+                        Icon(
+                          Icons.event_busy,
+                          size: 64,
+                          color: Colors.grey[400],
+                        ),
                         const SizedBox(height: 16),
                         Text(
                           'Belum ada kelas',
@@ -136,7 +140,7 @@ class KelasSiswaScreen extends StatelessWidget {
                     final kelasNgajarDocs = kelasNgajarSnapshot.data!.docs;
 
                     return FutureBuilder<List<Map<String, dynamic>>>(
-                      future: _fetchKelasData(kelasNgajarDocs),
+                      future: _fetchKelasData(kelasNgajarDocs, siswaId!),
                       builder: (context, snapshot) {
                         if (snapshot.connectionState ==
                             ConnectionState.waiting) {
@@ -182,7 +186,7 @@ class KelasSiswaScreen extends StatelessWidget {
                                       borderRadius: BorderRadius.circular(12),
                                     ),
                                     child: const Icon(
-                                      Icons.school,
+                                      Icons.event_available,
                                       color: Colors.white,
                                       size: 32,
                                     ),
@@ -194,7 +198,7 @@ class KelasSiswaScreen extends StatelessWidget {
                                           CrossAxisAlignment.start,
                                       children: [
                                         const Text(
-                                          'Kelas Semester Ini',
+                                          'Pilih Mata Pelajaran',
                                           style: TextStyle(
                                             fontSize: 18,
                                             fontWeight: FontWeight.bold,
@@ -203,7 +207,7 @@ class KelasSiswaScreen extends StatelessWidget {
                                         ),
                                         const SizedBox(height: 4),
                                         Text(
-                                          '${kelasList.length} Mata Pelajaran',
+                                          'Lihat riwayat absensi ${kelasList.length} mata pelajaran',
                                           style: TextStyle(
                                             fontSize: 14,
                                             color: Colors.white.withOpacity(
@@ -230,34 +234,17 @@ class KelasSiswaScreen extends StatelessWidget {
                                 itemCount: kelasList.length,
                                 itemBuilder: (context, index) {
                                   final kelas = kelasList[index];
-                                  return _buildKelasButton(
+                                  return _buildKelasCard(
+                                    context: context,
                                     namaMapel:
                                         kelas['namaMapel'] ?? 'Mata Pelajaran',
                                     namaGuru: kelas['namaGuru'] ?? 'Guru',
                                     kelasId: kelas['kelasId'] ?? '',
+                                    totalHadir: kelas['totalHadir'] ?? 0,
+                                    totalPertemuan:
+                                        kelas['totalPertemuan'] ?? 0,
                                     index: index,
                                     isDark: isDark,
-                                    onTap: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) =>
-                                              DetailMateriKelasScreen(
-                                                namaMapel:
-                                                    kelas['namaMapel'] ??
-                                                    'Mata Pelajaran',
-                                                namaGuru:
-                                                    kelas['namaGuru'] ?? 'Guru',
-                                                kelasId: kelas['kelasId'] ?? '',
-                                                color: _getColorForIndex(index),
-                                                icon: _getIconForMapel(
-                                                  kelas['namaMapel'] ??
-                                                      'Mata Pelajaran',
-                                                ),
-                                              ),
-                                        ),
-                                      );
-                                    },
                                   );
                                 },
                               ),
@@ -275,6 +262,7 @@ class KelasSiswaScreen extends StatelessWidget {
 
   Future<List<Map<String, dynamic>>> _fetchKelasData(
     List<QueryDocumentSnapshot> kelasNgajarDocs,
+    String siswaId,
   ) async {
     final kelasList = <Map<String, dynamic>>[];
 
@@ -307,7 +295,7 @@ class KelasSiswaScreen extends StatelessWidget {
                 'Mata Pelajaran';
           }
         } catch (e) {
-          // Skip if error
+          print('Error fetching mapel: $e');
         }
       }
 
@@ -323,6 +311,30 @@ class KelasSiswaScreen extends StatelessWidget {
             namaGuru = kelasData?['nama_guru'] ?? 'Guru';
           }
         } catch (e) {
+          print('Error fetching kelas: $e');
+        }
+      }
+
+      // Hitung total hadir dan total pertemuan
+      int totalHadir = 0;
+      int totalPertemuan = 0;
+
+      if (kelasId != null) {
+        try {
+          final absensiQuery = await FirebaseFirestore.instance
+              .collection('absensi')
+              .where('siswa_id', isEqualTo: siswaId)
+              .where('kelas_id', isEqualTo: kelasId)
+              .get();
+
+          totalPertemuan = absensiQuery.docs.length;
+          totalHadir = absensiQuery.docs
+              .where(
+                (doc) =>
+                    (doc.data()['status'] as String?)?.toLowerCase() == 'hadir',
+              )
+              .length;
+        } catch (e) {
           // Skip if error
         }
       }
@@ -331,28 +343,48 @@ class KelasSiswaScreen extends StatelessWidget {
         'namaMapel': namaMapel,
         'namaGuru': namaGuru,
         'kelasId': kelasId ?? '',
+        'totalHadir': totalHadir,
+        'totalPertemuan': totalPertemuan,
       });
     }
 
     return kelasList;
   }
 
-  Widget _buildKelasButton({
+  Widget _buildKelasCard({
+    required BuildContext context,
     required String namaMapel,
     required String namaGuru,
     required String kelasId,
+    required int totalHadir,
+    required int totalPertemuan,
     required int index,
     required bool isDark,
-    required VoidCallback onTap,
   }) {
     final color = _getColorForIndex(index);
     final icon = _getIconForMapel(namaMapel);
+    final persentase = totalPertemuan > 0
+        ? ((totalHadir / totalPertemuan) * 100).toStringAsFixed(0)
+        : '0';
 
     return Card(
       elevation: 3,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: InkWell(
-        onTap: onTap,
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => DetailAbsensiScreen(
+                namaMapel: namaMapel,
+                namaGuru: namaGuru,
+                kelasId: kelasId,
+                color: color,
+                icon: icon,
+              ),
+            ),
+          );
+        },
         borderRadius: BorderRadius.circular(16),
         child: Container(
           decoration: BoxDecoration(
@@ -365,19 +397,19 @@ class KelasSiswaScreen extends StatelessWidget {
             border: Border.all(color: color.withOpacity(0.3), width: 2),
           ),
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(12),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Container(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     color: color.withOpacity(0.15),
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Icon(icon, color: color, size: 36),
+                  child: Icon(icon, color: color, size: 28),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 8),
                 Text(
                   namaMapel,
                   style: TextStyle(
@@ -389,7 +421,7 @@ class KelasSiswaScreen extends StatelessWidget {
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 6),
+                const SizedBox(height: 4),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -404,6 +436,41 @@ class KelasSiswaScreen extends StatelessWidget {
                       ),
                     ),
                   ],
+                ),
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: color.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.check_circle, size: 16, color: color),
+                          const SizedBox(width: 4),
+                          Text(
+                            '$totalHadir/$totalPertemuan',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                              color: color,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Kehadiran $persentase%',
+                        style: TextStyle(fontSize: 10, color: Colors.grey[600]),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),

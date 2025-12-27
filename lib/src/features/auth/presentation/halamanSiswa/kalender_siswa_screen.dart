@@ -1,439 +1,520 @@
 import 'package:flutter/material.dart';
-import 'package:table_calendar/table_calendar.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../../core/config/theme.dart';
-import '../widgets/siswa_app_scaffold.dart';
+import '../../../../core/providers/user_provider.dart';
 
-class KalenderSiswaScreen extends StatefulWidget {
+class KalenderSiswaScreen extends StatelessWidget {
   const KalenderSiswaScreen({super.key});
 
-  @override
-  State<KalenderSiswaScreen> createState() => _KalenderSiswaScreenState();
-}
+  Color _getColorForIndex(int index) {
+    final colors = [
+      AppTheme.primaryPurple,
+      AppTheme.secondaryTeal,
+      AppTheme.accentGreen,
+      AppTheme.accentOrange,
+      AppTheme.accentPink,
+    ];
+    return colors[index % colors.length];
+  }
 
-class _KalenderSiswaScreenState extends State<KalenderSiswaScreen> {
-  CalendarFormat _calendarFormat = CalendarFormat.month;
-  DateTime _focusedDay = DateTime.now();
-  DateTime? _selectedDay;
-
-  final Map<DateTime, List<Map<String, dynamic>>> _events = {
-    DateTime.utc(2024, 11, 28): [
-      {
-        'judul': 'Esai Bahasa Indonesia',
-        'tipe': 'Tugas',
-        'waktu': '23:59',
-        'color': AppTheme.primaryPurple,
-      },
-    ],
-    DateTime.utc(2024, 11, 30): [
-      {
-        'judul': 'Quiz Bahasa Inggris',
-        'tipe': 'Quiz',
-        'waktu': '10:00',
-        'color': AppTheme.secondaryTeal,
-      },
-      {
-        'judul': 'Tugas Kimia',
-        'tipe': 'Tugas',
-        'waktu': '23:59',
-        'color': AppTheme.accentOrange,
-      },
-    ],
-    DateTime.utc(2024, 12, 1): [
-      {
-        'judul': 'Tugas Matematika',
-        'tipe': 'Tugas',
-        'waktu': '23:59',
-        'color': AppTheme.primaryPurple,
-      },
-    ],
-    DateTime.utc(2024, 12, 5): [
-      {
-        'judul': 'Quiz Matematika',
-        'tipe': 'Quiz',
-        'waktu': '08:00',
-        'color': AppTheme.secondaryTeal,
-      },
-    ],
-  };
-
-  List<Map<String, dynamic>> _getEventsForDay(DateTime day) {
-    return _events[DateTime.utc(day.year, day.month, day.day)] ?? [];
+  IconData _getIconForMapel(String namaMapel) {
+    final lower = namaMapel.toLowerCase();
+    if (lower.contains('matematika')) return Icons.calculate;
+    if (lower.contains('fisika')) return Icons.science;
+    if (lower.contains('kimia')) return Icons.biotech;
+    if (lower.contains('biologi')) return Icons.nature;
+    if (lower.contains('indonesia')) return Icons.menu_book;
+    if (lower.contains('inggris')) return Icons.language;
+    if (lower.contains('sejarah')) return Icons.history_edu;
+    if (lower.contains('geografi')) return Icons.public;
+    if (lower.contains('ekonomi')) return Icons.account_balance;
+    if (lower.contains('seni')) return Icons.palette;
+    if (lower.contains('olahraga') || lower.contains('penjaskes')) {
+      return Icons.sports_soccer;
+    }
+    return Icons.school;
   }
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
-    return SiswaAppScaffold(
-      title: 'Kalender',
-      icon: Icons.calendar_today,
-      currentRoute: '/kalender-siswa',
-      additionalActions: [
-        IconButton(
-          icon: const Icon(Icons.today),
-          onPressed: () {
-            setState(() {
-              _focusedDay = DateTime.now();
-              _selectedDay = DateTime.now();
-            });
-          },
-          tooltip: 'Hari Ini',
-        ),
-      ],
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          final isDesktop = constraints.maxWidth >= 1024;
-          
-          if (isDesktop) {
-            return Row(
-              children: [
-                Expanded(
-                  flex: 2,
-                  child: _buildCalendarSection(isDark),
-                ),
-                Expanded(
-                  flex: 1,
-                  child: _buildEventsSection(isDark),
-                ),
-              ],
-            );
-          }
-          
-          return Column(
-            children: [
-              _buildCalendarSection(isDark),
-              Expanded(child: _buildEventsSection(isDark)),
-            ],
-          );
-        },
-      ),
-    );
-  }
+    final siswaId = userProvider.userId;
 
-  Widget _buildCalendarSection(bool isDark) {
-    return Container(
-      decoration: BoxDecoration(
-        color: isDark ? AppTheme.cardDark : Colors.white,
-        border: Border(
-          right: BorderSide(
-            color: isDark ? Colors.grey[800]! : Colors.grey[200]!,
-            width: 1,
-          ),
-        ),
-      ),
-      child: SingleChildScrollView(
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: TableCalendar(
-                firstDay: DateTime.utc(2024, 1, 1),
-                lastDay: DateTime.utc(2025, 12, 31),
-                focusedDay: _focusedDay,
-                calendarFormat: _calendarFormat,
-                selectedDayPredicate: (day) {
-                  return isSameDay(_selectedDay, day);
-                },
-                onDaySelected: (selectedDay, focusedDay) {
-                  setState(() {
-                    _selectedDay = selectedDay;
-                    _focusedDay = focusedDay;
-                  });
-                },
-                onFormatChanged: (format) {
-                  setState(() {
-                    _calendarFormat = format;
-                  });
-                },
-                onPageChanged: (focusedDay) {
-                  _focusedDay = focusedDay;
-                },
-                eventLoader: _getEventsForDay,
-                calendarStyle: CalendarStyle(
-                  outsideDaysVisible: false,
-                  markerDecoration: const BoxDecoration(
-                    color: AppTheme.primaryPurple,
-                    shape: BoxShape.circle,
-                  ),
-                  selectedDecoration: BoxDecoration(
-                    color: AppTheme.primaryPurple,
-                    shape: BoxShape.circle,
-                  ),
-                  todayDecoration: BoxDecoration(
-                    color: AppTheme.secondaryTeal.withOpacity(0.5),
-                    shape: BoxShape.circle,
-                  ),
-                  weekendTextStyle: TextStyle(
-                    color: AppTheme.accentOrange,
-                  ),
-                ),
-                headerStyle: HeaderStyle(
-                  formatButtonVisible: true,
-                  titleCentered: true,
-                  formatButtonShowsNext: false,
-                  formatButtonDecoration: BoxDecoration(
-                    color: AppTheme.primaryPurple.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  formatButtonTextStyle: const TextStyle(
-                    color: AppTheme.primaryPurple,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            _buildLegend(isDark),
-            const SizedBox(height: 16),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildLegend(bool isDark) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: isDark ? Colors.grey[850] : Colors.grey[100],
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Keterangan',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Container(
-                width: 16,
-                height: 16,
-                decoration: const BoxDecoration(
-                  color: AppTheme.primaryPurple,
-                  shape: BoxShape.circle,
-                ),
-              ),
-              const SizedBox(width: 8),
-              const Text('Hari dipilih', style: TextStyle(fontSize: 12)),
-              const SizedBox(width: 16),
-              Container(
-                width: 16,
-                height: 16,
-                decoration: BoxDecoration(
-                  color: AppTheme.secondaryTeal.withOpacity(0.5),
-                  shape: BoxShape.circle,
-                ),
-              ),
-              const SizedBox(width: 8),
-              const Text('Hari ini', style: TextStyle(fontSize: 12)),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Container(
-                width: 6,
-                height: 6,
-                decoration: const BoxDecoration(
-                  color: AppTheme.primaryPurple,
-                  shape: BoxShape.circle,
-                ),
-              ),
-              const SizedBox(width: 8),
-              const Text('Ada kegiatan', style: TextStyle(fontSize: 12)),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildEventsSection(bool isDark) {
-    final selectedEvents = _selectedDay != null
-        ? _getEventsForDay(_selectedDay!)
-        : [];
-
-    return Container(
-      color: isDark ? AppTheme.backgroundDark : AppTheme.backgroundLight,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: isDark ? AppTheme.cardDark : Colors.white,
-              border: Border(
-                bottom: BorderSide(
-                  color: isDark ? Colors.grey[800]! : Colors.grey[200]!,
-                  width: 1,
-                ),
-              ),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Kegiatan',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                if (_selectedDay != null) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    _formatDate(_selectedDay!),
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: isDark ? Colors.grey[400] : Colors.grey[600],
+    return Scaffold(
+      appBar: AppBar(title: const Text('Jadwal Kelas'), elevation: 0),
+      body: siswaId == null
+          ? const Center(child: Text('User ID tidak ditemukan'))
+          : StreamBuilder<QuerySnapshot>(
+              stream: FirebaseFirestore.instance
+                  .collection('siswa_kelas')
+                  .where('siswa_id', isEqualTo: siswaId)
+                  .snapshots(),
+              builder: (context, siswaKelasSnapshot) {
+                if (siswaKelasSnapshot.connectionState ==
+                    ConnectionState.waiting) {
+                  return Center(
+                    child: CircularProgressIndicator(
+                      color: AppTheme.primaryPurple,
                     ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-          Expanded(
-            child: selectedEvents.isEmpty
-                ? Center(
+                  );
+                }
+
+                if (siswaKelasSnapshot.hasError) {
+                  return Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(
-                          Icons.event_busy,
+                          Icons.error_outline,
                           size: 64,
-                          color: isDark ? Colors.grey[700] : Colors.grey[400],
+                          color: Colors.red[400],
                         ),
                         const SizedBox(height: 16),
                         Text(
-                          _selectedDay == null
-                              ? 'Pilih tanggal untuk melihat kegiatan'
-                              : 'Tidak ada kegiatan',
+                          'Terjadi kesalahan',
                           style: TextStyle(
-                            fontSize: 16,
-                            color: isDark ? Colors.grey[600] : Colors.grey[500],
+                            fontSize: 18,
+                            color: Colors.grey[600],
                           ),
-                          textAlign: TextAlign.center,
                         ),
                       ],
                     ),
-                  )
-                : ListView.builder(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: selectedEvents.length,
-                    itemBuilder: (context, index) {
-                      return _buildEventCard(selectedEvents[index], isDark);
-                    },
+                  );
+                }
+
+                if (!siswaKelasSnapshot.hasData ||
+                    siswaKelasSnapshot.data!.docs.isEmpty) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.calendar_today,
+                          size: 64,
+                          color: Colors.grey[400],
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Belum ada jadwal kelas',
+                          style: TextStyle(
+                            fontSize: 18,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+
+                final siswaKelasDocs = siswaKelasSnapshot.data!.docs;
+                final kelasIds = siswaKelasDocs
+                    .map((doc) => doc['kelas_id'] as String?)
+                    .where((id) => id != null)
+                    .toList();
+
+                if (kelasIds.isEmpty) {
+                  return const Center(child: Text('Tidak ada kelas'));
+                }
+
+                return StreamBuilder<QuerySnapshot>(
+                  stream: FirebaseFirestore.instance
+                      .collection('kelas_ngajar')
+                      .where(FieldPath.documentId, whereIn: kelasIds)
+                      .snapshots(),
+                  builder: (context, kelasNgajarSnapshot) {
+                    if (kelasNgajarSnapshot.connectionState ==
+                        ConnectionState.waiting) {
+                      return Center(
+                        child: CircularProgressIndicator(
+                          color: AppTheme.primaryPurple,
+                        ),
+                      );
+                    }
+
+                    if (!kelasNgajarSnapshot.hasData ||
+                        kelasNgajarSnapshot.data!.docs.isEmpty) {
+                      return const Center(
+                        child: Text('Tidak ada jadwal kelas'),
+                      );
+                    }
+
+                    final kelasNgajarDocs = kelasNgajarSnapshot.data!.docs;
+
+                    return FutureBuilder<List<Map<String, dynamic>>>(
+                      future: _fetchJadwalData(kelasNgajarDocs),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return Center(
+                            child: CircularProgressIndicator(
+                              color: AppTheme.primaryPurple,
+                            ),
+                          );
+                        }
+
+                        if (snapshot.hasError) {
+                          return Center(
+                            child: Text('Error: ${snapshot.error}'),
+                          );
+                        }
+
+                        if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                          return const Center(child: Text('Tidak ada jadwal'));
+                        }
+
+                        final jadwalList = snapshot.data!;
+                        // Group by hari
+                        final groupedJadwal =
+                            <String, List<Map<String, dynamic>>>{};
+                        for (var jadwal in jadwalList) {
+                          final hari = jadwal['hari'] as String? ?? 'Unknown';
+                          if (!groupedJadwal.containsKey(hari)) {
+                            groupedJadwal[hari] = [];
+                          }
+                          groupedJadwal[hari]!.add(jadwal);
+                        }
+
+                        final hariOrder = [
+                          'Senin',
+                          'Selasa',
+                          'Rabu',
+                          'Kamis',
+                          'Jumat',
+                          'Sabtu',
+                        ];
+                        final sortedHari = hariOrder
+                            .where((h) => groupedJadwal.containsKey(h))
+                            .toList();
+
+                        return ListView.builder(
+                          padding: const EdgeInsets.all(16),
+                          itemCount: sortedHari.length,
+                          itemBuilder: (context, index) {
+                            final hari = sortedHari[index];
+                            final jadwalHari = groupedJadwal[hari]!;
+
+                            // Sort by jam
+                            jadwalHari.sort((a, b) {
+                              final jamA = a['jam'] as String? ?? '';
+                              final jamB = b['jam'] as String? ?? '';
+                              return jamA.compareTo(jamB);
+                            });
+
+                            return _buildHariSection(
+                              hari: hari,
+                              jadwalList: jadwalHari,
+                              isDark: isDark,
+                            );
+                          },
+                        );
+                      },
+                    );
+                  },
+                );
+              },
+            ),
+    );
+  }
+
+  Future<List<Map<String, dynamic>>> _fetchJadwalData(
+    List<QueryDocumentSnapshot> kelasNgajarDocs,
+  ) async {
+    final jadwalList = <Map<String, dynamic>>[];
+
+    for (int i = 0; i < kelasNgajarDocs.length; i++) {
+      final kelasNgajarDoc = kelasNgajarDocs[i];
+      final kelasNgajarData = kelasNgajarDoc.data() as Map<String, dynamic>;
+
+      // Ambil id_mapel dan id_kelas untuk query ke collection masing-masing
+      final idMapel = kelasNgajarData['id_mapel'];
+      final idKelas = kelasNgajarData['id_kelas'];
+
+      // Convert ke string untuk document ID
+      final mapelId = idMapel?.toString();
+      final kelasId = idKelas?.toString();
+
+      final jam = kelasNgajarData['jam'] as String?;
+      final hari = kelasNgajarData['hari'] as String?;
+
+      String namaMapel = 'Mata Pelajaran';
+      String namaGuru = 'Guru';
+      String namaKelas = 'Kelas';
+
+      // Query ke collection mapel
+      if (mapelId != null && mapelId.isNotEmpty) {
+        try {
+          final mapelDoc = await FirebaseFirestore.instance
+              .collection('mapel')
+              .doc(mapelId)
+              .get();
+          if (mapelDoc.exists) {
+            final mapelData = mapelDoc.data();
+            namaMapel =
+                mapelData?['namaMapel'] ??
+                mapelData?['nama_mapel'] ??
+                'Mata Pelajaran';
+          }
+        } catch (e) {
+          // Skip if error
+        }
+      }
+
+      // Query ke collection kelas untuk ambil nama_guru dan nama_kelas
+      if (kelasId != null && kelasId.isNotEmpty) {
+        try {
+          final kelasDoc = await FirebaseFirestore.instance
+              .collection('kelas')
+              .doc(kelasId)
+              .get();
+          if (kelasDoc.exists) {
+            final kelasData = kelasDoc.data();
+            namaGuru = kelasData?['nama_guru'] ?? 'Guru';
+            namaKelas =
+                kelasData?['nama_kelas'] ??
+                kelasData?['nomor_kelas'] ??
+                'Kelas';
+          }
+        } catch (e) {
+          // Skip if error
+        }
+      }
+
+      jadwalList.add({
+        'namaMapel': namaMapel,
+        'namaGuru': namaGuru,
+        'nomorKelas': namaKelas,
+        'jam': jam ?? '-',
+        'hari': hari ?? 'Unknown',
+        'index': i,
+      });
+    }
+
+    return jadwalList;
+  }
+
+  Widget _buildHariSection({
+    required String hari,
+    required List<Map<String, dynamic>> jadwalList,
+    required bool isDark,
+  }) {
+    Color getHariColor(String hari) {
+      switch (hari) {
+        case 'Senin':
+          return AppTheme.primaryPurple;
+        case 'Selasa':
+          return AppTheme.secondaryTeal;
+        case 'Rabu':
+          return AppTheme.accentGreen;
+        case 'Kamis':
+          return AppTheme.accentOrange;
+        case 'Jumat':
+          return AppTheme.accentPink;
+        case 'Sabtu':
+          return Colors.indigo;
+        default:
+          return Colors.grey;
+      }
+    }
+
+    final hariColor = getHariColor(hari);
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 20),
+      elevation: 3,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Column(
+        children: [
+          // Header hari
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [hariColor, hariColor.withOpacity(0.7)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(16),
+                topRight: Radius.circular(16),
+              ),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(8),
                   ),
+                  child: const Icon(
+                    Icons.calendar_today,
+                    color: Colors.white,
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  hari,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+                const Spacer(),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    '${jadwalList.length} Pelajaran',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // List jadwal
+          ListView.separated(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            padding: const EdgeInsets.all(12),
+            itemCount: jadwalList.length,
+            separatorBuilder: (context, index) => const Divider(height: 8),
+            itemBuilder: (context, index) {
+              final jadwal = jadwalList[index];
+              return _buildJadwalItem(
+                namaMapel: jadwal['namaMapel'] ?? 'Mata Pelajaran',
+                namaGuru: jadwal['namaGuru'] ?? 'Guru',
+                nomorKelas: jadwal['nomorKelas'] ?? 'Kelas',
+                jam: jadwal['jam'] ?? '-',
+                index: jadwal['index'] ?? 0,
+                isDark: isDark,
+              );
+            },
           ),
         ],
       ),
     );
   }
 
-  Widget _buildEventCard(Map<String, dynamic> event, bool isDark) {
-    final color = event['color'] as Color;
-    
+  Widget _buildJadwalItem({
+    required String namaMapel,
+    required String namaGuru,
+    required String nomorKelas,
+    required String jam,
+    required int index,
+    required bool isDark,
+  }) {
+    final color = _getColorForIndex(index);
+    final icon = _getIconForMapel(namaMapel);
+
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: const EdgeInsets.only(bottom: 4),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: isDark ? AppTheme.cardDark : Colors.white,
+        color: color.withOpacity(0.05),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: color.withOpacity(0.3),
-          width: 2,
-        ),
+        border: Border.all(color: color.withOpacity(0.2), width: 1),
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            Container(
-              width: 4,
-              height: 60,
-              decoration: BoxDecoration(
-                color: color,
-                borderRadius: BorderRadius.circular(2),
+      child: Row(
+        children: [
+          // Icon dan jam
+          Column(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icon, color: color, size: 24),
               ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
+              const SizedBox(height: 6),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: color,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.access_time,
+                      color: Colors.white,
+                      size: 12,
                     ),
-                    decoration: BoxDecoration(
-                      color: color.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Text(
-                      event['tipe'],
-                      style: TextStyle(
+                    const SizedBox(width: 4),
+                    Text(
+                      jam,
+                      style: const TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
-                        color: color,
+                        color: Colors.white,
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    event['judul'],
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.access_time,
-                        size: 14,
-                        color: isDark ? Colors.grey[400] : Colors.grey[600],
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        event['waktu'],
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: isDark ? Colors.grey[400] : Colors.grey[600],
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+                  ],
+                ),
               ),
+            ],
+          ),
+          const SizedBox(width: 14),
+          // Info pelajaran
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  namaMapel,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: isDark ? Colors.white : Colors.black87,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    Icon(Icons.person, size: 14, color: Colors.grey[600]),
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: Text(
+                        namaGuru,
+                        style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    Icon(Icons.class_, size: 14, color: Colors.grey[600]),
+                    const SizedBox(width: 4),
+                    Text(
+                      nomorKelas,
+                      style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                    ),
+                  ],
+                ),
+              ],
             ),
-            Icon(
-              Icons.arrow_forward_ios,
-              size: 16,
-              color: isDark ? Colors.grey[600] : Colors.grey[400],
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
-  }
-
-  String _formatDate(DateTime date) {
-    const months = [
-      'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-      'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
-    ];
-    const days = [
-      'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'
-    ];
-    
-    return '${days[date.weekday - 1]}, ${date.day} ${months[date.month - 1]} ${date.year}';
   }
 }

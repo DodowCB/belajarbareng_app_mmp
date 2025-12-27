@@ -1,19 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../../core/config/theme.dart';
 import '../../../../core/providers/theme_provider.dart';
+import '../../../../core/providers/user_provider.dart';
 import '../../data/models/pengumuman_model.dart';
 import 'blocs/blocs.dart';
 import 'tugas_siswa_screen.dart';
 import 'quiz_siswa_screen.dart';
 import 'kelas_siswa_screen.dart';
 import 'kalender_siswa_screen.dart';
+import 'semua_jadwal_screen.dart';
+import 'pengumuman_screen.dart';
+import 'absensi_siswa_screen.dart';
 import '../profile/profile_screen.dart';
 import '../settings/settings_screen.dart';
 import '../notifications/notifications_screen.dart';
 import '../help/help_support_screen.dart';
 import '../login/login_screen.dart';
+import 'widgets/siswa_widgets.dart';
 
 class HalamanSiswaScreen extends ConsumerStatefulWidget {
   const HalamanSiswaScreen({super.key});
@@ -26,6 +32,13 @@ class _HalamanSiswaScreenState extends ConsumerState<HalamanSiswaScreen> {
   bool _statsLoaded = false;
   bool _isSidebarCollapsed = false;
   bool _isProfileMenuExpanded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Reset flag untuk memastikan BLoC di-trigger
+    _statsLoaded = false;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -236,10 +249,27 @@ class _HalamanSiswaScreenState extends ConsumerState<HalamanSiswaScreen> {
                   },
                 ),
                 _buildSidebarItem(
+                  icon: Icons.event_available,
+                  title: 'Absensi',
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const AbsensiSiswaScreen(),
+                      ),
+                    );
+                  },
+                ),
+                _buildSidebarItem(
                   icon: Icons.campaign,
                   title: 'Pengumuman',
                   onTap: () {
-                    // Navigate to announcements
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const PengumumanScreen(),
+                      ),
+                    );
                   },
                 ),
               ],
@@ -786,7 +816,15 @@ class _HalamanSiswaScreenState extends ConsumerState<HalamanSiswaScreen> {
                   SizedBox(height: isDesktop ? 32 : 24),
                   _buildJadwalHariIni(isDesktop: isDesktop),
                   SizedBox(height: isDesktop ? 32 : 24),
-                  _buildKelasSemesterIni(isDesktop: isDesktop),
+                  SiswaWidgets.buildTugasTertunda(
+                    context: context,
+                    isDesktop: isDesktop,
+                  ),
+                  SizedBox(height: isDesktop ? 32 : 24),
+                  SiswaWidgets.buildKelasSemesterIni(
+                    context: context,
+                    isDesktop: isDesktop,
+                  ),
                   SizedBox(height: isDesktop ? 32 : 24),
                   _buildPengumumanTerbaru(isDesktop: isDesktop),
                   const SizedBox(height: 24),
@@ -818,11 +856,11 @@ class _HalamanSiswaScreenState extends ConsumerState<HalamanSiswaScreen> {
 
     return BlocBuilder<SiswaProfileBloc, SiswaProfileState>(
       builder: (context, state) {
-        String siswaName = 'Siswa';
+        // Ambil nama dari userProvider yang sudah di-set saat login
+        String siswaName = userProvider.namaLengkap ?? 'Siswa';
         String kelas = '';
 
         if (state is SiswaProfileLoaded) {
-          siswaName = state.siswaData['nama_lengkap'] ?? 'Siswa';
           kelas = state.siswaData['kelas'] ?? '';
         }
 
@@ -902,90 +940,237 @@ class _HalamanSiswaScreenState extends ConsumerState<HalamanSiswaScreen> {
   }
 
   Widget _buildStatsCards({required bool isDesktop, required bool isTablet}) {
-    return BlocBuilder<SiswaStatsBloc, SiswaStatsState>(
-      builder: (context, state) {
-        if (state is SiswaStatsLoaded) {
-          final tugasPending = state.totalTugas - state.tugasSelesai;
-          final nilaiPersentase = state.rataRataNilai;
-          final kehadiranPersentase =
-              95.0; // Placeholder, bisa diambil dari state nanti
+    final siswaId = userProvider.userId ?? '';
 
-          return LayoutBuilder(
-            builder: (context, constraints) {
-              if (isDesktop) {
-                return Row(
-                  children: [
-                    Expanded(
-                      child: _buildModernStatCard(
-                        title: 'Tugas Tertunda',
-                        value: tugasPending.toString(),
-                        subtitle: '2 jatuh tempo besok',
-                        icon: Icons.assignment_outlined,
-                        color: const Color(0xFFFF6B6B),
-                        isDesktop: true,
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: _buildModernStatCard(
-                        title: 'Rata-rata Nilai',
-                        value: '${nilaiPersentase.toInt()}%',
-                        subtitle: '+2% dari bulan lalu',
-                        icon: Icons.trending_up,
-                        color: const Color(0xFF4CAF50),
-                        isDesktop: true,
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: _buildModernStatCard(
-                        title: 'Kehadiran',
-                        value: '${kehadiranPersentase.toInt()}%',
-                        subtitle: 'Sangat baik',
-                        icon: Icons.people_outline,
-                        color: AppTheme.primaryPurple,
-                        isDesktop: true,
-                      ),
-                    ),
-                  ],
-                );
-              } else {
-                return Column(
-                  children: [
-                    _buildModernStatCard(
-                      title: 'Tugas Tertunda',
-                      value: tugasPending.toString(),
-                      subtitle: '2 jatuh tempo besok',
-                      icon: Icons.assignment_outlined,
-                      color: const Color(0xFFFF6B6B),
-                      isDesktop: false,
-                    ),
-                    const SizedBox(height: 12),
-                    _buildModernStatCard(
-                      title: 'Rata-rata Nilai',
-                      value: '${nilaiPersentase.toInt()}%',
-                      subtitle: '+2% dari bulan lalu',
-                      icon: Icons.trending_up,
-                      color: const Color(0xFF4CAF50),
-                      isDesktop: false,
-                    ),
-                    const SizedBox(height: 12),
-                    _buildModernStatCard(
-                      title: 'Kehadiran',
-                      value: '${kehadiranPersentase.toInt()}%',
-                      subtitle: 'Sangat baik',
-                      icon: Icons.people_outline,
-                      color: AppTheme.primaryPurple,
-                      isDesktop: false,
-                    ),
-                  ],
-                );
-              }
-            },
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('siswa_kelas')
+          .where('siswa_id', isEqualTo: siswaId)
+          .snapshots(),
+      builder: (context, siswaKelasSnapshot) {
+        if (siswaKelasSnapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (!siswaKelasSnapshot.hasData ||
+            siswaKelasSnapshot.data!.docs.isEmpty) {
+          return _buildStatsCardsContent(
+            tugasPending: 0,
+            jatuhTempoText: 'Tidak ada tugas',
+            kehadiranPersentase: 0.0,
+            isDesktop: isDesktop,
           );
         }
 
-        return const Center(child: CircularProgressIndicator());
+        final kelasId = siswaKelasSnapshot.data!.docs.first.get('kelas_id');
+
+        return StreamBuilder<QuerySnapshot>(
+          stream: FirebaseFirestore.instance
+              .collection('tugas')
+              .where('id_kelas', isEqualTo: kelasId)
+              .snapshots(),
+          builder: (context, tugasSnapshot) {
+            if (tugasSnapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+
+            int tugasPending = 0;
+            int jatuhTempoHariIni = 0;
+            int jatuhTempoBesok = 0;
+
+            if (tugasSnapshot.hasData) {
+              final now = DateTime.now();
+              final today = DateTime(now.year, now.month, now.day);
+              final tomorrow = today.add(const Duration(days: 1));
+
+              for (var doc in tugasSnapshot.data!.docs) {
+                final data = doc.data() as Map<String, dynamic>;
+                final deadline = (data['deadline'] as Timestamp?)?.toDate();
+
+                if (deadline != null && deadline.isAfter(now)) {
+                  tugasPending++;
+
+                  final deadlineDate = DateTime(
+                    deadline.year,
+                    deadline.month,
+                    deadline.day,
+                  );
+
+                  if (deadlineDate == today) {
+                    jatuhTempoHariIni++;
+                  } else if (deadlineDate == tomorrow) {
+                    jatuhTempoBesok++;
+                  }
+                }
+              }
+            }
+
+            String jatuhTempoText = 'Semua tugas terkendali! 🎉';
+            if (jatuhTempoHariIni > 0) {
+              jatuhTempoText = '$jatuhTempoHariIni jatuh tempo hari ini';
+            } else if (jatuhTempoBesok > 0) {
+              jatuhTempoText = '$jatuhTempoBesok jatuh tempo besok';
+            } else if (tugasPending > 0) {
+              jatuhTempoText = 'Tenang, masih ada waktu';
+            }
+
+            // Query absensi untuk menghitung kehadiran
+            return StreamBuilder<QuerySnapshot>(
+              stream: FirebaseFirestore.instance
+                  .collection('absensi')
+                  .where('siswa_id', isEqualTo: siswaId)
+                  .snapshots(),
+              builder: (context, absensiSnapshot) {
+                double kehadiranPersentase = 0.0;
+
+                if (absensiSnapshot.hasData &&
+                    absensiSnapshot.data!.docs.isNotEmpty) {
+                  int totalAbsensi = absensiSnapshot.data!.docs.length;
+                  int jumlahHadir = 0;
+
+                  for (var doc in absensiSnapshot.data!.docs) {
+                    final data = doc.data() as Map<String, dynamic>;
+                    final status = (data['status'] ?? '')
+                        .toString()
+                        .toLowerCase();
+
+                    // Hanya hitung yang statusnya "hadir"
+                    if (status == 'hadir') {
+                      jumlahHadir++;
+                    }
+                  }
+
+                  if (totalAbsensi > 0) {
+                    kehadiranPersentase = (jumlahHadir / totalAbsensi) * 100;
+                  }
+                }
+
+                return _buildStatsCardsContent(
+                  tugasPending: tugasPending,
+                  jatuhTempoText: jatuhTempoText,
+                  kehadiranPersentase: kehadiranPersentase,
+                  isDesktop: isDesktop,
+                );
+              },
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildStatsCardsContent({
+    required int tugasPending,
+    required String jatuhTempoText,
+    required double kehadiranPersentase,
+    required bool isDesktop,
+  }) {
+    final siswaId = userProvider.userId ?? '';
+
+    // Langsung query collection pengumpulan, auto-update real-time
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('pengumpulan')
+          .where('siswa_id', isEqualTo: siswaId)
+          .snapshots(),
+      builder: (context, pengumpulanSnapshot) {
+        // Hitung jumlah tugas terkumpul
+        final tugasSelesai = pengumpulanSnapshot.hasData
+            ? pengumpulanSnapshot.data!.docs.length
+            : 0;
+
+        print('DEBUG TUGAS SELESAI (StreamBuilder):');
+        print('- siswa_id: $siswaId');
+        print('- tugasSelesai: $tugasSelesai');
+        print('- hasData: ${pengumpulanSnapshot.hasData}');
+
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            // Tentukan subtitle kehadiran berdasarkan persentase
+            String kehadiranSubtitle;
+            if (kehadiranPersentase >= 90) {
+              kehadiranSubtitle = 'Sangat baik';
+            } else if (kehadiranPersentase >= 80) {
+              kehadiranSubtitle = 'Baik';
+            } else if (kehadiranPersentase >= 70) {
+              kehadiranSubtitle = 'Cukup';
+            } else if (kehadiranPersentase > 0) {
+              kehadiranSubtitle = 'Perlu ditingkatkan';
+            } else {
+              kehadiranSubtitle = 'Belum ada data';
+            }
+
+            if (isDesktop) {
+              return Row(
+                children: [
+                  Expanded(
+                    child: _buildModernStatCard(
+                      title: 'Tugas Tertunda',
+                      value: tugasPending.toString(),
+                      subtitle: jatuhTempoText,
+                      icon: Icons.assignment_outlined,
+                      color: const Color(0xFFFF6B6B),
+                      isDesktop: true,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: _buildModernStatCard(
+                      title: 'Tugas Terkumpul',
+                      value: tugasSelesai.toString(),
+                      subtitle: 'Terus semangat! 💪',
+                      icon: Icons.check_circle_outline,
+                      color: const Color(0xFF4CAF50),
+                      isDesktop: true,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: _buildModernStatCard(
+                      title: 'Kehadiran',
+                      value: '${kehadiranPersentase.toInt()}%',
+                      subtitle: kehadiranSubtitle,
+                      icon: Icons.people_outline,
+                      color: AppTheme.primaryPurple,
+                      isDesktop: true,
+                    ),
+                  ),
+                ],
+              );
+            } else {
+              return Column(
+                children: [
+                  _buildModernStatCard(
+                    title: 'Tugas Tertunda',
+                    value: tugasPending.toString(),
+                    subtitle: jatuhTempoText,
+                    icon: Icons.assignment_outlined,
+                    color: const Color(0xFFFF6B6B),
+                    isDesktop: false,
+                  ),
+                  const SizedBox(height: 12),
+                  _buildModernStatCard(
+                    title: 'Tugas Terkumpul',
+                    value: tugasSelesai.toString(),
+                    subtitle: 'Terus semangat! 💪',
+                    icon: Icons.check_circle_outline,
+                    color: const Color(0xFF4CAF50),
+                    isDesktop: false,
+                  ),
+                  const SizedBox(height: 12),
+                  _buildModernStatCard(
+                    title: 'Kehadiran',
+                    value: '${kehadiranPersentase.toInt()}%',
+                    subtitle: kehadiranSubtitle,
+                    icon: Icons.people_outline,
+                    color: AppTheme.primaryPurple,
+                    isDesktop: false,
+                  ),
+                ],
+              );
+            }
+          },
+        );
       },
     );
   }
@@ -1421,31 +1606,7 @@ class _HalamanSiswaScreenState extends ConsumerState<HalamanSiswaScreen> {
 
   Widget _buildJadwalHariIni({required bool isDesktop}) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    // Data jadwal dummy - nanti bisa diganti dengan data dari Firestore
-    final jadwal = [
-      {
-        'waktu': '08:00 - 09:30',
-        'mataPelajaran': 'Matematika Wajib',
-        'ruang': 'Ruang 304 • Pak Bambang',
-        'status': 'Sedang Berlangsung',
-        'color': const Color(0xFF4CAF50),
-      },
-      {
-        'waktu': '10:00 - 11:30',
-        'mataPelajaran': 'Bahasa Inggris',
-        'ruang': 'Lab Bahasa 1 • Mrs. Sarah',
-        'status': '',
-        'color': AppTheme.primaryPurple,
-      },
-      {
-        'waktu': '13:00 - 14:30',
-        'mataPelajaran': 'Fisika Dasar',
-        'ruang': 'Ruang 202 • Bu Rina',
-        'status': '',
-        'color': AppTheme.secondaryTeal,
-      },
-    ];
+    final siswaId = userProvider.userId ?? '';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1454,7 +1615,7 @@ class _HalamanSiswaScreenState extends ConsumerState<HalamanSiswaScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              'Jadwal Hari Ini',
+              'Jadwal Pelajaran',
               style: TextStyle(
                 fontSize: isDesktop ? 20 : 18,
                 fontWeight: FontWeight.bold,
@@ -1462,187 +1623,175 @@ class _HalamanSiswaScreenState extends ConsumerState<HalamanSiswaScreen> {
             ),
             TextButton(
               onPressed: () {
-                // Navigate to full schedule
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const SemuaJadwalScreen(),
+                  ),
+                );
               },
               child: const Text('Lihat Semua'),
             ),
           ],
         ),
         const SizedBox(height: 16),
-        ...jadwal
-            .map(
-              (item) => _buildJadwalCard(
-                waktu: item['waktu'] as String,
-                mataPelajaran: item['mataPelajaran'] as String,
-                ruang: item['ruang'] as String,
-                status: item['status'] as String,
-                color: item['color'] as Color,
-                isDark: isDark,
-              ),
-            )
-            .toList(),
-      ],
-    );
-  }
+        StreamBuilder<QuerySnapshot>(
+          stream: FirebaseFirestore.instance
+              .collection('siswa_kelas')
+              .where('siswa_id', isEqualTo: siswaId)
+              .snapshots(),
+          builder: (context, siswaKelasSnapshot) {
+            if (siswaKelasSnapshot.connectionState == ConnectionState.waiting) {
+              return Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: CircularProgressIndicator(
+                    color: AppTheme.primaryPurple,
+                  ),
+                ),
+              );
+            }
 
-  Widget _buildJadwalCard({
-    required String waktu,
-    required String mataPelajaran,
-    required String ruang,
-    required String status,
-    required Color color,
-    required bool isDark,
-  }) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF2A2A2A) : Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isDark ? Colors.grey[800]! : Colors.grey[200]!,
-        ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            Container(
-              width: 4,
-              height: 60,
-              decoration: BoxDecoration(
-                color: color,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Text(
-                        waktu,
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: color,
-                        ),
+            if (siswaKelasSnapshot.hasError) {
+              return _buildEmptyJadwal('Gagal memuat jadwal', isDark);
+            }
+
+            if (!siswaKelasSnapshot.hasData ||
+                siswaKelasSnapshot.data!.docs.isEmpty) {
+              return _buildEmptyJadwal(
+                'Anda belum terdaftar di kelas manapun',
+                isDark,
+              );
+            }
+
+            // Ambil kelas_id dari siswa_kelas
+            final kelasId = siswaKelasSnapshot.data!.docs.first.get('kelas_id');
+
+            // Query kelas_ngajar berdasarkan id_kelas
+            return StreamBuilder<QuerySnapshot>(
+              stream: FirebaseFirestore.instance
+                  .collection('kelas_ngajar')
+                  .where('id_kelas', isEqualTo: kelasId)
+                  .snapshots(),
+              builder: (context, kelasNgajarSnapshot) {
+                if (kelasNgajarSnapshot.connectionState ==
+                    ConnectionState.waiting) {
+                  return Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: CircularProgressIndicator(
+                        color: AppTheme.primaryPurple,
                       ),
-                      if (status.isNotEmpty) ...[
-                        const SizedBox(width: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF4CAF50).withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Text(
-                            status,
-                            style: const TextStyle(
-                              fontSize: 10,
-                              color: Color(0xFF4CAF50),
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    mataPelajaran,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: isDark ? Colors.white : Colors.black,
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    ruang,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: isDark ? Colors.grey[400] : Colors.grey[600],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 16),
-            ElevatedButton(
-              onPressed: () {
-                // Join class action
+                  );
+                }
+
+                if (kelasNgajarSnapshot.hasError) {
+                  return _buildEmptyJadwal(
+                    'Gagal memuat jadwal pelajaran',
+                    isDark,
+                  );
+                }
+
+                if (!kelasNgajarSnapshot.hasData ||
+                    kelasNgajarSnapshot.data!.docs.isEmpty) {
+                  return _buildEmptyJadwal(
+                    'Belum ada jadwal pelajaran',
+                    isDark,
+                  );
+                }
+
+                final kelasNgajarList = kelasNgajarSnapshot.data!.docs;
+
+                // Fetch kelas details untuk nomor_kelas
+                return FutureBuilder<DocumentSnapshot>(
+                  future: FirebaseFirestore.instance
+                      .collection('kelas')
+                      .doc(kelasId)
+                      .get(),
+                  builder: (context, kelasSnapshot) {
+                    String nomorKelas = '';
+                    if (kelasSnapshot.hasData && kelasSnapshot.data!.exists) {
+                      final kelasData =
+                          kelasSnapshot.data!.data() as Map<String, dynamic>?;
+                      nomorKelas = kelasData?['nomor_kelas'] ?? '';
+                    }
+
+                    return Column(
+                      children: kelasNgajarList.map((kelasNgajarDoc) {
+                        final kelasNgajarData =
+                            kelasNgajarDoc.data() as Map<String, dynamic>;
+                        final mapelId = kelasNgajarData['id_mapel'] ?? '';
+                        final guruId = kelasNgajarData['id_guru'] ?? '';
+                        final jam = kelasNgajarData['jam'] ?? '';
+
+                        // Fetch mapel details
+                        return FutureBuilder<DocumentSnapshot>(
+                          future: FirebaseFirestore.instance
+                              .collection('mapel')
+                              .doc(mapelId)
+                              .get(),
+                          builder: (context, mapelSnapshot) {
+                            if (!mapelSnapshot.hasData) {
+                              return const SizedBox.shrink();
+                            }
+
+                            final mapelData =
+                                mapelSnapshot.data!.data()
+                                    as Map<String, dynamic>?;
+                            if (mapelData == null) {
+                              return const SizedBox.shrink();
+                            }
+
+                            final namaMapel =
+                                mapelData['namaMapel'] ?? 'Mata Pelajaran';
+
+                            // Fetch guru details
+                            return FutureBuilder<DocumentSnapshot>(
+                              future: FirebaseFirestore.instance
+                                  .collection('guru')
+                                  .doc(guruId)
+                                  .get(),
+                              builder: (context, guruSnapshot) {
+                                String namaGuru = 'Guru';
+                                if (guruSnapshot.hasData &&
+                                    guruSnapshot.data!.exists) {
+                                  final guruData =
+                                      guruSnapshot.data!.data()
+                                          as Map<String, dynamic>?;
+                                  namaGuru =
+                                      guruData?['nama_lengkap'] ?? 'Guru';
+                                }
+
+                                // Generate random color for each subject
+                                final colors = [
+                                  AppTheme.primaryPurple,
+                                  AppTheme.secondaryTeal,
+                                  AppTheme.accentGreen,
+                                  AppTheme.accentOrange,
+                                  const Color(0xFF4CAF50),
+                                ];
+                                final colorIndex =
+                                    kelasNgajarList.indexOf(kelasNgajarDoc) %
+                                    colors.length;
+
+                                return _buildJadwalCard(
+                                  jam: jam,
+                                  mataPelajaran: namaMapel,
+                                  guru: namaGuru,
+                                  nomorKelas: nomorKelas,
+                                  color: colors[colorIndex],
+                                  isDark: isDark,
+                                );
+                              },
+                            );
+                          },
+                        );
+                      }).toList(),
+                    );
+                  },
+                );
               },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.primaryPurple,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 12,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              child: const Text('Masuk Kelas'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildKelasSemesterIni({required bool isDesktop}) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    // Data kelas dummy
-    final kelas = [
-      {
-        'nama': 'Matematika Lanjut',
-        'guru': 'Bu Bambang',
-        'image':
-            'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=400',
-      },
-      {
-        'nama': 'Fisika Terapan',
-        'guru': 'Bu Risa',
-        'image':
-            'https://images.unsplash.com/photo-1636466497217-26a8cbeaf0aa?w=400',
-      },
-    ];
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Kelas Semester Ini',
-          style: TextStyle(
-            fontSize: isDesktop ? 20 : 18,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 16),
-        GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: isDesktop ? 2 : 1,
-            crossAxisSpacing: 16,
-            mainAxisSpacing: 16,
-            childAspectRatio: isDesktop ? 3 : 2.5,
-          ),
-          itemCount: kelas.length,
-          itemBuilder: (context, index) {
-            final item = kelas[index];
-            return _buildKelasCard(
-              nama: item['nama'] as String,
-              guru: item['guru'] as String,
-              image: item['image'] as String,
-              isDark: isDark,
             );
           },
         ),
@@ -1650,13 +1799,9 @@ class _HalamanSiswaScreenState extends ConsumerState<HalamanSiswaScreen> {
     );
   }
 
-  Widget _buildKelasCard({
-    required String nama,
-    required String guru,
-    required String image,
-    required bool isDark,
-  }) {
+  Widget _buildEmptyJadwal(String message, bool isDark) {
     return Container(
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF2A2A2A) : Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -1664,45 +1809,84 @@ class _HalamanSiswaScreenState extends ConsumerState<HalamanSiswaScreen> {
           color: isDark ? Colors.grey[800]! : Colors.grey[200]!,
         ),
       ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(12),
-        child: Row(
-          children: [
-            Container(
-              width: 120,
-              height: double.infinity,
-              decoration: BoxDecoration(
-                color: AppTheme.primaryPurple.withOpacity(0.1),
+      child: Row(
+        children: [
+          Icon(Icons.info_outline, color: Colors.grey, size: 24),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              message,
+              style: TextStyle(
+                color: isDark ? Colors.grey[400] : Colors.grey[600],
+                fontSize: 14,
               ),
-              child: const Icon(Icons.image, size: 40, color: Colors.grey),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildJadwalCard({
+    required String jam,
+    required String mataPelajaran,
+    required String guru,
+    required String nomorKelas,
+    required Color color,
+    required bool isDark,
+  }) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF2C2C2C) : Colors.white,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+          color: isDark ? Colors.grey[800]! : Colors.grey[300]!,
+          width: 1,
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            // Column kiri - Jam
+            Text(
+              jam.isNotEmpty ? jam : '-',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
+                color: isDark ? Colors.grey[200] : Colors.black87,
+                height: 1.2,
+              ),
+            ),
+            const SizedBox(width: 16),
+            // Column kanan - Mata Pelajaran dan Info
             Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      nama,
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: isDark ? Colors.white : Colors.black,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    mataPelajaran,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: isDark ? Colors.white : Colors.black,
+                      height: 1.2,
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      guru,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: isDark ? Colors.grey[400] : Colors.grey[600],
-                      ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    nomorKelas.isNotEmpty ? '$nomorKelas \u2022 $guru' : guru,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w400,
+                      color: isDark ? Colors.grey[400] : Colors.grey[600],
+                      height: 1.2,
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
           ],
@@ -1713,22 +1897,6 @@ class _HalamanSiswaScreenState extends ConsumerState<HalamanSiswaScreen> {
 
   Widget _buildPengumumanTerbaru({required bool isDesktop}) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    // Data pengumuman dummy
-    final pengumuman = [
-      {
-        'icon': Icons.campaign,
-        'title': 'Ujian Tengah Semester',
-        'subtitle':
-            'Jadwal UTS dimulai pada hari Senin Tanggal 17 Agustus dengan...',
-      },
-      {
-        'icon': Icons.celebration,
-        'title': 'Libur Nasional',
-        'subtitle':
-            'Sekolah ditutup pada hari Jum\'at Tanggal 13 Juni\'21 Agustus dalam...',
-      },
-    ];
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1741,10 +1909,43 @@ class _HalamanSiswaScreenState extends ConsumerState<HalamanSiswaScreen> {
           ),
         ),
         const SizedBox(height: 16),
-        ...pengumuman
-            .map(
-              (item) => Container(
-                margin: const EdgeInsets.only(bottom: 12),
+        StreamBuilder<QuerySnapshot>(
+          stream: FirebaseFirestore.instance
+              .collection('pengumuman')
+              .orderBy('createdAt', descending: true)
+              .limit(3)
+              .snapshots(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: CircularProgressIndicator(
+                    color: AppTheme.primaryPurple,
+                  ),
+                ),
+              );
+            }
+
+            if (snapshot.hasError) {
+              return Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF2A2A2A) : Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: isDark ? Colors.grey[800]! : Colors.grey[200]!,
+                  ),
+                ),
+                child: Text(
+                  'Gagal memuat pengumuman',
+                  style: TextStyle(color: Colors.red, fontSize: 14),
+                ),
+              );
+            }
+
+            if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+              return Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: isDark ? const Color(0xFF2A2A2A) : Colors.white,
@@ -1755,51 +1956,87 @@ class _HalamanSiswaScreenState extends ConsumerState<HalamanSiswaScreen> {
                 ),
                 child: Row(
                   children: [
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: AppTheme.primaryPurple.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Icon(
-                        item['icon'] as IconData,
-                        color: AppTheme.primaryPurple,
-                        size: 24,
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            item['title'] as String,
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                              color: isDark ? Colors.white : Colors.black,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            item['subtitle'] as String,
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: isDark
-                                  ? Colors.grey[400]
-                                  : Colors.grey[600],
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
+                    Icon(Icons.info_outline, color: Colors.grey, size: 24),
+                    const SizedBox(width: 12),
+                    Text(
+                      'Belum ada pengumuman',
+                      style: TextStyle(
+                        color: isDark ? Colors.grey[400] : Colors.grey[600],
+                        fontSize: 14,
                       ),
                     ),
                   ],
                 ),
-              ),
-            )
-            .toList(),
+              );
+            }
+
+            final pengumumanList = snapshot.data!.docs;
+
+            return Column(
+              children: pengumumanList.map((doc) {
+                final data = doc.data() as Map<String, dynamic>;
+                final judul = data['judul'] ?? 'Tanpa Judul';
+                final deskripsi = data['deskripsi'] ?? '';
+
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF2A2A2A) : Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: isDark ? Colors.grey[800]! : Colors.grey[200]!,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: AppTheme.primaryPurple.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Icon(
+                          Icons.campaign,
+                          color: AppTheme.primaryPurple,
+                          size: 24,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              judul,
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                                color: isDark ? Colors.white : Colors.black,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              deskripsi,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: isDark
+                                    ? Colors.grey[400]
+                                    : Colors.grey[600],
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }).toList(),
+            );
+          },
+        ),
       ],
     );
   }

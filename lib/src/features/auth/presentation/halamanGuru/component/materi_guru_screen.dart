@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import '../../../../../core/config/theme.dart';
 import '../../../../../core/providers/user_provider.dart';
+import '../../../../../core/services/google_drive_service.dart';
 import '../../widgets/guru_app_scaffold.dart';
 import 'materi_guru_dialogs.dart';
 
@@ -16,6 +17,7 @@ class MateriGuruScreen extends ConsumerStatefulWidget {
 
 class _MateriGuruScreenState extends ConsumerState<MateriGuruScreen> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final GoogleDriveService _driveService = GoogleDriveService();
   String _searchQuery = '';
   String _selectedKelas = 'Semua Kelas';
   String _selectedMapel = 'Semua Mapel';
@@ -30,7 +32,8 @@ class _MateriGuruScreenState extends ConsumerState<MateriGuruScreen> {
   }
 
   Future<void> _loadFilters() async {
-    final guruId = userProvider.userId;
+    final userProv = UserProvider();
+    final guruId = userProv.userId;
     if (guruId == null) return;
 
     try {
@@ -84,7 +87,8 @@ class _MateriGuruScreenState extends ConsumerState<MateriGuruScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final guruId = userProvider.userId;
+    final userProv = UserProvider();
+    final guruId = userProv.userId;
 
     return GuruAppScaffold(
       title: 'Materi Pembelajaran',
@@ -578,18 +582,33 @@ class _MateriGuruScreenState extends ConsumerState<MateriGuruScreen> {
         .where('id_materi', isEqualTo: int.parse(materi['id']))
         .get();
 
+    debugPrint('Materi ID: ${materi['id']}');
+    debugPrint('Materi Files Count: ${materiFilesSnap.docs.length}');
+
     final fileCount = materiFilesSnap.docs.length;
     String mimeType = 'application/octet-stream';
+    String? status;
+    String? youtubeUrl;
 
     if (fileCount > 0) {
       final firstFileId = materiFilesSnap.docs.first.data()['id_files'];
+      debugPrint('First File ID: $firstFileId');
+
       final fileDoc = await _firestore
           .collection('files')
           .doc(firstFileId.toString())
           .get();
 
+      debugPrint('File Doc Exists: ${fileDoc.exists}');
+
       if (fileDoc.exists) {
-        mimeType = fileDoc.data()?['mimeType'] ?? 'application/octet-stream';
+        final fileData = fileDoc.data();
+        debugPrint('File Data: $fileData');
+        mimeType = fileData?['mimeType'] ?? 'application/octet-stream';
+        status = fileData?['status'];
+        youtubeUrl = fileData?['url_youtube'];
+
+        debugPrint('Extracted - Status: $status, YouTube URL: $youtubeUrl');
       }
     }
 
@@ -606,6 +625,8 @@ class _MateriGuruScreenState extends ConsumerState<MateriGuruScreen> {
       'mapel': mapelName,
       'fileCount': fileCount,
       'mimeType': mimeType,
+      'status': status,
+      'youtubeUrl': youtubeUrl,
       'tanggal': tanggal,
     };
   }
@@ -647,24 +668,197 @@ class _MateriGuruScreenState extends ConsumerState<MateriGuruScreen> {
       null,
       _kelasList,
       _mapelList,
-      (data) {
-        // TODO: Save to Firestore
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Row(
-              children: [
-                Icon(Icons.check_circle, color: Colors.white),
-                SizedBox(width: 12),
-                Text('Materi berhasil diupload'),
-              ],
-            ),
-            backgroundColor: AppTheme.accentGreen,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-        );
+      (data) async {
+        try {
+          // Ambil ID guru dari UserProvider
+          final userProv = UserProvider();
+          final idGuru = userProv.userId;
+
+          if (idGuru == null) {
+            throw Exception('User tidak login');
+          }
+
+          // Buat dokumen materi dengan ID sequential
+          final materiSnapshot = await FirebaseFirestore.instance
+              .collection('materi')
+              .get();
+
+          final nextMateriId = (materiSnapshot.docs.length + 1).toString();
+
+          // Simpan materi
+          await FirebaseFirestore.instance
+              .collection('materi')
+              .doc(nextMateriId)
+              .set({
+                'id_guru': idGuru,
+                'id_kelas': data['id_kelas'],
+                'id_mapel': data['id_mapel'],
+                'judul': data['judul'],
+                'deskripsi': data['deskripsi'],
+                'createdAt': FieldValue.serverTimestamp(),
+                'updatedAt': FieldValue.serverTimestamp(),
+              });
+
+          // Jika mode YouTube, simpan ke collection files
+          if (data['isYoutubeMode'] == true && data['youtubeUrl'] != null) {
+            // Buat dokumen files dengan ID sequential
+            final filesSnapshot = await FirebaseFirestore.instance
+                .collection('files')
+                .get();
+
+            final nextFileId = (filesSnapshot.docs.length + 1).toString();
+
+            // Simpan file YouTube
+            await FirebaseFirestore.instance
+                .collection('files')
+                .doc(nextFileId)
+                .set({
+                  'url_youtube': data['youtubeUrl'],
+                  'status': 'youtube',
+                  'name': null,
+                  'drive_file_id': null,
+                  'size': null,
+                  'mimeType': null,
+                  'uploadedAt': FieldValue.serverTimestamp(),
+                });
+
+            // Simpan relasi materi_files
+            final materiFilesSnapshot = await FirebaseFirestore.instance
+                .collection('materi_files')
+                .get();
+
+            final nextRelationId = (materiFilesSnapshot.docs.length + 1)
+                .toString();
+
+            await FirebaseFirestore.instance
+                .collection('materi_files')
+                .doc(nextRelationId)
+                .set({
+                  'id_materi': int.parse(nextMateriId),
+                  'id_files': int.parse(nextFileId),
+                });
+
+            debugPrint(
+              'Saved materi_files: id_materi=${int.parse(nextMateriId)}, id_files=${int.parse(nextFileId)}',
+            );
+          }
+          // Jika mode File, upload ke Google Drive
+          else if (data['fileBytes'] != null && data['fileName'] != null) {
+            try {
+              // Cari atau buat folder BelajarBareng MMP
+              String? folderId = await _driveService.findFolderByName(
+                folderName: 'BelajarBareng MMP',
+              );
+
+              if (folderId == null) {
+                final folderData = await _driveService.createFolder(
+                  folderName: 'BelajarBareng MMP',
+                );
+                folderId = folderData?['id'];
+              }
+
+              // Cari atau buat subfolder materi
+              String? materiFolderId = await _driveService.findFolderByName(
+                folderName: 'materi',
+                parentFolderId: folderId,
+              );
+
+              if (materiFolderId == null) {
+                final folderData = await _driveService.createFolder(
+                  folderName: 'materi',
+                  parentFolderId: folderId,
+                );
+                materiFolderId = folderData?['id'];
+              }
+
+              // Upload file ke Google Drive
+              final driveFile = await _driveService.uploadFile(
+                fileName: data['fileName'],
+                fileBytes: data['fileBytes'],
+                folderId: materiFolderId,
+              );
+
+              if (driveFile == null) {
+                throw Exception('Gagal upload file ke Google Drive');
+              }
+
+              // Buat dokumen files dengan ID sequential
+              final filesSnapshot = await FirebaseFirestore.instance
+                  .collection('files')
+                  .get();
+
+              final nextFileId = (filesSnapshot.docs.length + 1).toString();
+
+              // Simpan metadata file ke Firestore
+              await FirebaseFirestore.instance
+                  .collection('files')
+                  .doc(nextFileId)
+                  .set({
+                    'name': driveFile['name'],
+                    'drive_file_id': driveFile['id'],
+                    'size': driveFile['size'],
+                    'mimeType': driveFile['mimeType'],
+                    'status': 'file',
+                    'url_youtube': null,
+                    'uploadedAt': FieldValue.serverTimestamp(),
+                  });
+
+              // Simpan relasi materi_files
+              final materiFilesSnapshot = await FirebaseFirestore.instance
+                  .collection('materi_files')
+                  .get();
+
+              final nextRelationId = (materiFilesSnapshot.docs.length + 1)
+                  .toString();
+
+              await FirebaseFirestore.instance
+                  .collection('materi_files')
+                  .doc(nextRelationId)
+                  .set({
+                    'id_materi': int.parse(nextMateriId),
+                    'id_files': int.parse(nextFileId),
+                  });
+            } catch (e) {
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Error upload file: $e'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+              return;
+            }
+          }
+
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: const Row(
+                  children: [
+                    Icon(Icons.check_circle, color: Colors.white),
+                    SizedBox(width: 12),
+                    Text('Materi berhasil diupload'),
+                  ],
+                ),
+                backgroundColor: AppTheme.accentGreen,
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            );
+
+            // Refresh UI
+            setState(() {});
+          }
+        } catch (e) {
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+            );
+          }
+        }
       },
     );
   }

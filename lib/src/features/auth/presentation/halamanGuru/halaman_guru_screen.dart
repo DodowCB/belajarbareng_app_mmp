@@ -1177,12 +1177,28 @@ class HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
                     ...tugasDocs.map((doc) {
                       final data = doc.data() as Map<String, dynamic>;
                       final deadline = data['deadline'] as Timestamp?;
-                      final deadlineStr = deadline != null
-                          ? DateFormat(
-                              'dd MMM yyyy',
-                              'id_ID',
-                            ).format(deadline.toDate())
-                          : '-';
+                      String deadlineStr = '-';
+                      if (deadline != null) {
+                        final date = deadline.toDate();
+                        final months = [
+                          'Jan',
+                          'Feb',
+                          'Mar',
+                          'Apr',
+                          'Mei',
+                          'Jun',
+                          'Jul',
+                          'Agu',
+                          'Sep',
+                          'Okt',
+                          'Nov',
+                          'Des',
+                        ];
+                        final day = date.day.toString().padLeft(2, '0');
+                        final month = months[date.month - 1];
+                        final year = date.year;
+                        deadlineStr = '$day $month $year';
+                      }
                       return _buildTaskItem(
                         data['judul'] ?? 'Tugas',
                         data['kelas'] ?? 'Kelas',
@@ -1198,12 +1214,28 @@ class HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
                   children: tugasDocs.map((doc) {
                     final data = doc.data() as Map<String, dynamic>;
                     final deadline = data['deadline'] as Timestamp?;
-                    final deadlineStr = deadline != null
-                        ? DateFormat(
-                            'dd MMM yyyy',
-                            'id_ID',
-                          ).format(deadline.toDate())
-                        : '-';
+                    String deadlineStr = '-';
+                    if (deadline != null) {
+                      final date = deadline.toDate();
+                      final months = [
+                        'Jan',
+                        'Feb',
+                        'Mar',
+                        'Apr',
+                        'Mei',
+                        'Jun',
+                        'Jul',
+                        'Agu',
+                        'Sep',
+                        'Okt',
+                        'Nov',
+                        'Des',
+                      ];
+                      final day = date.day.toString().padLeft(2, '0');
+                      final month = months[date.month - 1];
+                      final year = date.year;
+                      deadlineStr = '$day $month $year';
+                    }
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 12),
                       child: _buildTaskCard(

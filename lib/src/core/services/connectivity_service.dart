@@ -118,7 +118,12 @@ class ConnectivityService extends ChangeNotifier {
                   'Cache-Control': 'no-cache',
                 },
               )
-              .timeout(const Duration(seconds: 5));
+              .timeout(
+                const Duration(seconds: 3),
+                onTimeout: () {
+                  throw TimeoutException('Connection timeout');
+                },
+              );
 
           // Accept various success status codes
           if (response.statusCode >= 200 && response.statusCode < 300) {

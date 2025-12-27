@@ -11,6 +11,7 @@ import 'kelas_nilai_list_screen.dart';
 import 'tugas_list_screen.dart';
 import 'materi_guru_screen.dart';
 import 'absensi_guru_screen.dart';
+import 'quiz_guru_screen.dart';
 import '../../profile/profile_screen.dart';
 import '../../settings/settings_screen.dart';
 import '../../notifications/notifications_screen.dart';
@@ -186,6 +187,18 @@ extension GuruSidebarWidgets on HalamanGuruScreenState {
                       context,
                       MaterialPageRoute(
                         builder: (context) => const AbsensiGuruScreen(),
+                      ),
+                    );
+                  },
+                ),
+                buildSidebarItem(
+                  icon: Icons.quiz,
+                  title: 'Quiz',
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const QuizGuruScreen(),
                       ),
                     );
                   },

@@ -46,7 +46,7 @@ class _SiswaAppScaffoldState extends ConsumerState<SiswaAppScaffold> {
     return LayoutBuilder(
       builder: (context, constraints) {
         final isDesktop = constraints.maxWidth >= 1024;
-        
+
         if (!isDesktop) {
           // Mobile/Tablet: Use AppBar with Drawer
           return Scaffold(
@@ -56,7 +56,7 @@ class _SiswaAppScaffoldState extends ConsumerState<SiswaAppScaffold> {
             floatingActionButton: widget.floatingActionButton,
           );
         }
-        
+
         // Desktop: Use Sidebar
         return Scaffold(
           body: Row(
@@ -73,7 +73,7 @@ class _SiswaAppScaffoldState extends ConsumerState<SiswaAppScaffold> {
 
   PreferredSizeWidget _buildAppBar(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return AppBar(
       leading: Builder(
         builder: (context) => IconButton(
@@ -91,7 +91,7 @@ class _SiswaAppScaffoldState extends ConsumerState<SiswaAppScaffold> {
 
   Widget _buildSidebar(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
       width: _isSidebarCollapsed ? 70 : 250,
@@ -211,7 +211,7 @@ class _SiswaAppScaffoldState extends ConsumerState<SiswaAppScaffold> {
 
   Widget _buildSidebarHeader(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return InkWell(
       onTap: () {
         setState(() {
@@ -231,11 +231,7 @@ class _SiswaAppScaffoldState extends ConsumerState<SiswaAppScaffold> {
                   color: AppTheme.primaryPurple,
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Icon(
-                  Icons.school,
-                  color: Colors.white,
-                  size: 24,
-                ),
+                child: const Icon(Icons.school, color: Colors.white, size: 24),
               )
             : Row(
                 children: [
@@ -259,15 +255,17 @@ class _SiswaAppScaffoldState extends ConsumerState<SiswaAppScaffold> {
                       children: [
                         Text(
                           'BelajarBareng',
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(fontWeight: FontWeight.bold),
                         ),
                         Text(
                           'Platform Siswa',
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: isDark ? Colors.grey[400] : Colors.grey[600],
-                          ),
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(
+                                color: isDark
+                                    ? Colors.grey[400]
+                                    : Colors.grey[600],
+                              ),
                         ),
                       ],
                     ),
@@ -280,7 +278,7 @@ class _SiswaAppScaffoldState extends ConsumerState<SiswaAppScaffold> {
 
   Widget _buildExpandableProfileMenu(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return Column(
       children: [
         InkWell(
@@ -302,8 +300,8 @@ class _SiswaAppScaffoldState extends ConsumerState<SiswaAppScaffold> {
                   ),
                 ),
                 Icon(
-                  _isProfileMenuExpanded 
-                      ? Icons.keyboard_arrow_up 
+                  _isProfileMenuExpanded
+                      ? Icons.keyboard_arrow_up
                       : Icons.keyboard_arrow_down,
                   color: isDark ? Colors.grey[400] : Colors.grey[600],
                 ),
@@ -319,9 +317,7 @@ class _SiswaAppScaffoldState extends ConsumerState<SiswaAppScaffold> {
             onTap: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(
-                  builder: (context) => const ProfileScreen(),
-                ),
+                MaterialPageRoute(builder: (context) => const ProfileScreen()),
               );
             },
           ),
@@ -332,9 +328,7 @@ class _SiswaAppScaffoldState extends ConsumerState<SiswaAppScaffold> {
             onTap: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(
-                  builder: (context) => const SettingsScreen(),
-                ),
+                MaterialPageRoute(builder: (context) => const SettingsScreen()),
               );
             },
           ),
@@ -399,7 +393,7 @@ class _SiswaAppScaffoldState extends ConsumerState<SiswaAppScaffold> {
     VoidCallback? onTap,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return Tooltip(
       message: _isSidebarCollapsed ? title : '',
       child: Container(
@@ -414,7 +408,11 @@ class _SiswaAppScaffoldState extends ConsumerState<SiswaAppScaffold> {
           dense: true,
           leading: Icon(
             icon,
-            color: iconColor ?? (isActive ? AppTheme.primaryPurple : (isDark ? Colors.grey[400] : Colors.grey[600])),
+            color:
+                iconColor ??
+                (isActive
+                    ? AppTheme.primaryPurple
+                    : (isDark ? Colors.grey[400] : Colors.grey[600])),
             size: 22,
           ),
           title: _isSidebarCollapsed
@@ -422,7 +420,8 @@ class _SiswaAppScaffoldState extends ConsumerState<SiswaAppScaffold> {
               : Text(
                   title,
                   style: TextStyle(
-                    color: textColor ?? (isActive ? AppTheme.primaryPurple : null),
+                    color:
+                        textColor ?? (isActive ? AppTheme.primaryPurple : null),
                     fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
                     fontSize: 14,
                   ),
@@ -436,7 +435,7 @@ class _SiswaAppScaffoldState extends ConsumerState<SiswaAppScaffold> {
 
   Widget _buildSidebarProfileSection(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return BlocBuilder<SiswaProfileBloc, SiswaProfileState>(
       builder: (context, state) {
         String userName = 'Siswa';
@@ -506,14 +505,12 @@ class _SiswaAppScaffoldState extends ConsumerState<SiswaAppScaffold> {
 
   Widget _buildDrawer(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return Drawer(
       child: Column(
         children: [
           DrawerHeader(
-            decoration: BoxDecoration(
-              color: AppTheme.primaryPurple,
-            ),
+            decoration: BoxDecoration(color: AppTheme.primaryPurple),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.end,
@@ -542,10 +539,7 @@ class _SiswaAppScaffoldState extends ConsumerState<SiswaAppScaffold> {
                 ),
                 const Text(
                   'Platform Siswa',
-                  style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: 14,
-                  ),
+                  style: TextStyle(color: Colors.white70, fontSize: 14),
                 ),
               ],
             ),
@@ -733,11 +727,15 @@ class _SiswaAppScaffoldState extends ConsumerState<SiswaAppScaffold> {
     VoidCallback? onTap,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return ListTile(
       leading: Icon(
         icon,
-        color: iconColor ?? (isActive ? AppTheme.primaryPurple : (isDark ? Colors.grey[400] : Colors.grey[600])),
+        color:
+            iconColor ??
+            (isActive
+                ? AppTheme.primaryPurple
+                : (isDark ? Colors.grey[400] : Colors.grey[600])),
         size: 22,
       ),
       title: Text(

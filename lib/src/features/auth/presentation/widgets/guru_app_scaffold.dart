@@ -191,6 +191,17 @@ class _GuruAppScaffoldState extends ConsumerState<GuruAppScaffold> {
                     }
                   },
                 ),
+                _buildSidebarItem(
+                  icon: Icons.quiz,
+                  title: 'Quiz',
+                  isActive: widget.currentRoute == '/quiz',
+                  onTap: () {
+                    // TODO: Navigate to Quiz screen
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Fitur Quiz segera hadir!')),
+                    );
+                  },
+                ),
               ],
             ),
           ),
