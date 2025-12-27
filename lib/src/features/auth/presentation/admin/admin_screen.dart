@@ -10,6 +10,9 @@ import '../mapel/subjects_screen.dart';
 import '../kelas/classes_screen.dart';
 import '../pengumuman/pengumuman_screen.dart';
 import '../jadwal_mengajar/jadwal_mengajar_screen.dart';
+import 'reports_screen.dart';
+import 'analytics_screen.dart';
+import 'settings_screen.dart';
 import 'admin_bloc.dart';
 
 class AdminScreen extends StatefulWidget {
@@ -410,6 +413,39 @@ class _AdminScreenState extends State<AdminScreen> {
                   : () => _showOfflineMessage(),
               isOffline: !state.isOnline,
             ),
+            _buildStatCard(
+              title: 'Reports',
+              value: '📊',
+              subtitle: 'View detailed reports',
+              icon: Icons.assessment,
+              color: Colors.blue,
+              onTap: state.isOnline
+                  ? () => _navigateToReports()
+                  : () => _showOfflineMessage(),
+              isOffline: !state.isOnline,
+            ),
+            _buildStatCard(
+              title: 'Analytics',
+              value: '📈',
+              subtitle: 'View analytics',
+              icon: Icons.analytics,
+              color: Colors.deepPurple,
+              onTap: state.isOnline
+                  ? () => _navigateToAnalytics()
+                  : () => _showOfflineMessage(),
+              isOffline: !state.isOnline,
+            ),
+            _buildStatCard(
+              title: 'Settings',
+              value: '⚙️',
+              subtitle: 'System configuration',
+              icon: Icons.settings,
+              color: Colors.blueGrey,
+              onTap: state.isOnline
+                  ? () => _navigateToSettings()
+                  : () => _showOfflineMessage(),
+              isOffline: !state.isOnline,
+            ),
           ];
 
           return Column(
@@ -587,7 +623,9 @@ class _AdminScreenState extends State<AdminScreen> {
                       splashColor: AppTheme.primaryPurple.withOpacity(0.1),
                       child: ListTile(
                         leading: CircleAvatar(
-                          backgroundColor: AppTheme.primaryPurple.withOpacity(0.1),
+                          backgroundColor: AppTheme.primaryPurple.withOpacity(
+                            0.1,
+                          ),
                           child: Icon(
                             activity['icon'] as IconData,
                             color: AppTheme.primaryPurple,
@@ -646,9 +684,8 @@ class _AdminScreenState extends State<AdminScreen> {
                         children: [
                           Text(
                             'Activity Detail',
-                            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                ),
+                            style: Theme.of(context).textTheme.titleLarge
+                                ?.copyWith(fontWeight: FontWeight.bold),
                           ),
                           Text(
                             activity['time'] as String,
@@ -883,6 +920,24 @@ class _AdminScreenState extends State<AdminScreen> {
     Navigator.of(context).push(
       MaterialPageRoute(builder: (context) => const JadwalMengajarScreen()),
     );
+  }
+
+  void _navigateToReports() {
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (context) => const ReportsScreen()));
+  }
+
+  void _navigateToAnalytics() {
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (context) => const AnalyticsScreen()));
+  }
+
+  void _navigateToSettings() {
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (context) => const SettingsScreen()));
   }
 
   Widget _buildOfflineBanner(AdminState state) {

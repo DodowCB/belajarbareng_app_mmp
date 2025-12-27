@@ -563,6 +563,7 @@ class _QuizGuruScreenState extends ConsumerState<QuizGuruScreen> {
       'id_kelas': int.parse(data['id_kelas'].toString()),
       'id_mapel': int.parse(data['id_mapel'].toString()),
       'judul': data['judul'],
+      'waktu': int.parse(data['waktu'].toString()),
       'createdAt': FieldValue.serverTimestamp(),
     });
 
@@ -620,6 +621,7 @@ class QuizFormDialog extends StatefulWidget {
 class _QuizFormDialogState extends State<QuizFormDialog> {
   final formKey = GlobalKey<FormState>();
   final judulController = TextEditingController();
+  int waktuMenit = 30; // Default 30 menit
   String? selectedKelasId;
   String? selectedMapelId;
 
@@ -629,9 +631,18 @@ class _QuizFormDialogState extends State<QuizFormDialog> {
   void initState() {
     super.initState();
     if (widget.quizData != null) {
-      judulController.text = widget.quizData!['judul'];
-      selectedKelasId = widget.quizData!['id_kelas'];
-      selectedMapelId = widget.quizData!['id_mapel'];
+      judulController.text = widget.quizData!['judul'] ?? '';
+      // Safely parse waktu with null check
+      final waktuValue = widget.quizData!['waktu'];
+      if (waktuValue != null) {
+        if (waktuValue is int) {
+          waktuMenit = waktuValue;
+        } else if (waktuValue is String) {
+          waktuMenit = int.tryParse(waktuValue) ?? 30;
+        }
+      }
+      selectedKelasId = widget.quizData!['id_kelas']?.toString();
+      selectedMapelId = widget.quizData!['id_mapel']?.toString();
     }
   }
 
@@ -733,6 +744,8 @@ class _QuizFormDialogState extends State<QuizFormDialog> {
                         onChanged: (v) => setState(() => selectedMapelId = v),
                         validator: (v) => v == null ? 'Wajib dipilih' : null,
                       ),
+                      const SizedBox(height: 16),
+                      _buildTimerPicker(),
                       const SizedBox(height: 24),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -838,6 +851,7 @@ class _QuizFormDialogState extends State<QuizFormDialog> {
 
                       final data = {
                         'judul': judulController.text,
+                        'waktu': waktuMenit,
                         'id_kelas': selectedKelasId,
                         'id_mapel': selectedMapelId,
                         'soalList': soalList.map((s) => s.toMap()).toList(),
@@ -858,6 +872,190 @@ class _QuizFormDialogState extends State<QuizFormDialog> {
               ],
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTimerPicker() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            AppTheme.primaryPurple.withOpacity(0.1),
+            AppTheme.secondaryTeal.withOpacity(0.1),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: AppTheme.primaryPurple.withOpacity(0.3),
+          width: 2,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryPurple.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  Icons.timer,
+                  color: AppTheme.primaryPurple,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Text(
+                'Durasi Quiz',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          // Timer Display
+          Center(
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 20),
+              decoration: BoxDecoration(
+                color: isDark ? AppTheme.cardDark : Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppTheme.primaryPurple.withOpacity(0.2),
+                    blurRadius: 15,
+                    spreadRadius: 2,
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.access_time,
+                    size: 40,
+                    color: AppTheme.primaryPurple,
+                  ),
+                  const SizedBox(width: 16),
+                  Column(
+                    children: [
+                      Text(
+                        '$waktuMenit',
+                        style: TextStyle(
+                          fontSize: 48,
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.primaryPurple,
+                          height: 1,
+                        ),
+                      ),
+                      Text(
+                        'menit',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey[600],
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 24),
+          // Slider
+          SliderTheme(
+            data: SliderTheme.of(context).copyWith(
+              activeTrackColor: AppTheme.primaryPurple,
+              inactiveTrackColor: AppTheme.primaryPurple.withOpacity(0.2),
+              thumbColor: AppTheme.primaryPurple,
+              overlayColor: AppTheme.primaryPurple.withOpacity(0.2),
+              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 12),
+              overlayShape: const RoundSliderOverlayShape(overlayRadius: 24),
+            ),
+            child: Slider(
+              value: waktuMenit.toDouble(),
+              min: 5,
+              max: 180,
+              divisions: 35,
+              label: '$waktuMenit menit',
+              onChanged: (value) {
+                setState(() {
+                  waktuMenit = value.toInt();
+                });
+              },
+            ),
+          ),
+          // Quick Select Buttons
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              _buildQuickTimeButton(15),
+              _buildQuickTimeButton(30),
+              _buildQuickTimeButton(45),
+              _buildQuickTimeButton(60),
+              _buildQuickTimeButton(90),
+            ],
+          ),
+          const SizedBox(height: 12),
+          // Range Info
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                '5 min',
+                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+              ),
+              Text(
+                '180 min',
+                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildQuickTimeButton(int minutes) {
+    final isSelected = waktuMenit == minutes;
+
+    return InkWell(
+      onTap: () {
+        setState(() {
+          waktuMenit = minutes;
+        });
+      },
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? AppTheme.primaryPurple
+              : AppTheme.primaryPurple.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: AppTheme.primaryPurple.withOpacity(isSelected ? 1 : 0.3),
+            width: isSelected ? 2 : 1,
+          ),
+        ),
+        child: Text(
+          '${minutes}m',
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+            color: isSelected ? Colors.white : AppTheme.primaryPurple,
+          ),
         ),
       ),
     );

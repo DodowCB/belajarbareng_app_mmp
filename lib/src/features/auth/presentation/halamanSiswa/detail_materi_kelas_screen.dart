@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'dart:html' as html;
+import 'dart:ui_web' as ui_web;
 import '../../../../core/config/theme.dart';
 
 class DetailMateriKelasScreen extends StatelessWidget {
@@ -221,7 +223,6 @@ class DetailMateriKelasScreen extends StatelessWidget {
     for (var materiDoc in materiDocs) {
       final materiId = materiDoc.id;
       final materiData = materiDoc.data() as Map<String, dynamic>;
-
       // Ambil judul dan deskripsi dari materi
       final judulMateri =
           materiData['judul'] ?? materiData['title'] ?? 'Materi';
@@ -244,7 +245,6 @@ class DetailMateriKelasScreen extends StatelessWidget {
 
         for (var materiFileDoc in materiFilesQuery.docs) {
           final materiFileData = materiFileDoc.data();
-
           // Field di Firestore adalah 'id_files' bukan 'id_file', dan kemungkinan juga integer
           final idFilesValue = materiFileData['id_files'];
           final idFile = idFilesValue?.toString();
@@ -253,26 +253,44 @@ class DetailMateriKelasScreen extends StatelessWidget {
             try {
               final fileDoc = await FirebaseFirestore.instance
                   .collection('files')
-                  .doc(idFile)
+                  .doc(idFile.toString())
                   .get();
 
               if (fileDoc.exists) {
                 final fileData = fileDoc.data();
-
-                materiList.add({
-                  'materiId': materiId,
-                  'materiFileId': materiFileDoc.id,
-                  'fileId': idFile,
-                  'judulMateri': judulMateri,
-                  'deskripsiMateri': deskripsiMateri,
-                  'name': fileData?['name'] ?? 'File',
-                  'mimeType': fileData?['mimeType'] ?? '',
-                  'size': fileData?['size'] ?? 0,
-                  'uploadedAt': fileData?['uploadedAt'],
-                  'uploadedBy': fileData?['uploadedBy'] ?? '',
-                  'drive_file_id': fileData?['drive_file_id'] ?? '',
-                  'webViewLink': fileData?['webViewLink'],
-                });
+                // Get status and youtube_url from files collection
+                final status = fileData?['status'] ?? 'file';
+                final youtubeUrl = fileData?['url_youtube']?.toString();
+                // If status is youtube, add as YouTube entry
+                if (status == 'youtube' && youtubeUrl != null) {
+                  materiList.add({
+                    'materiId': materiId,
+                    'materiFileId': materiFileDoc.id,
+                    'fileId': idFile,
+                    'judulMateri': judulMateri,
+                    'deskripsiMateri': deskripsiMateri,
+                    'status': 'youtube',
+                    'youtubeUrl': youtubeUrl,
+                    'uploadedAt': fileData?['uploadedAt'],
+                  });
+                } else {
+                  // Add as file entry
+                  materiList.add({
+                    'materiId': materiId,
+                    'materiFileId': materiFileDoc.id,
+                    'fileId': idFile,
+                    'judulMateri': judulMateri,
+                    'deskripsiMateri': deskripsiMateri,
+                    'status': 'file',
+                    'name': fileData?['name'] ?? 'File',
+                    'mimeType': fileData?['mimeType'] ?? '',
+                    'size': fileData?['size'] ?? 0,
+                    'uploadedAt': fileData?['uploadedAt'],
+                    'uploadedBy': fileData?['uploadedBy'] ?? '',
+                    'drive_file_id': fileData?['drive_file_id'] ?? '',
+                    'webViewLink': fileData?['webViewLink'],
+                  });
+                }
               }
             } catch (e) {
               print('Error fetching file: $e');
@@ -298,6 +316,19 @@ class DetailMateriKelasScreen extends StatelessWidget {
   }) {
     final judulMateri = materi['judulMateri'] ?? 'Materi';
     final deskripsiMateri = materi['deskripsiMateri'] ?? '';
+    final status = materi['status'] ?? 'file';
+
+    // If YouTube, show YouTube card
+    if (status == 'youtube') {
+      return _buildYouTubeCard(
+        context: context,
+        materi: materi,
+        color: color,
+        isDark: isDark,
+      );
+    }
+
+    // Otherwise show file card
     final fileName = materi['name'] ?? 'File';
     final fileSize = _formatFileSize(materi['size'] ?? 0);
     final mimeType = materi['mimeType'] ?? '';
@@ -605,5 +636,346 @@ class DetailMateriKelasScreen extends StatelessWidget {
       ];
       return '${date.day} ${months[date.month - 1]} ${date.year}';
     }
+  }
+
+  Widget _buildYouTubeCard({
+    required BuildContext context,
+    required Map<String, dynamic> materi,
+    required Color color,
+    required bool isDark,
+  }) {
+    final judulMateri = materi['judulMateri'] ?? 'Materi';
+    final deskripsiMateri = materi['deskripsiMateri'] ?? '';
+    final youtubeUrl = materi['youtubeUrl'] ?? '';
+    final uploadedAt = materi['uploadedAt'] as Timestamp?;
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 16),
+      elevation: 3,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          gradient: LinearGradient(
+            colors: [Colors.red.withOpacity(0.05), Colors.transparent],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Judul Materi
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.red.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      Icons.play_circle_fill,
+                      color: Colors.red,
+                      size: 24,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          judulMateri,
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: isDark ? Colors.white : Colors.black87,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.red.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(
+                              color: Colors.red.withOpacity(0.3),
+                            ),
+                          ),
+                          child: const Text(
+                            'Video YouTube',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Colors.red,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              if (uploadedAt != null) ...[
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Icon(Icons.access_time, size: 14, color: Colors.grey[600]),
+                    const SizedBox(width: 6),
+                    Text(
+                      _formatDate(uploadedAt),
+                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                    ),
+                  ],
+                ),
+              ],
+              if (deskripsiMateri.isNotEmpty) ...[
+                const SizedBox(height: 16),
+                Divider(height: 1, color: Colors.grey[300]),
+                const SizedBox(height: 16),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(Icons.description, size: 16, color: Colors.grey[600]),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        deskripsiMateri,
+                        style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+              const SizedBox(height: 16),
+              // Watch Video Button
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    _showYouTubeVideoDialog(
+                      context,
+                      judulMateri,
+                      deskripsiMateri,
+                      youtubeUrl,
+                      isDark,
+                    );
+                  },
+                  icon: const Icon(Icons.play_circle, size: 20),
+                  label: const Text('Tonton Video'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showYouTubeVideoDialog(
+    BuildContext context,
+    String judul,
+    String deskripsi,
+    String youtubeUrl,
+    bool isDark,
+  ) {
+    showDialog(
+      context: context,
+      builder: (c) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: Container(
+          width: 800,
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Header
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.red.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      Icons.play_circle_fill,
+                      color: Colors.red,
+                      size: 28,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          judul,
+                          style: Theme.of(context).textTheme.titleLarge
+                              ?.copyWith(fontWeight: FontWeight.bold),
+                        ),
+                        const Text(
+                          'Video Pembelajaran',
+                          style: TextStyle(color: Colors.grey, fontSize: 14),
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.close),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              const Divider(),
+              const SizedBox(height: 16),
+              // YouTube Player
+              _buildYouTubePlayer(youtubeUrl),
+              const SizedBox(height: 16),
+              // Description
+              if (deskripsi.isNotEmpty)
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: isDark ? Colors.grey[800] : Colors.grey[100],
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.description,
+                            size: 20,
+                            color: isDark ? Colors.grey[400] : Colors.grey[600],
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Deskripsi',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                              color: isDark
+                                  ? Colors.grey[300]
+                                  : Colors.grey[800],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        deskripsi,
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: isDark ? Colors.grey[400] : Colors.grey[700],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              const SizedBox(height: 24),
+              // Close button
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text(
+                    'Tutup',
+                    style: TextStyle(color: Colors.grey[600]),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildYouTubePlayer(String youtubeUrl) {
+    // Extract video ID from YouTube URL
+    String? videoId = _extractYouTubeId(youtubeUrl);
+
+    if (videoId == null) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.red.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.red.withOpacity(0.3)),
+        ),
+        child: const Row(
+          children: [
+            Icon(Icons.error_outline, color: Colors.red),
+            SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'URL YouTube tidak valid',
+                style: TextStyle(color: Colors.red),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Create unique view ID
+    final viewId =
+        'youtube-player-$videoId-${DateTime.now().millisecondsSinceEpoch}';
+
+    // Register iframe view
+    ui_web.platformViewRegistry.registerViewFactory(viewId, (int viewId) {
+      final iframe = html.IFrameElement()
+        ..src = 'https://www.youtube.com/embed/$videoId'
+        ..style.border = 'none'
+        ..style.width = '100%'
+        ..style.height = '100%'
+        ..allow =
+            'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture'
+        ..allowFullscreen = true;
+      return iframe;
+    });
+
+    return Container(
+      height: 300,
+      decoration: BoxDecoration(
+        color: Colors.black,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: HtmlElementView(viewType: viewId),
+    );
+  }
+
+  String? _extractYouTubeId(String url) {
+    // Support formats:
+    // - https://www.youtube.com/watch?v=VIDEO_ID
+    // - https://youtu.be/VIDEO_ID
+    // - https://www.youtube.com/embed/VIDEO_ID
+
+    final RegExp regExp = RegExp(
+      r'(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})',
+      caseSensitive: false,
+    );
+
+    final match = regExp.firstMatch(url);
+    return match?.group(1);
   }
 }

@@ -602,11 +602,17 @@ class _DetailTugasKelasScreenState extends State<DetailTugasKelasScreen> {
             Divider(color: Colors.grey[300]),
             const SizedBox(height: 16),
             _buildSubmissionSection(tugas['tugasId'], siswaId),
-          ] else ...[
-            Divider(color: Colors.grey[300]),
-            const SizedBox(height: 16),
-            _buildUploadSection(context, tugas['tugasId'], siswaId, status),
+            const SizedBox(height: 24),
           ],
+          Divider(color: Colors.grey[300]),
+          const SizedBox(height: 16),
+          _buildUploadSection(
+            context,
+            tugas['tugasId'],
+            siswaId,
+            status,
+            isSubmitted,
+          ),
         ],
       ),
     );
@@ -633,7 +639,7 @@ class _DetailTugasKelasScreenState extends State<DetailTugasKelasScreen> {
         final fileIds = pengumpulanSnapshot.data!.docs
             .map((doc) => doc.data() as Map<String, dynamic>)
             .where((data) => data['file_id'] != null)
-            .map((data) => data['file_id'] as String)
+            .map((data) => data['file_id'].toString())
             .toList();
 
         if (fileIds.isEmpty) {
@@ -740,18 +746,42 @@ class _DetailTugasKelasScreenState extends State<DetailTugasKelasScreen> {
     String tugasId,
     String siswaId,
     String status,
+    bool isSubmitted,
   ) {
     final isTerlambat = status == 'Terlambat';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Kumpulkan Tugas',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        Text(
+          isSubmitted ? 'Ganti File Tugas' : 'Kumpulkan Tugas',
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 12),
-        if (isTerlambat) ...[
+        if (isSubmitted) ...[
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.blue.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.blue, width: 1),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.info_outline, color: Colors.blue, size: 20),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Upload file baru akan mengganti file yang sudah dikumpulkan',
+                    style: TextStyle(fontSize: 13, color: Colors.blue[700]),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+        ],
+        if (isTerlambat && !isSubmitted) ...[
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -796,6 +826,8 @@ class _DetailTugasKelasScreenState extends State<DetailTugasKelasScreen> {
               label: Text(
                 _isUploading
                     ? 'Mengupload...'
+                    : isSubmitted
+                    ? 'Pilih & Ganti File (PDF/ZIP)'
                     : 'Pilih & Upload File (PDF/ZIP)',
               ),
               style: ElevatedButton.styleFrom(
@@ -996,6 +1028,52 @@ class _DetailTugasKelasScreenState extends State<DetailTugasKelasScreen> {
         throw Exception('Gagal upload ke Google Drive');
       }
 
+      // Check if there's existing submission and delete it
+      final existingPengumpulan = await FirebaseFirestore.instance
+          .collection('pengumpulan')
+          .where('siswa_id', isEqualTo: int.parse(siswaId))
+          .where('tugas_id', isEqualTo: int.parse(tugasId))
+          .get();
+
+      // Delete old pengumpulan records and their files
+      for (var doc in existingPengumpulan.docs) {
+        final data = doc.data();
+        final oldFileId = data['file_id']?.toString();
+
+        // Delete old file from Google Drive and Firestore
+        if (oldFileId != null) {
+          // Get drive_file_id from pengumpulan_files
+          final fileDoc = await FirebaseFirestore.instance
+              .collection('pengumpulan_files')
+              .doc(oldFileId)
+              .get();
+
+          if (fileDoc.exists) {
+            final fileData = fileDoc.data();
+            final driveFileIdToDelete = fileData?['drive_file_id']?.toString();
+
+            // Delete from Google Drive
+            if (driveFileIdToDelete != null) {
+              try {
+                await _driveService.deleteFile(driveFileIdToDelete);
+                debugPrint(
+                  '✅ Deleted old file from Google Drive: $driveFileIdToDelete',
+                );
+              } catch (e) {
+                debugPrint('⚠️ Failed to delete file from Drive: $e');
+                // Continue even if Drive deletion fails
+              }
+            }
+
+            // Delete file record from Firestore
+            await fileDoc.reference.delete();
+          }
+        }
+
+        // Delete pengumpulan record
+        await doc.reference.delete();
+      }
+
       // Get next ID for pengumpulan_files (string number: "1", "2", "3", etc)
       final filesSnapshot = await FirebaseFirestore.instance
           .collection('pengumpulan_files')
@@ -1043,9 +1121,15 @@ class _DetailTugasKelasScreenState extends State<DetailTugasKelasScreen> {
 
       if (context.mounted) {
         Navigator.pop(context); // Close bottom sheet
+
+        final isReplacing = existingPengumpulan.docs.isNotEmpty;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Berhasil mengumpulkan tugas: ${file.name}'),
+            content: Text(
+              isReplacing
+                  ? 'Berhasil mengganti file tugas: ${file.name}'
+                  : 'Berhasil mengumpulkan tugas: ${file.name}',
+            ),
             backgroundColor: AppTheme.accentGreen,
           ),
         );

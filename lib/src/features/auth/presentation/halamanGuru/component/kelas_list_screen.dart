@@ -13,102 +13,74 @@ class KelasListScreen extends StatefulWidget {
 class _KelasListScreenState extends State<KelasListScreen> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   String _searchQuery = '';
-  List<Map<String, dynamic>> _kelasList = [];
-  bool _isLoading = true;
 
-  @override
-  void initState() {
-    super.initState();
-    _loadKelas();
-  }
+  Stream<List<Map<String, dynamic>>> _kelasStream() {
+    final guruId = userProvider.userId ?? '';
 
-  Future<void> _loadKelas() async {
-    setState(() => _isLoading = true);
+    return _firestore
+        .collection('kelas_ngajar')
+        .where('id_guru', isEqualTo: guruId)
+        .snapshots()
+        .asyncMap((kelasNgajarSnapshot) async {
+          final List<Map<String, dynamic>> kelasList = [];
 
-    try {
-      final guruId = userProvider.userId ?? '';
+          for (final doc in kelasNgajarSnapshot.docs) {
+            final data = doc.data();
+            final kelasId = data['id_kelas']?.toString() ?? '';
+            final mapelId = data['id_mapel']?.toString() ?? '';
 
-      // Get kelas ngajar untuk guru ini
-      final kelasNgajarSnapshot = await _firestore
-          .collection('kelas_ngajar')
-          .where('id_guru', isEqualTo: guruId)
-          .get();
-
-      final List<Map<String, dynamic>> kelasList = [];
-
-      for (final doc in kelasNgajarSnapshot.docs) {
-        final data = doc.data();
-        final kelasId = data['id_kelas']?.toString() ?? '';
-        final mapelId = data['id_mapel']?.toString() ?? '';
-
-        // Get kelas detail
-        final kelasDoc = await _firestore
-            .collection('kelas')
-            .doc(kelasId)
-            .get();
-
-        if (kelasDoc.exists) {
-          final kelasData = kelasDoc.data();
-
-          // Get mapel detail
-          final mapelDoc = await _firestore
-              .collection('mapel')
-              .doc(mapelId)
-              .get();
-          final mapelData = mapelDoc.data();
-
-          // Get jumlah siswa
-          final siswaKelasSnapshot = await _firestore
-              .collection('siswa_kelas')
-              .where('kelas_id', isEqualTo: kelasId)
-              .get();
-
-          // Get guru (wali kelas) info
-          String waliKelasName = 'Belum ada wali kelas';
-          if (kelasData?['id_guru'] != null) {
-            final guruDoc = await _firestore
-                .collection('guru')
-                .doc(kelasData!['id_guru'].toString())
+            // Get kelas detail
+            final kelasDoc = await _firestore
+                .collection('kelas')
+                .doc(kelasId)
                 .get();
-            if (guruDoc.exists) {
-              waliKelasName = guruDoc.data()?['nama'] ?? 'Tidak diketahui';
+
+            if (kelasDoc.exists) {
+              final kelasData = kelasDoc.data();
+
+              // Get mapel detail
+              final mapelDoc = await _firestore
+                  .collection('mapel')
+                  .doc(mapelId)
+                  .get();
+              final mapelData = mapelDoc.data();
+
+              // Get jumlah siswa
+              final siswaKelasSnapshot = await _firestore
+                  .collection('siswa_kelas')
+                  .where('kelas_id', isEqualTo: kelasId)
+                  .get();
+
+              // Get wali kelas dari field nama_guru di collection kelas
+              final waliKelasName =
+                  kelasData?['nama_guru'] ?? 'Belum ada wali kelas';
+
+              kelasList.add({
+                'id': kelasId,
+                'kelasId': kelasId,
+                'namaKelas': kelasData?['nama_kelas'] ?? 'Kelas $kelasId',
+                'namaMapel': mapelData?['namaMapel'] ?? 'Mata Pelajaran',
+                'jumlahSiswa': siswaKelasSnapshot.docs.length,
+                'status': kelasData?['status'] ?? false,
+                'waliKelas': waliKelasName,
+                'hari': data['hari'] ?? '',
+                'jam': data['jam'] ?? '',
+                'semester': kelasData?['semester'] ?? '',
+              });
             }
           }
 
-          kelasList.add({
-            'id': kelasId,
-            'kelasId': kelasId,
-            'namaKelas': kelasData?['nama_kelas'] ?? 'Kelas $kelasId',
-            'namaMapel': mapelData?['namaMapel'] ?? 'Mata Pelajaran',
-            'jumlahSiswa': siswaKelasSnapshot.docs.length,
-            'status': kelasData?['status'] ?? false,
-            'waliKelas': waliKelasName,
-            'hari': data['hari'] ?? '',
-            'jam': data['jam'] ?? '',
-            'semester': kelasData?['semester'] ?? '',
-          });
-        }
-      }
-
-      setState(() {
-        _kelasList = kelasList;
-        _isLoading = false;
-      });
-    } catch (e) {
-      setState(() => _isLoading = false);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
-        );
-      }
-    }
+          return kelasList;
+        });
   }
 
-  List<Map<String, dynamic>> get _filteredKelasList {
-    if (_searchQuery.isEmpty) return _kelasList;
+  List<Map<String, dynamic>> _filterKelasList(
+    List<Map<String, dynamic>> kelasList,
+  ) {
+    if (_searchQuery.isEmpty) return kelasList;
 
     final q = _searchQuery.toLowerCase();
-    return _kelasList.where((kelas) {
+    return kelasList.where((kelas) {
       return '${kelas['namaKelas']} ${kelas['namaMapel']} ${kelas['waliKelas']}'
           .toLowerCase()
           .contains(q);
@@ -128,13 +100,6 @@ class _KelasListScreenState extends State<KelasListScreen> {
         backgroundColor: AppTheme.primaryPurple,
         foregroundColor: Colors.white,
         elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _loadKelas,
-            tooltip: 'Refresh',
-          ),
-        ],
       ),
       body: Column(
         children: [
@@ -159,10 +124,42 @@ class _KelasListScreenState extends State<KelasListScreen> {
 
           // Content
           Expanded(
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : _filteredKelasList.isEmpty
-                ? Center(
+            child: StreamBuilder<List<Map<String, dynamic>>>(
+              stream: _kelasStream(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                if (snapshot.hasError) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.error_outline,
+                          size: 64,
+                          color: Colors.red[400],
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Error: ${snapshot.error}',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.red[600],
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  );
+                }
+
+                final kelasList = snapshot.data ?? [];
+                final filteredList = _filterKelasList(kelasList);
+
+                if (filteredList.isEmpty) {
+                  return Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -179,15 +176,19 @@ class _KelasListScreenState extends State<KelasListScreen> {
                         ),
                       ],
                     ),
-                  )
-                : ListView.builder(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: _filteredKelasList.length,
-                    itemBuilder: (context, index) {
-                      final kelas = _filteredKelasList[index];
-                      return _buildKelasCard(kelas);
-                    },
-                  ),
+                  );
+                }
+
+                return ListView.builder(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: filteredList.length,
+                  itemBuilder: (context, index) {
+                    final kelas = filteredList[index];
+                    return _buildKelasCard(kelas);
+                  },
+                );
+              },
+            ),
           ),
         ],
       ),

@@ -86,7 +86,10 @@ dependencies:
   file_picker: ^8.0.0+1
   excel: ^4.0.3
 
-  # 8. Connectivity & Local Storage for Offline Support
+  # 8. Charts & Analytics
+  fl_chart: ^0.69.0 # For charts and graphs
+
+  # 9. Connectivity & Local Storage for Offline Support
   connectivity_plus: ^6.0.5
   tostore: ^1.8.8
   shared_preferences: ^2.2.2 # For web platform storage

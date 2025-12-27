@@ -15,10 +15,6 @@ class MateriGuruDialogs {
   ) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    // Debug: Print status untuk memastikan data
-    debugPrint('Preview Dialog - Status: ${details['status']}');
-    debugPrint('Preview Dialog - YouTube URL: ${details['youtubeUrl']}');
-
     showDialog(
       context: context,
       builder: (c) => Dialog(

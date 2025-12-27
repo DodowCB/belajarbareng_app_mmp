@@ -10,6 +10,7 @@ import 'blocs/blocs.dart';
 import 'tugas_siswa_screen.dart';
 import 'quiz_siswa_screen.dart';
 import 'kelas_siswa_screen.dart';
+import 'quiz_kelas_siswa_screen.dart';
 import 'kalender_siswa_screen.dart';
 import 'semua_jadwal_screen.dart';
 import 'pengumuman_screen.dart';
@@ -244,6 +245,18 @@ class _HalamanSiswaScreenState extends ConsumerState<HalamanSiswaScreen> {
                       context,
                       MaterialPageRoute(
                         builder: (context) => const KelasSiswaScreen(),
+                      ),
+                    );
+                  },
+                ),
+                _buildSidebarItem(
+                  icon: Icons.quiz,
+                  title: 'Quiz',
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const QuizKelasSiswaScreen(),
                       ),
                     );
                   },
