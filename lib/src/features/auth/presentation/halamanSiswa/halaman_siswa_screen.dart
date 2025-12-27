@@ -1071,18 +1071,13 @@ class _HalamanSiswaScreenState extends ConsumerState<HalamanSiswaScreen> {
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
           .collection('pengumpulan')
-          .where('siswa_id', isEqualTo: siswaId)
+          .where('siswa_id', isEqualTo: int.parse(siswaId))
           .snapshots(),
       builder: (context, pengumpulanSnapshot) {
         // Hitung jumlah tugas terkumpul
         final tugasSelesai = pengumpulanSnapshot.hasData
             ? pengumpulanSnapshot.data!.docs.length
             : 0;
-
-        print('DEBUG TUGAS SELESAI (StreamBuilder):');
-        print('- siswa_id: $siswaId');
-        print('- tugasSelesai: $tugasSelesai');
-        print('- hasData: ${pengumpulanSnapshot.hasData}');
 
         return LayoutBuilder(
           builder: (context, constraints) {

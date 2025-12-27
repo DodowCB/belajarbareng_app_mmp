@@ -317,8 +317,8 @@ class _DetailTugasKelasScreenState extends State<DetailTugasKelasScreen> {
       // Check submission status
       final pengumpulanQuery = await FirebaseFirestore.instance
           .collection('pengumpulan')
-          .where('siswa_id', isEqualTo: siswaId)
-          .where('tugas_id', isEqualTo: tugasId)
+          .where('siswa_id', isEqualTo: int.parse(siswaId))
+          .where('tugas_id', isEqualTo: int.parse(tugasId))
           .limit(1)
           .get();
 
@@ -617,8 +617,8 @@ class _DetailTugasKelasScreenState extends State<DetailTugasKelasScreen> {
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
           .collection('pengumpulan')
-          .where('siswa_id', isEqualTo: siswaId)
-          .where('tugas_id', isEqualTo: tugasId)
+          .where('siswa_id', isEqualTo: int.parse(siswaId))
+          .where('tugas_id', isEqualTo: int.parse(tugasId))
           .snapshots(),
       builder: (context, pengumpulanSnapshot) {
         if (!pengumpulanSnapshot.hasData) {
@@ -1030,9 +1030,9 @@ class _DetailTugasKelasScreenState extends State<DetailTugasKelasScreen> {
           .collection('pengumpulan')
           .doc(nextPengumpulanId)
           .set({
-            'siswa_id': siswaId,
-            'tugas_id': tugasId,
-            'file_id': nextFileId,
+            'siswa_id': int.parse(siswaId),
+            'tugas_id': int.parse(tugasId),
+            'file_id': int.parse(nextFileId),
             'createdAt': FieldValue.serverTimestamp(),
           });
 
