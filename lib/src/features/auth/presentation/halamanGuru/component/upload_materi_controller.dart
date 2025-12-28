@@ -3,7 +3,6 @@ import 'package:file_picker/file_picker.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../../../core/services/google_drive_service.dart';
 import '../../../../../core/providers/user_provider.dart';
-import 'dart:html' as html;
 import 'dart:typed_data';
 
 /// Controller untuk menangani business logic upload materi
@@ -151,78 +150,7 @@ class UploadMateriController {
     }
   }
 
-  Future<void> handleDroppedFiles({
-    required List<html.File> files,
-    required Function(PlatformFile) uploadFile,
-  }) async {
-    try {
-      for (final file in files) {
-        final allowedExtensions = [
-          'pdf',
-          'doc',
-          'docx',
-          'ppt',
-          'pptx',
-          'xls',
-          'xlsx',
-          'jpg',
-          'jpeg',
-          'png',
-          'mp4',
-          'zip',
-          'txt',
-        ];
-
-        final fileName = file.name.toLowerCase();
-        final isAllowed = allowedExtensions.any(
-          (ext) => fileName.endsWith('.$ext'),
-        );
-
-        if (!isAllowed) {
-          if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('File type not supported: ${file.name}'),
-                backgroundColor: Colors.orange,
-              ),
-            );
-          }
-          continue;
-        }
-
-        final reader = html.FileReader();
-        reader.readAsArrayBuffer(file);
-        await reader.onLoadEnd.first;
-
-        final bytes = reader.result as Uint8List;
-        final platformFile = PlatformFile(
-          name: file.name,
-          size: file.size,
-          bytes: bytes,
-        );
-
-        await uploadFile(platformFile);
-      }
-
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${files.length} file(s) uploaded successfully!'),
-            backgroundColor: Colors.green,
-          ),
-        );
-      }
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to upload files: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
-  }
+  // handleDroppedFiles removed - use file_picker package instead for cross-platform support
 
   // ============= FILE MANAGEMENT =============
 

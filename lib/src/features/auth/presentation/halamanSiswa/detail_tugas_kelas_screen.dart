@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'dart:html' as html;
+import 'package:file_picker/file_picker.dart';
 import '../../../../core/config/theme.dart';
 import '../../../../core/providers/user_provider.dart';
 import '../../../../core/services/google_drive_service.dart';
@@ -920,20 +920,19 @@ class _DetailTugasKelasScreenState extends State<DetailTugasKelasScreen> {
         }
       }
 
-      // For Flutter Web, use HTML file input as it's more reliable
-      final uploadInput = html.FileUploadInputElement();
-      uploadInput.accept = '.pdf,.zip'; // Only accept PDF and ZIP
-      uploadInput.click();
+      // Use file_picker for cross-platform file selection
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf', 'zip'],
+        withData: true,
+      );
 
-      await uploadInput.onChange.first;
-
-      final files = uploadInput.files;
-      if (files == null || files.isEmpty) {
+      if (result == null || result.files.isEmpty) {
         debugPrint('No file selected');
         return;
       }
 
-      final file = files[0];
+      final file = result.files.first;
       final fileName = file.name.toLowerCase();
 
       // Check file extension
@@ -952,15 +951,10 @@ class _DetailTugasKelasScreenState extends State<DetailTugasKelasScreen> {
         return;
       }
 
-      // Read file as bytes using FileReader
-      final reader = html.FileReader();
-      reader.readAsArrayBuffer(file);
+      // Get file bytes
+      final fileBytes = file.bytes;
 
-      await reader.onLoad.first;
-
-      final fileBytes = reader.result as List<int>;
-
-      if (fileBytes.isEmpty) {
+      if (fileBytes == null || fileBytes.isEmpty) {
         if (context.mounted) {
           ScaffoldMessenger.of(
             context,

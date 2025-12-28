@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'dart:html' as html;
-import 'dart:ui_web' as ui_web;
-import '../../../../core/config/theme.dart';
 
 class DetailMateriKelasScreen extends StatelessWidget {
   final String namaMapel;
@@ -845,7 +842,7 @@ class DetailMateriKelasScreen extends StatelessWidget {
               const Divider(),
               const SizedBox(height: 16),
               // YouTube Player
-              _buildYouTubePlayer(youtubeUrl),
+              _buildYouTubePlayer(context, youtubeUrl),
               const SizedBox(height: 16),
               // Description
               if (deskripsi.isNotEmpty)
@@ -909,7 +906,7 @@ class DetailMateriKelasScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildYouTubePlayer(String youtubeUrl) {
+  Widget _buildYouTubePlayer(BuildContext context, String youtubeUrl) {
     // Extract video ID from YouTube URL
     String? videoId = _extractYouTubeId(youtubeUrl);
 
@@ -936,31 +933,56 @@ class DetailMateriKelasScreen extends StatelessWidget {
       );
     }
 
-    // Create unique view ID
-    final viewId =
-        'youtube-player-$videoId-${DateTime.now().millisecondsSinceEpoch}';
+    // For mobile platforms, show a thumbnail with play button
+    return GestureDetector(
+      onTap: () async {
+        try {
+          final url = Uri.parse('https://www.youtube.com/watch?v=$videoId');
+          // Try to launch with external application first
+          final launched = await launchUrl(
+            url,
+            mode: LaunchMode.externalApplication,
+          );
 
-    // Register iframe view
-    ui_web.platformViewRegistry.registerViewFactory(viewId, (int viewId) {
-      final iframe = html.IFrameElement()
-        ..src = 'https://www.youtube.com/embed/$videoId'
-        ..style.border = 'none'
-        ..style.width = '100%'
-        ..style.height = '100%'
-        ..allow =
-            'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture'
-        ..allowFullscreen = true;
-      return iframe;
-    });
-
-    return Container(
-      height: 300,
-      decoration: BoxDecoration(
-        color: Colors.black,
-        borderRadius: BorderRadius.circular(12),
+          if (!launched) {
+            // Fallback to platform default if external app fails
+            await launchUrl(url, mode: LaunchMode.platformDefault);
+          }
+        } catch (e) {
+          // Show error message if launching fails
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Tidak dapat membuka video YouTube: $e'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+        }
+      },
+      child: Container(
+        height: 300,
+        decoration: BoxDecoration(
+          color: Colors.black,
+          borderRadius: BorderRadius.circular(12),
+          image: DecorationImage(
+            image: NetworkImage(
+              'https://img.youtube.com/vi/$videoId/hqdefault.jpg',
+            ),
+            fit: BoxFit.cover,
+          ),
+        ),
+        child: Center(
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.red,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(Icons.play_arrow, color: Colors.white, size: 48),
+          ),
+        ),
       ),
-      clipBehavior: Clip.antiAlias,
-      child: HtmlElementView(viewType: viewId),
     );
   }
 

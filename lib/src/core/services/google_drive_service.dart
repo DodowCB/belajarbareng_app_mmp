@@ -25,7 +25,9 @@ class GoogleDriveService {
     final options = GoogleDriveOptions.instance;
 
     _googleSignIn = GoogleSignIn(
-      clientId: options.currentClientId,
+      // WORKAROUND: Pakai serverClientId untuk Android
+      // Karena Android OAuth Client belum tersedia di google-services.json
+      serverClientId: options.webClientId,
       scopes: options.scopes,
     );
 

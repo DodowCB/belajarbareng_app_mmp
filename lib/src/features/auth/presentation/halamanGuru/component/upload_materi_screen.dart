@@ -5,7 +5,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../../core/services/google_drive_service.dart';
 import '../../../../../core/config/theme.dart';
 import '../../../../../core/providers/user_provider.dart';
-import 'dart:html' as html;
 import 'dart:typed_data';
 
 class UploadMateriScreen extends ConsumerStatefulWidget {
@@ -38,7 +37,6 @@ class _UploadMateriScreenState extends ConsumerState<UploadMateriScreen> {
     super.initState();
     _initializeGoogleDrive();
     _loadKelasAndMapel();
-    _setupDragAndDrop();
   }
 
   @override
@@ -46,120 +44,6 @@ class _UploadMateriScreenState extends ConsumerState<UploadMateriScreen> {
     _judulController.dispose();
     _deskripsiController.dispose();
     super.dispose();
-  }
-
-  void _setupDragAndDrop() {
-    // Setup drag and drop for web
-    final dropZone = html.document.body;
-
-    dropZone?.onDragOver.listen((event) {
-      event.preventDefault();
-      if (mounted && _isSignedIn) {
-        setState(() => _isDraggingOver = true);
-      }
-    });
-
-    dropZone?.onDragLeave.listen((event) {
-      if (mounted) {
-        setState(() => _isDraggingOver = false);
-      }
-    });
-
-    dropZone?.onDrop.listen((event) async {
-      event.preventDefault();
-      if (mounted) {
-        setState(() => _isDraggingOver = false);
-      }
-
-      if (!_isSignedIn) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Please sign in to Google Drive first'),
-            backgroundColor: Colors.orange,
-          ),
-        );
-        return;
-      }
-
-      final files = event.dataTransfer?.files;
-      if (files != null && files.isNotEmpty) {
-        await _handleDroppedFiles(files);
-      }
-    });
-  }
-
-  Future<void> _handleDroppedFiles(List<html.File> files) async {
-    try {
-      for (final file in files) {
-        // Check file extension
-        final allowedExtensions = [
-          'pdf',
-          'doc',
-          'docx',
-          'ppt',
-          'pptx',
-          'xls',
-          'xlsx',
-          'jpg',
-          'jpeg',
-          'png',
-          'mp4',
-          'zip',
-          'txt',
-        ];
-
-        final fileName = file.name.toLowerCase();
-        final isAllowed = allowedExtensions.any(
-          (ext) => fileName.endsWith('.$ext'),
-        );
-
-        if (!isAllowed) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('File type not supported: ${file.name}'),
-                backgroundColor: Colors.orange,
-              ),
-            );
-          }
-          continue;
-        }
-
-        // Read file as bytes
-        final reader = html.FileReader();
-        reader.readAsArrayBuffer(file);
-        await reader.onLoadEnd.first;
-
-        final bytes = reader.result as Uint8List;
-
-        // Create PlatformFile object
-        final platformFile = PlatformFile(
-          name: file.name,
-          size: file.size,
-          bytes: bytes,
-        );
-
-        await _uploadSingleFile(platformFile);
-      }
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${files.length} file(s) uploaded successfully!'),
-            backgroundColor: Colors.green,
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to upload files: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
   }
 
   Future<void> _initializeGoogleDrive() async {
@@ -312,34 +196,11 @@ class _UploadMateriScreenState extends ConsumerState<UploadMateriScreen> {
 
       debugPrint('Showing file picker...');
 
-      // For Flutter Web, use HTML file input as it's more reliable
-      final uploadInput = html.FileUploadInputElement();
-      uploadInput.multiple = true;
-      uploadInput.accept =
-          '.pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.jpg,.jpeg,.png,.mp4,.zip,.txt';
-
-      uploadInput.click();
-
-      await uploadInput.onChange.first;
-
-      final files = uploadInput.files;
-      if (files == null || files.isEmpty) {
-        debugPrint('No files selected');
-        return;
-      }
-
-      debugPrint('Files selected: ${files.length}');
-
-      // Upload files one by one with progress tracking
-      int successCount = 0;
-      int failCount = 0;
-
-      for (final file in files) {
-        debugPrint('Processing: ${file.name}');
-        debugPrint('File size: ${file.size} bytes');
-
-        // Check file extension
-        final allowedExtensions = [
+      // Use file_picker for cross-platform support
+      final result = await FilePicker.platform.pickFiles(
+        allowMultiple: true,
+        type: FileType.custom,
+        allowedExtensions: [
           'pdf',
           'doc',
           'docx',
@@ -353,62 +214,45 @@ class _UploadMateriScreenState extends ConsumerState<UploadMateriScreen> {
           'mp4',
           'zip',
           'txt',
-        ];
+        ],
+        withData: true,
+      );
 
-        final fileName = file.name.toLowerCase();
-        final isAllowed = allowedExtensions.any(
-          (ext) => fileName.endsWith('.$ext'),
-        );
+      if (result == null || result.files.isEmpty) {
+        debugPrint('No files selected');
+        return;
+      }
 
-        if (!isAllowed) {
-          debugPrint('❌ File type not supported: ${file.name}');
-          failCount++;
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('File type not supported: ${file.name}'),
-                backgroundColor: Colors.orange,
-              ),
-            );
-          }
-          continue;
-        }
+      debugPrint('Files selected: ${result.files.length}');
 
-        // Read file as bytes using FileReader
-        final reader = html.FileReader();
-        reader.readAsArrayBuffer(file);
+      // Upload files one by one with progress tracking
+      int successCount = 0;
+      int failCount = 0;
 
-        // Wait for the file to be read
-        await reader.onLoadEnd.first;
+      for (final platformFile in result.files) {
+        debugPrint('Processing: ${platformFile.name}');
+        debugPrint('File size: ${platformFile.size} bytes');
 
-        if (reader.result == null) {
-          debugPrint('❌ Failed to read file bytes: ${file.name}');
+        if (platformFile.bytes == null) {
+          debugPrint('❌ Failed to read file bytes: ${platformFile.name}');
           failCount++;
           continue;
         }
 
-        final bytes = reader.result as Uint8List;
-        debugPrint('✓ File bytes loaded: ${bytes.length} bytes');
-
-        // Create PlatformFile for compatibility
-        final platformFile = PlatformFile(
-          name: file.name,
-          size: file.size,
-          bytes: bytes,
-        );
+        debugPrint('✓ File bytes loaded: ${platformFile.bytes!.length} bytes');
 
         try {
           await _uploadSingleFile(platformFile);
           successCount++;
-          debugPrint('✓ Successfully uploaded: ${file.name}');
+          debugPrint('✓ Successfully uploaded: ${platformFile.name}');
         } catch (e) {
-          debugPrint('❌ Failed to upload ${file.name}: $e');
+          debugPrint('❌ Failed to upload ${platformFile.name}: $e');
           failCount++;
 
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text('Failed to upload ${file.name}: $e'),
+                content: Text('Failed to upload ${platformFile.name}: $e'),
                 backgroundColor: Colors.red,
                 duration: const Duration(seconds: 3),
               ),

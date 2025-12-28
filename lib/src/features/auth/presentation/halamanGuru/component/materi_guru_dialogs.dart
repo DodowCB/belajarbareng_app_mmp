@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'dart:html' as html;
-import 'dart:ui_web' as ui_web;
+import 'package:file_picker/file_picker.dart';
 import '../../../../../core/config/theme.dart';
 import '../../../../../core/services/google_drive_service.dart';
 
@@ -406,19 +405,24 @@ class MateriGuruDialogs {
                                       ? null
                                       : () async {
                                           try {
-                                            // Buat file input element
-                                            final uploadInput =
-                                                html.FileUploadInputElement();
-                                            uploadInput.accept = '.pdf,.zip';
-                                            uploadInput.click();
+                                            // Use file_picker for cross-platform support
+                                            final result = await FilePicker
+                                                .platform
+                                                .pickFiles(
+                                                  type: FileType.custom,
+                                                  allowedExtensions: [
+                                                    'pdf',
+                                                    'zip',
+                                                  ],
+                                                  withData: true,
+                                                );
 
-                                            // Tunggu user memilih file
-                                            await uploadInput.onChange.first;
-                                            final files = uploadInput.files;
-                                            if (files == null || files.isEmpty)
+                                            if (result == null ||
+                                                result.files.isEmpty) {
                                               return;
+                                            }
 
-                                            final file = files[0];
+                                            final file = result.files.first;
 
                                             // Validasi ukuran file (max 50MB)
                                             if (file.size > 50 * 1024 * 1024) {
@@ -441,14 +445,16 @@ class MateriGuruDialogs {
                                               uploadProgress = 0.0;
                                             });
 
-                                            // Baca file sebagai bytes
-                                            final reader = html.FileReader();
-                                            reader.readAsArrayBuffer(file);
-                                            await reader.onLoadEnd.first;
+                                            // Get file bytes
+                                            final bytes = file.bytes;
+                                            if (bytes == null) {
+                                              throw Exception(
+                                                'Failed to read file',
+                                              );
+                                            }
 
                                             setState(() {
-                                              selectedFileBytes =
-                                                  reader.result as List<int>;
+                                              selectedFileBytes = bytes;
                                               uploadProgress = 1.0;
                                               isUploadingFile = false;
                                             });
@@ -759,31 +765,49 @@ class MateriGuruDialogs {
       );
     }
 
-    // Create unique view ID
-    final viewId =
-        'youtube-player-$videoId-${DateTime.now().millisecondsSinceEpoch}';
+    // For mobile platforms, show a thumbnail with play button
+    return GestureDetector(
+      onTap: () async {
+        try {
+          final url = Uri.parse('https://www.youtube.com/watch?v=$videoId');
+          // Try to launch with external application first
+          final launched = await launchUrl(
+            url,
+            mode: LaunchMode.externalApplication,
+          );
 
-    // Register iframe view
-    ui_web.platformViewRegistry.registerViewFactory(viewId, (int viewId) {
-      final iframe = html.IFrameElement()
-        ..src = 'https://www.youtube.com/embed/$videoId'
-        ..style.border = 'none'
-        ..style.width = '100%'
-        ..style.height = '100%'
-        ..allow =
-            'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture'
-        ..allowFullscreen = true;
-      return iframe;
-    });
-
-    return Container(
-      height: 300,
-      decoration: BoxDecoration(
-        color: Colors.black,
-        borderRadius: BorderRadius.circular(12),
+          if (!launched) {
+            // Fallback to platform default if external app fails
+            await launchUrl(url, mode: LaunchMode.platformDefault);
+          }
+        } catch (e) {
+          // Silent fail - just print to debug console
+          debugPrint('Failed to open YouTube video: $e');
+        }
+      },
+      child: Container(
+        height: 300,
+        decoration: BoxDecoration(
+          color: Colors.black,
+          borderRadius: BorderRadius.circular(12),
+          image: DecorationImage(
+            image: NetworkImage(
+              'https://img.youtube.com/vi/$videoId/hqdefault.jpg',
+            ),
+            fit: BoxFit.cover,
+          ),
+        ),
+        child: Center(
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.red,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(Icons.play_arrow, color: Colors.white, size: 48),
+          ),
+        ),
       ),
-      clipBehavior: Clip.antiAlias,
-      child: HtmlElementView(viewType: viewId),
     );
   }
 

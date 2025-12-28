@@ -298,7 +298,10 @@ class _TugasListScreenState extends State<TugasListScreen>
                   try {
                     final uri = Uri.parse(fileUrl);
                     if (await canLaunchUrl(uri)) {
-                      await launchUrl(uri, mode: LaunchMode.externalApplication);
+                      await launchUrl(
+                        uri,
+                        mode: LaunchMode.externalApplication,
+                      );
                       downloadedCount++;
                     }
                   } catch (e) {

@@ -1,0 +1,127 @@
+{
+  "project_info": {
+    "project_number": "1018894742415",
+    "firebase_url": "https://belajarbarengflutterproject-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "belajarbarengflutterproject",
+    "storage_bucket": "belajarbarengflutterproject.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1018894742415:android:23f79219b84d431a9c51fa",
+        "android_client_info": {
+          "package_name": "com.example.belajarbareng_app_mmp"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1018894742415-rh6e6t6tb7sqoiu1fg49r6hmpkhoedbn.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC10KRHKDAXSQaKfMk54R_ZFNNggC8CzyM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1018894742415-rh6e6t6tb7sqoiu1fg49r6hmpkhoedbn.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "1018894742415-32bp7obc68dqqduq8drdcmdne58sk25f.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.belajarbarengAppMmp"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1018894742415:android:499c550db37b63769c51fa",
+        "android_client_info": {
+          "package_name": "com.example.belajarbareng_app_mmp"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1018894742415-rh6e6t6tb7sqoiu1fg49r6hmpkhoedbn.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC10KRHKDAXSQaKfMk54R_ZFNNggC8CzyM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1018894742415-rh6e6t6tb7sqoiu1fg49r6hmpkhoedbn.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "1018894742415-32bp7obc68dqqduq8drdcmdne58sk25f.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.belajarbarengAppMmp"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1018894742415:android:1744d0aa449b84219c51fa",
+        "android_client_info": {
+          "package_name": "com.example.firebasetutorial"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1018894742415-ohtgr4krg9koqe2to2ijnmpnsj9m3krr.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.belajarbareng_app_mmp",
+            "certificate_hash": "5ca8d9dca3ce1b5fb5a9e83bc3e50b7a47669bed"
+          }
+        },
+        {
+          "client_id": "1018894742415-rh6e6t6tb7sqoiu1fg49r6hmpkhoedbn.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC10KRHKDAXSQaKfMk54R_ZFNNggC8CzyM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1018894742415-rh6e6t6tb7sqoiu1fg49r6hmpkhoedbn.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "1018894742415-32bp7obc68dqqduq8drdcmdne58sk25f.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.belajarbarengAppMmp"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
