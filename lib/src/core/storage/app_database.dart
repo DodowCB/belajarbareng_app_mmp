@@ -170,7 +170,8 @@ class CachedTugas extends Table {
   TextColumn get idGuru => text().named('id_guru')();
   TextColumn get judul => text()();
   TextColumn get deskripsi => text()();
-  TextColumn get status => text().withDefault(const Constant('Aktif'))(); // 'Aktif', 'Selesai'
+  TextColumn get status =>
+      text().withDefault(const Constant('Aktif'))(); // 'Aktif', 'Selesai'
   DateTimeColumn get deadline => dateTime()();
   DateTimeColumn get createdAt => dateTime().named('created_at')();
   DateTimeColumn get updatedAt => dateTime().named('updated_at')();
