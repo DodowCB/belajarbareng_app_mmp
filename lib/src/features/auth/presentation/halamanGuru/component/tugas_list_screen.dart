@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
-import 'dart:html' as html;
+import 'package:url_launcher/url_launcher.dart';
 import '../../../../../core/config/theme.dart';
 import '../../../../../core/providers/user_provider.dart';
 import 'create_tugas_screen.dart';
@@ -294,15 +294,16 @@ class _TugasListScreenState extends State<TugasListScreen>
                     'file_${fileDoc.id}';
 
                 if (fileUrl.isNotEmpty) {
-                  // Trigger download using anchor element
-                  final anchor = html.AnchorElement(href: fileUrl)
-                    ..setAttribute('download', fileName)
-                    ..style.display = 'none';
-                  html.document.body?.append(anchor);
-                  anchor.click();
-                  anchor.remove();
-
-                  downloadedCount++;
+                  // Open/download file using url_launcher
+                  try {
+                    final uri = Uri.parse(fileUrl);
+                    if (await canLaunchUrl(uri)) {
+                      await launchUrl(uri, mode: LaunchMode.externalApplication);
+                      downloadedCount++;
+                    }
+                  } catch (e) {
+                    // Silent error handling for individual file
+                  }
 
                   // Small delay between downloads
                   await Future.delayed(const Duration(milliseconds: 500));
