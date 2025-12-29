@@ -102,8 +102,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           : AppTheme.backgroundLight,
       appBar: AppBar(
         title: const Text('System Settings'),
-        backgroundColor: Colors.blueGrey,
-        foregroundColor: Colors.white,
+        backgroundColor: Colors.transparent,
         elevation: 0,
       ),
       body: _isLoading
@@ -117,13 +116,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   Container(
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [Colors.blueGrey, Colors.blueGrey.shade700],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
+                        gradient: AppTheme.purpleGradient,
+                        borderRadius: BorderRadius.circular(16),
                       ),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
                     child: Row(
                       children: [
                         Container(
@@ -183,12 +178,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               Container(
                                 padding: const EdgeInsets.all(10),
                                 decoration: BoxDecoration(
-                                  color: Colors.blue.withOpacity(0.1),
+                                  color: AppTheme.primaryPurple.withOpacity(0.12),
                                   borderRadius: BorderRadius.circular(10),
                                 ),
                                 child: const Icon(
                                   Icons.key,
-                                  color: Colors.blue,
+                                  color: AppTheme.primaryPurple,
                                   size: 24,
                                 ),
                               ),
@@ -228,9 +223,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               filled: true,
-                              fillColor: isDark
-                                  ? Colors.grey[850]
-                                  : Colors.grey[50],
+                              fillColor: isDark ? AppTheme.cardDark : AppTheme.cardLight,
                             ),
                             obscureText: true,
                             maxLines: 1,
@@ -239,10 +232,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           Container(
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: Colors.blue.withOpacity(0.1),
+                              color: AppTheme.primaryPurple.withOpacity(0.08),
                               borderRadius: BorderRadius.circular(8),
                               border: Border.all(
-                                color: Colors.blue.withOpacity(0.3),
+                                color: AppTheme.primaryPurple.withOpacity(0.18),
                               ),
                             ),
                             child: const Row(
@@ -283,8 +276,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               label: Text(
                                 _isSaving ? 'Saving...' : 'Save API Key',
                               ),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.blue,
+                                style: ElevatedButton.styleFrom(
+                                backgroundColor: AppTheme.primaryPurple,
                                 foregroundColor: Colors.white,
                                 padding: const EdgeInsets.symmetric(
                                   vertical: 16,

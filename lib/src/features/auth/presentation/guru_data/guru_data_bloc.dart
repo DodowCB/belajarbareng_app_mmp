@@ -3,11 +3,13 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import '../../../../core/services/excel_import_service.dart';
 import '../../../../core/services/id_generator_service.dart';
+import '../../../../core/services/recent_activity_service.dart';
 import 'guru_data_event.dart';
 import 'guru_data_state.dart';
 
 class GuruDataBloc extends Bloc<GuruDataEvent, GuruDataState> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final RecentActivityService _recentActivityService = RecentActivityService();
 
   GuruDataBloc() : super(const GuruDataInitial()) {
     on<LoadGuruData>(_onLoadGuruData);
@@ -90,6 +92,15 @@ class GuruDataBloc extends Bloc<GuruDataEvent, GuruDataState> {
       await _firestore.collection('guru').doc(event.guruId).delete();
       emit(const GuruDataActionSuccess('Guru deleted successfully'));
       add(const LoadGuruData());
+      try {
+        await _recentActivityService.addActivity({
+          'title': 'Teacher removed',
+          'details': 'Removed teacher id: ${event.guruId}',
+          'icon': 'person_remove',
+        });
+      } catch (e) {
+        debugPrint('Failed to record recent activity for delete: $e');
+      }
     } catch (e) {
       emit(GuruDataError('Failed to delete guru: ${e.toString()}'));
     }
@@ -154,6 +165,16 @@ class GuruDataBloc extends Bloc<GuruDataEvent, GuruDataState> {
           ),
         );
 
+        try {
+          await _recentActivityService.addActivity({
+            'title': 'Imported teachers from Excel',
+            'details': 'Imported $successCount records',
+            'icon': 'upload_file',
+          });
+        } catch (e) {
+          debugPrint('Failed to record recent activity for import: $e');
+        }
+
         // Reload data
         add(const LoadGuruData());
       } else {
@@ -173,6 +194,15 @@ class GuruDataBloc extends Bloc<GuruDataEvent, GuruDataState> {
       final id = await IdGeneratorService.getNextId('guru');
       await _firestore.collection('guru').doc(id).set(event.guruData);
       emit(const GuruDataActionSuccess('Guru berhasil ditambahkan'));
+      try {
+        await _recentActivityService.addActivity({
+          'title': 'New teacher added',
+          'details': event.guruData['nama_lengkap'] ?? event.guruData['email'] ?? id,
+          'icon': 'person_add',
+        });
+      } catch (e) {
+        debugPrint('Failed to record recent activity for addGuru: $e');
+      }
     } catch (e) {
       emit(GuruDataError('Failed to add guru: ${e.toString()}'));
     }
@@ -188,6 +218,15 @@ class GuruDataBloc extends Bloc<GuruDataEvent, GuruDataState> {
           .doc(event.guruId)
           .update(event.guruData);
       emit(const GuruDataActionSuccess('Guru berhasil diupdate'));
+      try {
+        await _recentActivityService.addActivity({
+          'title': 'Teacher updated',
+          'details': 'Updated teacher id: ${event.guruId}',
+          'icon': 'tune',
+        });
+      } catch (e) {
+        debugPrint('Failed to record recent activity for updateGuru: $e');
+      }
     } catch (e) {
       emit(GuruDataError('Failed to update guru: ${e.toString()}'));
     }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/config/theme.dart';
+import '../widgets/admin_header.dart';
 
 class ReportsScreen extends StatefulWidget {
   const ReportsScreen({super.key});
@@ -32,34 +33,50 @@ class _ReportsScreenState extends State<ReportsScreen>
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark
-          ? AppTheme.backgroundDark
-          : AppTheme.backgroundLight,
-      appBar: AppBar(
-        title: const Text('Reports'),
-        backgroundColor: Colors.blue,
-        foregroundColor: Colors.white,
-        elevation: 0,
-        bottom: TabBar(
-          controller: _tabController,
-          labelColor: Colors.white,
-          unselectedLabelColor: Colors.white70,
-          indicatorColor: Colors.white,
-          tabs: const [
-            Tab(icon: Icon(Icons.check_circle), text: 'Absensi'),
-            Tab(icon: Icon(Icons.assignment), text: 'Tugas'),
-            Tab(icon: Icon(Icons.library_books), text: 'Materi'),
-            Tab(icon: Icon(Icons.quiz), text: 'Quiz'),
-          ],
-        ),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      appBar: const AdminHeader(
+        title: 'Reports',
+        icon: Icons.assessment,
       ),
-      body: TabBarView(
-        controller: _tabController,
+      body: Column(
         children: [
-          _buildAbsensiReport(),
-          _buildTugasReport(),
-          _buildMateriReport(),
-          _buildQuizReport(),
+          // Tab bar container matching admin styles
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            decoration: BoxDecoration(
+              color: Theme.of(context).cardColor,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(Theme.of(context).brightness == Brightness.dark ? 0.3 : 0.05),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: TabBar(
+              controller: _tabController,
+              labelColor: Theme.of(context).textTheme.titleMedium?.color ?? AppTheme.textPrimary,
+              unselectedLabelColor: (Theme.of(context).textTheme.titleMedium?.color ?? AppTheme.textPrimary).withOpacity(0.7),
+              indicatorColor: AppTheme.primaryPurple,
+              tabs: const [
+                Tab(icon: Icon(Icons.check_circle), text: 'Absensi'),
+                Tab(icon: Icon(Icons.assignment), text: 'Tugas'),
+                Tab(icon: Icon(Icons.library_books), text: 'Materi'),
+                Tab(icon: Icon(Icons.quiz), text: 'Quiz'),
+              ],
+            ),
+          ),
+          Expanded(
+            child: TabBarView(
+              controller: _tabController,
+              children: [
+                _buildAbsensiReport(),
+                _buildTugasReport(),
+                _buildMateriReport(),
+                _buildQuizReport(),
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -111,16 +128,16 @@ class _ReportsScreenState extends State<ReportsScreen>
               _buildSummaryCard(
                 title: 'Ringkasan Absensi',
                 icon: Icons.summarize,
-                color: Colors.green,
+                color: AppTheme.accentGreen,
                 items: [
                   _buildSummaryItem(
                     'Total Absensi',
                     totalAbsensi.toString(),
-                    Colors.blue,
+                    AppTheme.primaryPurple,
                   ),
-                  _buildSummaryItem('Hadir', hadir.toString(), Colors.green),
-                  _buildSummaryItem('Sakit', sakit.toString(), Colors.orange),
-                  _buildSummaryItem('Izin', izin.toString(), Colors.purple),
+                  _buildSummaryItem('Hadir', hadir.toString(), AppTheme.accentGreen),
+                  _buildSummaryItem('Sakit', sakit.toString(), AppTheme.accentOrange),
+                  _buildSummaryItem('Izin', izin.toString(), AppTheme.primaryPurple),
                   _buildSummaryItem('Alpha', alpha.toString(), Colors.red),
                 ],
               ),
@@ -183,17 +200,17 @@ class _ReportsScreenState extends State<ReportsScreen>
               _buildSummaryCard(
                 title: 'Ringkasan Pengumpulan Tugas',
                 icon: Icons.assignment,
-                color: Colors.orange,
+                color: AppTheme.accentOrange,
                 items: [
                   _buildSummaryItem(
                     'Total Pengumpulan',
                     totalPengumpulan.toString(),
-                    Colors.blue,
+                    AppTheme.primaryPurple,
                   ),
                   _buildSummaryItem(
                     'Terkumpul',
                     terkumpul.toString(),
-                    Colors.green,
+                    AppTheme.accentGreen,
                   ),
                 ],
               ),
@@ -252,12 +269,12 @@ class _ReportsScreenState extends State<ReportsScreen>
               _buildSummaryCard(
                 title: 'Ringkasan Materi',
                 icon: Icons.library_books,
-                color: Colors.purple,
+                color: AppTheme.primaryPurple,
                 items: [
                   _buildSummaryItem(
                     'Total Materi',
                     totalMateri.toString(),
-                    Colors.purple,
+                    AppTheme.primaryPurple,
                   ),
                 ],
               ),
@@ -316,12 +333,12 @@ class _ReportsScreenState extends State<ReportsScreen>
               _buildSummaryCard(
                 title: 'Ringkasan Quiz',
                 icon: Icons.quiz,
-                color: Colors.teal,
+                color: AppTheme.secondaryTeal,
                 items: [
                   _buildSummaryItem(
                     'Total Quiz',
                     totalQuiz.toString(),
-                    Colors.teal,
+                    AppTheme.secondaryTeal,
                   ),
                 ],
               ),
@@ -356,38 +373,47 @@ class _ReportsScreenState extends State<ReportsScreen>
     required Color color,
     required List<Widget> items,
   }) {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: color.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Icon(icon, color: color, size: 24),
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: isDark ? Colors.grey[800]! : Colors.grey[200]!),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(isDark ? 0.3 : 0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10),
                 ),
-                const SizedBox(width: 12),
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Wrap(spacing: 12, runSpacing: 12, children: items),
-          ],
-        ),
+                child: Icon(icon, color: color, size: 24),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                title,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Wrap(spacing: 12, runSpacing: 12, children: items),
+        ],
       ),
     );
   }
@@ -457,8 +483,21 @@ class _ReportsScreenState extends State<ReportsScreen>
         ? DateFormat('dd MMM yyyy, HH:mm').format(timestamp.toDate())
         : '-';
 
-    return Card(
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
       margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: isDark ? Colors.grey[800]! : Colors.grey[200]!),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(isDark ? 0.25 : 0.03),
+            blurRadius: 6,
+            offset: const Offset(0, 1),
+          ),
+        ],
+      ),
       child: ListTile(
         leading: CircleAvatar(
           backgroundColor: statusColor.withOpacity(0.2),
@@ -487,8 +526,21 @@ class _ReportsScreenState extends State<ReportsScreen>
         ? DateFormat('dd MMM yyyy, HH:mm').format(timestamp.toDate())
         : '-';
 
-    return Card(
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
       margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: isDark ? Colors.grey[800]! : Colors.grey[200]!),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(isDark ? 0.25 : 0.03),
+            blurRadius: 6,
+            offset: const Offset(0, 1),
+          ),
+        ],
+      ),
       child: ListTile(
         leading: const CircleAvatar(
           backgroundColor: Colors.orange,
@@ -519,8 +571,21 @@ class _ReportsScreenState extends State<ReportsScreen>
 
     final idGuru = data['id_guru'];
 
-    return Card(
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
       margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: isDark ? Colors.grey[800]! : Colors.grey[200]!),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(isDark ? 0.25 : 0.03),
+            blurRadius: 6,
+            offset: const Offset(0, 1),
+          ),
+        ],
+      ),
       child: ListTile(
         leading: const CircleAvatar(
           backgroundColor: Colors.purple,
@@ -566,8 +631,21 @@ class _ReportsScreenState extends State<ReportsScreen>
         ? DateFormat('dd MMM yyyy').format(timestamp.toDate())
         : '-';
 
-    return Card(
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
       margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: isDark ? Colors.grey[800]! : Colors.grey[200]!),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(isDark ? 0.25 : 0.03),
+            blurRadius: 6,
+            offset: const Offset(0, 1),
+          ),
+        ],
+      ),
       child: ListTile(
         leading: const CircleAvatar(
           backgroundColor: Colors.teal,

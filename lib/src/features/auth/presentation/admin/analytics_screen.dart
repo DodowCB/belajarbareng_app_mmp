@@ -23,8 +23,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
           : AppTheme.backgroundLight,
       appBar: AppBar(
         title: const Text('Analytics'),
-        backgroundColor: Colors.deepPurple,
-        foregroundColor: Colors.white,
+        backgroundColor: Colors.transparent,
         elevation: 0,
       ),
       body: SingleChildScrollView(
@@ -36,11 +35,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Colors.deepPurple, Colors.deepPurple.shade700],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
+                gradient: AppTheme.purpleGradient,
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Row(
@@ -51,7 +46,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                       color: Colors.white.withOpacity(0.2),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Icon(
+                      child: const Icon(
                       Icons.analytics,
                       color: Colors.white,
                       size: 32,
@@ -180,13 +175,13 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: Colors.green.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: const Icon(
-                          Icons.check_circle,
-                          color: Colors.green,
-                        ),
+                            color: AppTheme.accentGreen.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Icon(
+                            Icons.check_circle,
+                            color: AppTheme.accentGreen,
+                          ),
                       ),
                       const SizedBox(width: 12),
                       const Text(
@@ -271,7 +266,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                                   value: hadir,
                                   title:
                                       '${((hadir / totalStatus) * 100).toStringAsFixed(1)}%',
-                                  color: Colors.green.shade400,
+                                  color: AppTheme.accentGreen,
                                   titleStyle: const TextStyle(
                                     color: Colors.white,
                                     fontWeight: FontWeight.bold,
@@ -299,10 +294,10 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                                       ],
                                     ),
                                     child: const Icon(
-                                      Icons.check_circle,
-                                      color: Colors.green,
-                                      size: 16,
-                                    ),
+                                        Icons.check_circle,
+                                        color: AppTheme.accentGreen,
+                                        size: 16,
+                                      ),
                                   ),
                                   badgePositionPercentageOffset: 1.2,
                                 ),
@@ -311,7 +306,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                                   value: sakit,
                                   title:
                                       '${((sakit / totalStatus) * 100).toStringAsFixed(1)}%',
-                                  color: Colors.orange.shade400,
+                                  color: AppTheme.accentOrange,
                                   titleStyle: const TextStyle(
                                     color: Colors.white,
                                     fontWeight: FontWeight.bold,
@@ -340,7 +335,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                                     ),
                                     child: const Icon(
                                       Icons.medical_services,
-                                      color: Colors.orange,
+                                      color: AppTheme.accentOrange,
                                       size: 16,
                                     ),
                                   ),
@@ -351,7 +346,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                                   value: izin,
                                   title:
                                       '${((izin / totalStatus) * 100).toStringAsFixed(1)}%',
-                                  color: Colors.purple.shade400,
+                                  color: AppTheme.primaryPurple,
                                   titleStyle: const TextStyle(
                                     color: Colors.white,
                                     fontWeight: FontWeight.bold,
@@ -380,7 +375,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                                     ),
                                     child: const Icon(
                                       Icons.info_outline,
-                                      color: Colors.purple,
+                                      color: AppTheme.primaryPurple,
                                       size: 16,
                                     ),
                                   ),
@@ -481,13 +476,13 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                           Container(
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [
-                                  Colors.blue.shade50,
-                                  Colors.blue.shade100,
-                                ],
-                              ),
+                              color: (Theme.of(context).brightness == Brightness.dark)
+                                  ? AppTheme.cardDark
+                                  : AppTheme.cardLight,
                               borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: AppTheme.primaryPurple.withOpacity(0.06),
+                              ),
                             ),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -501,10 +496,10 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                                 ),
                                 Text(
                                   '${totalStatus.toInt()}',
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 18,
-                                    color: Colors.blue,
+                                    color: AppTheme.primaryPurple,
                                   ),
                                 ),
                               ],

@@ -45,18 +45,10 @@ class _AdminScreenState extends State<AdminScreen> {
       value: _adminBloc,
       child: Scaffold(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        body: StreamBuilder<AdminState>(
-          stream: _adminBloc.getAdminDataStream(),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
-            }
-
-            if (snapshot.hasError) {
-              return Center(child: Text('Error: ${snapshot.error}'));
-            }
-
-            final state = snapshot.data ?? AdminState();
+        body: BlocBuilder<AdminBloc, AdminState>(
+          builder: (context, state) {
+            if (state.isLoading) return const Center(child: CircularProgressIndicator());
+            if (state.error != null) return Center(child: Text('Error: ${state.error}'));
 
             return CustomScrollView(
               slivers: [
@@ -613,10 +605,10 @@ class _AdminScreenState extends State<AdminScreen> {
               separatorBuilder: (context, index) => const Divider(height: 1),
               itemBuilder: (context, index) {
                 final activity = state.recentActivities[index];
-                return MouseRegion(
-                  cursor: SystemMouseCursors.click,
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
+                return AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  child: MouseRegion(
+                    cursor: SystemMouseCursors.click,
                     child: InkWell(
                       onTap: () => _showActivityDetail(activity),
                       hoverColor: AppTheme.primaryPurple.withOpacity(0.05),
