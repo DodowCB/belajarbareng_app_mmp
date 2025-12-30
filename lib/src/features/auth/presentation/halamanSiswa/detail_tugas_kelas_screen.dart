@@ -314,11 +314,13 @@ class _DetailTugasKelasScreenState extends State<DetailTugasKelasScreen> {
       final tugasData = tugasDoc.data() as Map<String, dynamic>;
       final tugasId = tugasDoc.id;
 
-      // Check submission status
-      final pengumpulanQuery = await FirebaseFirestore.instance
+        // Check submission status (support numeric or string IDs)
+        final dynamic parsedSiswaId = int.tryParse(siswaId) ?? siswaId;
+        final dynamic parsedTugasId = int.tryParse(tugasId) ?? tugasId;
+        final pengumpulanQuery = await FirebaseFirestore.instance
           .collection('pengumpulan')
-          .where('siswa_id', isEqualTo: int.parse(siswaId))
-          .where('tugas_id', isEqualTo: int.parse(tugasId))
+          .where('siswa_id', isEqualTo: parsedSiswaId)
+          .where('tugas_id', isEqualTo: parsedTugasId)
           .limit(1)
           .get();
 
@@ -623,8 +625,8 @@ class _DetailTugasKelasScreenState extends State<DetailTugasKelasScreen> {
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
           .collection('pengumpulan')
-          .where('siswa_id', isEqualTo: int.parse(siswaId))
-          .where('tugas_id', isEqualTo: int.parse(tugasId))
+          .where('siswa_id', isEqualTo: int.tryParse(siswaId) ?? siswaId)
+          .where('tugas_id', isEqualTo: int.tryParse(tugasId) ?? tugasId)
           .snapshots(),
       builder: (context, pengumpulanSnapshot) {
         if (!pengumpulanSnapshot.hasData) {
@@ -1023,10 +1025,10 @@ class _DetailTugasKelasScreenState extends State<DetailTugasKelasScreen> {
       }
 
       // Check if there's existing submission and delete it
-      final existingPengumpulan = await FirebaseFirestore.instance
+        final existingPengumpulan = await FirebaseFirestore.instance
           .collection('pengumpulan')
-          .where('siswa_id', isEqualTo: int.parse(siswaId))
-          .where('tugas_id', isEqualTo: int.parse(tugasId))
+          .where('siswa_id', isEqualTo: int.tryParse(siswaId) ?? siswaId)
+          .where('tugas_id', isEqualTo: int.tryParse(tugasId) ?? tugasId)
           .get();
 
       // Delete old pengumpulan records and their files
@@ -1102,9 +1104,9 @@ class _DetailTugasKelasScreenState extends State<DetailTugasKelasScreen> {
           .collection('pengumpulan')
           .doc(nextPengumpulanId)
           .set({
-            'siswa_id': int.parse(siswaId),
-            'tugas_id': int.parse(tugasId),
-            'file_id': int.parse(nextFileId),
+            'siswa_id': int.tryParse(siswaId) ?? siswaId,
+            'tugas_id': int.tryParse(tugasId) ?? tugasId,
+            'file_id': int.tryParse(nextFileId) ?? nextFileId,
             'createdAt': FieldValue.serverTimestamp(),
           });
 

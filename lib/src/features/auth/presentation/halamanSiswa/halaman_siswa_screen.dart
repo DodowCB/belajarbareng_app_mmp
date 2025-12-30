@@ -1079,12 +1079,13 @@ class _HalamanSiswaScreenState extends ConsumerState<HalamanSiswaScreen> {
     required bool isDesktop,
   }) {
     final siswaId = userProvider.userId ?? '';
+    final dynamic querySiswaId = int.tryParse(siswaId) ?? siswaId;
 
     // Langsung query collection pengumpulan, auto-update real-time
     return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance
+        stream: FirebaseFirestore.instance
           .collection('pengumpulan')
-          .where('siswa_id', isEqualTo: int.parse(siswaId))
+          .where('siswa_id', isEqualTo: querySiswaId)
           .snapshots(),
       builder: (context, pengumpulanSnapshot) {
         // Hitung jumlah tugas terkumpul
