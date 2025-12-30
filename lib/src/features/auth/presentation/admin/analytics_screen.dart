@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../../../../core/config/theme.dart';
+import '../widgets/admin_header.dart';
 
 class AnalyticsScreen extends StatefulWidget {
   const AnalyticsScreen({super.key});
@@ -18,65 +19,17 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark
-          ? AppTheme.backgroundDark
-          : AppTheme.backgroundLight,
-      appBar: AppBar(
-        title: const Text('Analytics'),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      appBar: const AdminHeader(
+        title: 'Analytics',
+        icon: Icons.analytics,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                gradient: AppTheme.purpleGradient,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                      child: const Icon(
-                      Icons.analytics,
-                      color: Colors.white,
-                      size: 32,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  const Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Data Analytics',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                        SizedBox(height: 4),
-                        Text(
-                          'Insights and statistics',
-                          style: TextStyle(fontSize: 14, color: Colors.white70),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 12),
 
             // Absensi Chart
             _buildAbsensiChart(),
@@ -117,48 +70,37 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
 
         final absensiDocs = snapshot.data!.docs;
 
-        // Debug: Print total documents and sample data
-        print('Total absensi docs: ${absensiDocs.length}');
-        if (absensiDocs.isNotEmpty) {
-          final sampleData = absensiDocs.first.data() as Map<String, dynamic>?;
-          print('Sample data: $sampleData');
-        }
-
         final hadir = absensiDocs
             .where((doc) {
-              final data = doc.data() as Map<String, dynamic>?;
-              return data != null && data['status'] == 'hadir';
-            })
+          final data = doc.data() as Map<String, dynamic>?;
+          return data != null && data['status'] == 'hadir';
+        })
             .length
             .toDouble();
         final sakit = absensiDocs
             .where((doc) {
-              final data = doc.data() as Map<String, dynamic>?;
-              return data != null && data['status'] == 'sakit';
-            })
+          final data = doc.data() as Map<String, dynamic>?;
+          return data != null && data['status'] == 'sakit';
+        })
             .length
             .toDouble();
         final izin = absensiDocs
             .where((doc) {
-              final data = doc.data() as Map<String, dynamic>?;
-              return data != null && data['status'] == 'izin';
-            })
+          final data = doc.data() as Map<String, dynamic>?;
+          return data != null && data['status'] == 'izin';
+        })
             .length
             .toDouble();
         final alpha = absensiDocs
             .where((doc) {
-              final data = doc.data() as Map<String, dynamic>?;
-              return data != null && data['status'] == 'alpha';
-            })
+          final data = doc.data() as Map<String, dynamic>?;
+          return data != null && data['status'] == 'alpha';
+        })
             .length
             .toDouble();
 
-        // Debug: Print counts
-        print('Hadir: $hadir, Sakit: $sakit, Izin: $izin, Alpha: $alpha');
-
         final totalStatus = hadir + sakit + izin + alpha;
 
-        // If no valid status data found, show info message
         if (totalStatus == 0 && absensiDocs.isNotEmpty) {
           return Card(
             elevation: 2,
@@ -168,39 +110,10 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
             child: Padding(
               padding: const EdgeInsets.all(20),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                            color: AppTheme.accentGreen.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: const Icon(
-                            Icons.check_circle,
-                            color: AppTheme.accentGreen,
-                          ),
-                      ),
-                      const SizedBox(width: 12),
-                      const Text(
-                        'Statistik Kehadiran',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-                  Center(
-                    child: Text(
-                      'Ada ${absensiDocs.length} dokumen absensi, tetapi tidak ada field "status" yang valid',
-                      style: TextStyle(color: Colors.grey[600]),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
+                  const Text('Statistik Kehadiran', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 10),
+                  Text('Ada ${absensiDocs.length} dokumen, tapi status kosong.', style: TextStyle(color: Colors.grey[600])),
                 ],
               ),
             ),
@@ -241,280 +154,113 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                   ],
                 ),
                 const SizedBox(height: 24),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Pie Chart
-                    Expanded(
-                      flex: 2,
-                      child: SizedBox(
-                        height: 250,
-                        child: PieChart(
-                          PieChartData(
-                            pieTouchData: PieTouchData(
-                              touchCallback:
-                                  (FlTouchEvent event, pieTouchResponse) {
-                                    // Add touch interaction
-                                  },
-                            ),
-                            borderData: FlBorderData(show: false),
-                            sectionsSpace: 3,
-                            centerSpaceRadius: 50,
-                            sections: [
-                              if (hadir > 0)
-                                PieChartSectionData(
-                                  value: hadir,
-                                  title:
-                                      '${((hadir / totalStatus) * 100).toStringAsFixed(1)}%',
-                                  color: AppTheme.accentGreen,
-                                  titleStyle: const TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 14,
-                                    shadows: [
-                                      Shadow(
-                                        color: Colors.black26,
-                                        blurRadius: 2,
-                                      ),
-                                    ],
-                                  ),
-                                  radius: 100,
-                                  titlePositionPercentageOffset: 0.55,
-                                  badgeWidget: Container(
-                                    padding: const EdgeInsets.all(4),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      shape: BoxShape.circle,
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.green.withOpacity(0.3),
-                                          blurRadius: 4,
-                                          spreadRadius: 2,
-                                        ),
-                                      ],
-                                    ),
-                                    child: const Icon(
-                                        Icons.check_circle,
-                                        color: AppTheme.accentGreen,
-                                        size: 16,
-                                      ),
-                                  ),
-                                  badgePositionPercentageOffset: 1.2,
-                                ),
-                              if (sakit > 0)
-                                PieChartSectionData(
-                                  value: sakit,
-                                  title:
-                                      '${((sakit / totalStatus) * 100).toStringAsFixed(1)}%',
-                                  color: AppTheme.accentOrange,
-                                  titleStyle: const TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 14,
-                                    shadows: [
-                                      Shadow(
-                                        color: Colors.black26,
-                                        blurRadius: 2,
-                                      ),
-                                    ],
-                                  ),
-                                  radius: 100,
-                                  titlePositionPercentageOffset: 0.55,
-                                  badgeWidget: Container(
-                                    padding: const EdgeInsets.all(4),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      shape: BoxShape.circle,
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.orange.withOpacity(0.3),
-                                          blurRadius: 4,
-                                          spreadRadius: 2,
-                                        ),
-                                      ],
-                                    ),
-                                    child: const Icon(
-                                      Icons.medical_services,
-                                      color: AppTheme.accentOrange,
-                                      size: 16,
-                                    ),
-                                  ),
-                                  badgePositionPercentageOffset: 1.2,
-                                ),
-                              if (izin > 0)
-                                PieChartSectionData(
-                                  value: izin,
-                                  title:
-                                      '${((izin / totalStatus) * 100).toStringAsFixed(1)}%',
-                                  color: AppTheme.primaryPurple,
-                                  titleStyle: const TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 14,
-                                    shadows: [
-                                      Shadow(
-                                        color: Colors.black26,
-                                        blurRadius: 2,
-                                      ),
-                                    ],
-                                  ),
-                                  radius: 100,
-                                  titlePositionPercentageOffset: 0.55,
-                                  badgeWidget: Container(
-                                    padding: const EdgeInsets.all(4),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      shape: BoxShape.circle,
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.purple.withOpacity(0.3),
-                                          blurRadius: 4,
-                                          spreadRadius: 2,
-                                        ),
-                                      ],
-                                    ),
-                                    child: const Icon(
-                                      Icons.info_outline,
-                                      color: AppTheme.primaryPurple,
-                                      size: 16,
-                                    ),
-                                  ),
-                                  badgePositionPercentageOffset: 1.2,
-                                ),
-                              if (alpha > 0)
-                                PieChartSectionData(
-                                  value: alpha,
-                                  title:
-                                      '${((alpha / totalStatus) * 100).toStringAsFixed(1)}%',
-                                  color: Colors.red.shade400,
-                                  titleStyle: const TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 14,
-                                    shadows: [
-                                      Shadow(
-                                        color: Colors.black26,
-                                        blurRadius: 2,
-                                      ),
-                                    ],
-                                  ),
-                                  radius: 100,
-                                  titlePositionPercentageOffset: 0.55,
-                                  badgeWidget: Container(
-                                    padding: const EdgeInsets.all(4),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      shape: BoxShape.circle,
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.red.withOpacity(0.3),
-                                          blurRadius: 4,
-                                          spreadRadius: 2,
-                                        ),
-                                      ],
-                                    ),
-                                    child: const Icon(
-                                      Icons.cancel,
-                                      color: Colors.red,
-                                      size: 16,
-                                    ),
-                                  ),
-                                  badgePositionPercentageOffset: 1.2,
-                                ),
-                            ],
+                // Fixed LayoutBuilder block
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final isNarrow = constraints.maxWidth < 600;
+
+                    // 1. Define the Pie Chart Widget
+                    Widget pie = SizedBox(
+                      height: 250,
+                      child: PieChart(
+                        PieChartData(
+                          pieTouchData: PieTouchData(
+                            touchCallback: (FlTouchEvent event, pieTouchResponse) {},
                           ),
+                          borderData: FlBorderData(show: false),
+                          sectionsSpace: 3,
+                          centerSpaceRadius: 50,
+                          sections: [
+                            if (hadir > 0)
+                              _buildPieSection(hadir, totalStatus, AppTheme.accentGreen, Icons.check_circle),
+                            if (sakit > 0)
+                              _buildPieSection(sakit, totalStatus, AppTheme.accentOrange, Icons.medical_services),
+                            if (izin > 0)
+                              _buildPieSection(izin, totalStatus, AppTheme.primaryPurple, Icons.info_outline),
+                            if (alpha > 0)
+                              _buildPieSection(alpha, totalStatus, Colors.red.shade400, Icons.cancel),
+                          ],
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 20),
-                    // Legend with details
-                    Expanded(
-                      flex: 1,
-                      child: Column(
+                    );
+
+                    // 2. Define the Legend Widget
+                    Widget legend = Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Detail',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        _buildEnhancedLegendItem('Hadir', Colors.green, hadir.toInt(), totalStatus, Icons.check_circle),
+                        const SizedBox(height: 12),
+                        _buildEnhancedLegendItem('Sakit', Colors.orange, sakit.toInt(), totalStatus, Icons.medical_services),
+                        const SizedBox(height: 12),
+                        _buildEnhancedLegendItem('Izin', Colors.purple, izin.toInt(), totalStatus, Icons.info_outline),
+                        const SizedBox(height: 12),
+                        _buildEnhancedLegendItem('Alpha', Colors.red, alpha.toInt(), totalStatus, Icons.cancel),
+                      ],
+                    );
+
+                    // 3. Return the layout based on constraints
+                    if (isNarrow) {
+                      return Column(
+                        children: [
+                          pie,
+                          const SizedBox(height: 24),
+                          legend,
+                        ],
+                      );
+                    } else {
+                      return Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            'Detail',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          _buildEnhancedLegendItem(
-                            'Hadir',
-                            Colors.green,
-                            hadir.toInt(),
-                            totalStatus,
-                            Icons.check_circle,
-                          ),
-                          const SizedBox(height: 12),
-                          _buildEnhancedLegendItem(
-                            'Sakit',
-                            Colors.orange,
-                            sakit.toInt(),
-                            totalStatus,
-                            Icons.medical_services,
-                          ),
-                          const SizedBox(height: 12),
-                          _buildEnhancedLegendItem(
-                            'Izin',
-                            Colors.purple,
-                            izin.toInt(),
-                            totalStatus,
-                            Icons.info_outline,
-                          ),
-                          const SizedBox(height: 12),
-                          _buildEnhancedLegendItem(
-                            'Alpha',
-                            Colors.red,
-                            alpha.toInt(),
-                            totalStatus,
-                            Icons.cancel,
-                          ),
-                          const Divider(height: 24),
-                          Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: (Theme.of(context).brightness == Brightness.dark)
-                                  ? AppTheme.cardDark
-                                  : AppTheme.cardLight,
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(
-                                color: AppTheme.primaryPurple.withOpacity(0.06),
-                              ),
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                const Text(
-                                  'Total',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                                Text(
-                                  '${totalStatus.toInt()}',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 18,
-                                    color: AppTheme.primaryPurple,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
+                          Expanded(flex: 3, child: pie),
+                          const SizedBox(width: 24),
+                          Expanded(flex: 2, child: legend),
                         ],
-                      ),
-                    ),
-                  ],
+                      );
+                    }
+                  },
                 ),
               ],
             ),
           ),
         );
       },
+    );
+  }
+
+  // Helper to reduce code duplication in Pie Chart sections
+  PieChartSectionData _buildPieSection(double value, double total, Color color, IconData icon) {
+    return PieChartSectionData(
+      value: value,
+      title: '${((value / total) * 100).toStringAsFixed(1)}%',
+      color: color,
+      titleStyle: const TextStyle(
+        color: Colors.white,
+        fontWeight: FontWeight.bold,
+        fontSize: 14,
+        shadows: [Shadow(color: Colors.black26, blurRadius: 2)],
+      ),
+      radius: 100,
+      titlePositionPercentageOffset: 0.55,
+      badgeWidget: Container(
+        padding: const EdgeInsets.all(4),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(color: color.withOpacity(0.3), blurRadius: 4, spreadRadius: 2),
+          ],
+        ),
+        child: Icon(icon, color: color, size: 16),
+      ),
+      badgePositionPercentageOffset: 1.2,
     );
   }
 
