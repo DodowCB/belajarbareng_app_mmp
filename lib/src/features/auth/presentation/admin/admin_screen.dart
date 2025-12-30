@@ -13,6 +13,7 @@ import '../jadwal_mengajar/jadwal_mengajar_screen.dart';
 import 'reports_screen.dart';
 import 'analytics_screen.dart';
 import 'settings_screen.dart';
+import '../notifications/notifications_screen.dart';
 import 'admin_bloc.dart';
 
 class AdminScreen extends StatefulWidget {
@@ -208,21 +209,9 @@ class _AdminScreenState extends State<AdminScreen> {
         IconButton(
           icon: const Icon(Icons.notifications_outlined),
           onPressed: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: const Row(
-                  children: [
-                    Icon(Icons.notifications_active, color: Colors.white),
-                    SizedBox(width: 12),
-                    Expanded(child: Text('5 new notifications')),
-                  ],
-                ),
-                backgroundColor: AppTheme.primaryPurple,
-                behavior: SnackBarBehavior.floating,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                duration: const Duration(seconds: 2),
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => const NotificationsScreen(),
               ),
             );
           },
@@ -767,23 +756,6 @@ class _AdminScreenState extends State<AdminScreen> {
                       child: Text(
                         'Close',
                         style: TextStyle(color: Colors.grey[600]),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    ElevatedButton.icon(
-                      onPressed: () {
-                        Navigator.pop(context);
-                        // Navigate to related screen based on activity type
-                        _navigateBasedOnActivity(activity['title'] as String);
-                      },
-                      icon: const Icon(Icons.arrow_forward, size: 18),
-                      label: const Text('View More'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.primaryPurple,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
                       ),
                     ),
                   ],

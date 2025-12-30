@@ -107,15 +107,30 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         title: 'Notifications',
         icon: Icons.notifications,
         additionalActions: [
-          if (unreadCount > 0)
-            TextButton.icon(
-              onPressed: _markAllAsRead,
-              icon: const Icon(Icons.done_all, size: 18),
-              label: const Text('Mark all read'),
-              style: TextButton.styleFrom(
-                foregroundColor: AppTheme.primaryPurple,
-              ),
-            ),
+          Builder(builder: (ctx) {
+            final w = MediaQuery.of(ctx).size.width;
+            if (unreadCount > 0) {
+              // On narrow screens, show icon-only to avoid overflow
+              if (w < 420) {
+                return IconButton(
+                  icon: const Icon(Icons.done_all),
+                  onPressed: _markAllAsRead,
+                  tooltip: 'Mark all read',
+                );
+              }
+
+              return TextButton.icon(
+                onPressed: _markAllAsRead,
+                icon: const Icon(Icons.done_all, size: 18),
+                label: const Text('Mark all read'),
+                style: TextButton.styleFrom(
+                  foregroundColor: AppTheme.primaryPurple,
+                ),
+              );
+            }
+
+            return const SizedBox.shrink();
+          }),
           IconButton(
             icon: const Icon(Icons.settings_outlined),
             onPressed: _showNotificationSettings,
