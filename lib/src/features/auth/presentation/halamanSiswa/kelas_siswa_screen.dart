@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../../core/config/theme.dart';
 import '../../../../core/providers/user_provider.dart';
+import '../widgets/siswa_app_scaffold.dart';
 import 'detail_materi_kelas_screen.dart';
 
 class KelasSiswaScreen extends StatelessWidget {
@@ -41,11 +42,13 @@ class KelasSiswaScreen extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final siswaId = userProvider.userId;
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('Materi Kelas'), elevation: 0),
+    return SiswaAppScaffold(
+      title: 'Kelas',
+      icon: Icons.class_,
+      currentRoute: '/kelas-siswa',
       body: siswaId == null
-          ? const Center(child: Text('User ID tidak ditemukan'))
-          : StreamBuilder<QuerySnapshot>(
+        ? const Center(child: Text('User ID tidak ditemukan'))
+        : StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
                   .collection('siswa_kelas')
                   .where('siswa_id', isEqualTo: siswaId)

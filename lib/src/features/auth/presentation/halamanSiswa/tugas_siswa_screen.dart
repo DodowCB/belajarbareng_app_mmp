@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../../core/config/theme.dart';
 import '../../../../core/providers/user_provider.dart';
+import '../widgets/siswa_app_scaffold.dart';
 import 'detail_tugas_kelas_screen.dart';
 
 class TugasSiswaScreen extends StatefulWidget {
@@ -40,14 +41,13 @@ class _TugasSiswaScreenState extends State<TugasSiswaScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final siswaId = userProvider.userId;
 
-    return Scaffold(
-      backgroundColor: isDark
-          ? AppTheme.backgroundDark
-          : AppTheme.backgroundLight,
-      appBar: AppBar(title: const Text('Tugas Saya'), elevation: 0),
+    return SiswaAppScaffold(
+      title: 'Tugas',
+      icon: Icons.assignment,
+      currentRoute: '/tugas-siswa',
       body: siswaId == null
-          ? const Center(child: Text('User ID tidak ditemukan'))
-          : StreamBuilder<QuerySnapshot>(
+        ? const Center(child: Text('User ID tidak ditemukan'))
+        : StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
                   .collection('siswa_kelas')
                   .where('siswa_id', isEqualTo: siswaId)

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../../core/config/theme.dart';
 import '../../../../core/providers/user_provider.dart';
+import '../widgets/siswa_app_scaffold.dart';
 
 class KalenderSiswaScreen extends StatelessWidget {
   const KalenderSiswaScreen({super.key});
@@ -40,11 +41,13 @@ class KalenderSiswaScreen extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final siswaId = userProvider.userId;
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('Jadwal Kelas'), elevation: 0),
+    return SiswaAppScaffold(
+      title: 'Kalender',
+      icon: Icons.calendar_today,
+      currentRoute: '/kalender-siswa',
       body: siswaId == null
-          ? const Center(child: Text('User ID tidak ditemukan'))
-          : StreamBuilder<QuerySnapshot>(
+        ? const Center(child: Text('User ID tidak ditemukan'))
+        : StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
                   .collection('siswa_kelas')
                   .where('siswa_id', isEqualTo: siswaId)
