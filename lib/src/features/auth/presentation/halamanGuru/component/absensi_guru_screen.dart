@@ -5,6 +5,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import '../../../../../core/config/theme.dart';
 import '../../../../../core/providers/user_provider.dart' as user_prov;
 import 'absensi_dialog_helper.dart';
+import '../../widgets/guru_app_scaffold.dart';
 
 class AbsensiGuruScreen extends StatefulWidget {
   const AbsensiGuruScreen({super.key});
@@ -29,16 +30,10 @@ class _AbsensiGuruScreenState extends State<AbsensiGuruScreen> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Scaffold(
-      backgroundColor: isDark
-          ? AppTheme.backgroundDark
-          : AppTheme.backgroundLight,
-      appBar: AppBar(
-        title: const Text('Absensi'),
-        backgroundColor: AppTheme.primaryPurple,
-        foregroundColor: Colors.white,
-        elevation: 0,
-      ),
+    return GuruAppScaffold(
+      title: 'Absensi',
+      icon: Icons.fact_check,
+      currentRoute: '/absensi',
       body: Column(
         children: [
           // Date Picker Section

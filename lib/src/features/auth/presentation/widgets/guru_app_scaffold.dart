@@ -8,6 +8,7 @@ import '../halamanGuru/component/kelas_list_screen.dart';
 import '../halamanGuru/component/kelas_nilai_list_screen.dart';
 import '../halamanGuru/component/tugas_list_screen.dart';
 import '../halamanGuru/component/materi_guru_screen.dart';
+import '../halamanGuru/component/absensi_guru_screen.dart';
 import '../profile/profile_screen.dart';
 import '../settings/settings_screen.dart';
 import '../notifications/notifications_screen.dart';
@@ -186,6 +187,21 @@ class _GuruAppScaffoldState extends ConsumerState<GuruAppScaffold> {
                         context,
                         MaterialPageRoute(
                           builder: (context) => const MateriGuruScreen(),
+                        ),
+                      );
+                    }
+                  },
+                ),
+                _buildSidebarItem(
+                  icon: Icons.fact_check,
+                  title: 'Absensi',
+                  isActive: widget.currentRoute == '/absensi',
+                  onTap: () {
+                    if (widget.currentRoute != '/absensi') {
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const AbsensiGuruScreen(),
                         ),
                       );
                     }
@@ -714,6 +730,22 @@ class _GuruAppScaffoldState extends ConsumerState<GuruAppScaffold> {
                         context,
                         MaterialPageRoute(
                           builder: (context) => const MateriGuruScreen(),
+                        ),
+                      );
+                    }
+                  },
+                ),
+                _buildDrawerItem(
+                  icon: Icons.fact_check,
+                  title: 'Absensi',
+                  isActive: widget.currentRoute == '/absensi',
+                  onTap: () {
+                    Navigator.pop(context);
+                    if (widget.currentRoute != '/absensi') {
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const AbsensiGuruScreen(),
                         ),
                       );
                     }

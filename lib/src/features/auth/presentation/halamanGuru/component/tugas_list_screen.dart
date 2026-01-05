@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../../../core/config/theme.dart';
 import '../../../../../core/providers/user_provider.dart';
 import 'create_tugas_screen.dart';
+import '../../widgets/guru_app_scaffold.dart';
 
 class TugasListScreen extends StatefulWidget {
   const TugasListScreen({super.key});
@@ -342,23 +343,17 @@ class _TugasListScreenState extends State<TugasListScreen>
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Scaffold(
-      backgroundColor: isDark
-          ? AppTheme.backgroundDark
-          : AppTheme.backgroundLight,
-      appBar: AppBar(
-        title: const Text('Manajemen Tugas'),
-        backgroundColor: AppTheme.primaryPurple,
-        foregroundColor: Colors.white,
-        elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _loadTugas,
-            tooltip: 'Refresh',
-          ),
-        ],
-      ),
+    return GuruAppScaffold(
+      title: 'Manajemen Tugas',
+      icon: Icons.assignment,
+      currentRoute: '/tugas',
+      additionalActions: [
+        IconButton(
+          icon: const Icon(Icons.refresh),
+          onPressed: _loadTugas,
+          tooltip: 'Refresh',
+        ),
+      ],
       body: Column(
         children: [
           // Search and Tabs

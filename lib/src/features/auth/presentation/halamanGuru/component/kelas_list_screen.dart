@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../../../core/config/theme.dart';
 import '../../../../../core/providers/user_provider.dart';
+import '../../widgets/guru_app_scaffold.dart';
 
 class KelasListScreen extends StatefulWidget {
   const KelasListScreen({super.key});
@@ -91,16 +92,10 @@ class _KelasListScreenState extends State<KelasListScreen> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Scaffold(
-      backgroundColor: isDark
-          ? AppTheme.backgroundDark
-          : AppTheme.backgroundLight,
-      appBar: AppBar(
-        title: const Text('Daftar Kelas'),
-        backgroundColor: AppTheme.primaryPurple,
-        foregroundColor: Colors.white,
-        elevation: 0,
-      ),
+    return GuruAppScaffold(
+      title: 'Daftar Kelas',
+      icon: Icons.class_,
+      currentRoute: '/kelas',
       body: Column(
         children: [
           // Search Bar

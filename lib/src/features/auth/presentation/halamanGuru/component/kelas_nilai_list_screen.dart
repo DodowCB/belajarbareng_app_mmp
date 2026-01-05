@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../../../core/config/theme.dart';
 import '../../../../../core/providers/user_provider.dart';
 import 'input_nilai_siswa_screen.dart';
+import '../../widgets/guru_app_scaffold.dart';
 
 class KelasNilaiListScreen extends StatefulWidget {
   const KelasNilaiListScreen({super.key});
@@ -101,110 +102,104 @@ class _KelasNilaiListScreenState extends State<KelasNilaiListScreen> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Scaffold(
-      backgroundColor: isDark
-          ? AppTheme.backgroundDark
-          : AppTheme.backgroundLight,
-      appBar: AppBar(
-        title: const Text('Input Nilai Siswa'),
-        backgroundColor: AppTheme.primaryPurple,
-        foregroundColor: Colors.white,
-        elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _loadKelas,
-            tooltip: 'Refresh',
-          ),
-        ],
-      ),
+    return GuruAppScaffold(
+      title: 'Input Nilai Siswa',
+      icon: Icons.grade,
+      currentRoute: '/nilai-siswa',
+      additionalActions: [
+        IconButton(
+          icon: const Icon(Icons.refresh),
+          onPressed: _loadKelas,
+          tooltip: 'Refresh',
+        ),
+      ],
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _kelasList.isEmpty
-          ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.class_, size: 64, color: Colors.grey[400]),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Tidak ada kelas yang diajar',
-                    style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Hubungi admin untuk menambahkan jadwal mengajar',
-                    style: TextStyle(fontSize: 14, color: Colors.grey[500]),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              ),
-            )
-          : Column(
-              children: [
-                // Header info
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-                  child: Row(
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: AppTheme.primaryPurple.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Icon(
-                          Icons.grade,
-                          color: AppTheme.primaryPurple,
-                          size: 28,
-                        ),
+                      Icon(Icons.class_, size: 64, color: Colors.grey[400]),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Tidak ada kelas yang diajar',
+                        style: TextStyle(fontSize: 16, color: Colors.grey[600]),
                       ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Total Kelas: ${_kelasList.length}',
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'Pilih kelas untuk input atau edit nilai',
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: isDark
-                                    ? Colors.grey[400]
-                                    : Colors.grey[600],
-                              ),
-                            ),
-                          ],
-                        ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Hubungi admin untuk menambahkan jadwal mengajar',
+                        style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+                        textAlign: TextAlign.center,
                       ),
                     ],
                   ),
-                ),
-                const Divider(height: 1),
+                )
+              : Column(
+                  children: [
+                    // Header info
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: AppTheme.primaryPurple.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Icon(
+                              Icons.grade,
+                              color: AppTheme.primaryPurple,
+                              size: 28,
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Total Kelas: ${_kelasList.length}',
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  'Pilih kelas untuk input atau edit nilai',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: isDark
+                                        ? Colors.grey[400]
+                                        : Colors.grey[600],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Divider(height: 1),
 
-                // List kelas
-                Expanded(
-                  child: ListView.separated(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: _kelasList.length,
-                    separatorBuilder: (context, index) =>
-                        const SizedBox(height: 12),
-                    itemBuilder: (context, index) {
-                      final kelas = _kelasList[index];
-                      return _buildKelasCard(kelas);
-                    },
-                  ),
+                    // List kelas
+                    Expanded(
+                      child: ListView.separated(
+                        padding: const EdgeInsets.all(16),
+                        itemCount: _kelasList.length,
+                        separatorBuilder: (context, index) =>
+                            const SizedBox(height: 12),
+                        itemBuilder: (context, index) {
+                          final kelas = _kelasList[index];
+                          return _buildKelasCard(kelas);
+                        },
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
     );
   }
 
