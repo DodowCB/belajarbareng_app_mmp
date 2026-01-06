@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/config/theme.dart';
 import '../../../../core/providers/theme_provider.dart';
+import '../../../../core/providers/connectivity_provider.dart';
 import '../halamanGuru/halaman_guru_screen.dart';
 import '../halamanGuru/component/kelas_guru_screen.dart';
 import '../halamanGuru/component/kelas_list_screen.dart';
@@ -494,6 +495,8 @@ class _GuruAppScaffoldState extends ConsumerState<GuruAppScaffold> {
   }
 
   Widget _buildHeader(BuildContext context, bool isDark) {
+    final isOnline = ref.watch(isOnlineProvider);
+    
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
       decoration: BoxDecoration(
@@ -516,13 +519,49 @@ class _GuruAppScaffoldState extends ConsumerState<GuruAppScaffold> {
               overflow: TextOverflow.ellipsis,
             ),
           ),
-          if (widget.additionalActions != null) ...widget.additionalActions!,
+          // Online/Offline Indicator
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: isOnline ? Colors.green[50] : Colors.red[50],
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: isOnline ? Colors.green : Colors.red,
+                width: 1.5,
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  isOnline ? Icons.wifi : Icons.wifi_off,
+                  size: 16,
+                  color: isOnline ? Colors.green[700] : Colors.red[700],
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  isOnline ? 'Online' : 'Offline',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: isOnline ? Colors.green[700] : Colors.red[700],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (widget.additionalActions != null) ...[
+            const SizedBox(width: 12),
+            ...widget.additionalActions!,
+          ],
         ],
       ),
     );
   }
 
   PreferredSizeWidget _buildAppBar(BuildContext context, bool isDark) {
+    final isOnline = ref.watch(isOnlineProvider);
+    
     return AppBar(
       leading: Builder(
         builder: (context) => IconButton(
@@ -534,7 +573,41 @@ class _GuruAppScaffoldState extends ConsumerState<GuruAppScaffold> {
       title: Text(widget.title),
       backgroundColor: isDark ? AppTheme.backgroundDark : Colors.white,
       elevation: 0,
-      actions: widget.additionalActions,
+      actions: [
+        // Online/Offline Indicator
+        Container(
+          margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(
+            color: isOnline ? Colors.green[50] : Colors.red[50],
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: isOnline ? Colors.green : Colors.red,
+              width: 1.5,
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                isOnline ? Icons.wifi : Icons.wifi_off,
+                size: 14,
+                color: isOnline ? Colors.green[700] : Colors.red[700],
+              ),
+              const SizedBox(width: 4),
+              Text(
+                isOnline ? 'Online' : 'Offline',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: isOnline ? Colors.green[700] : Colors.red[700],
+                ),
+              ),
+            ],
+          ),
+        ),
+        if (widget.additionalActions != null) ...widget.additionalActions!,
+      ],
     );
   }
 

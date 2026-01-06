@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import '../../../../core/config/theme.dart';
 import '../../../../core/providers/user_provider.dart';
+import '../../../../core/providers/connectivity_provider.dart';
 import '../../data/models/pengumuman_model.dart';
 import 'blocs/blocs.dart';
 import 'component/kelas_nilai_list_screen.dart';
@@ -83,6 +84,8 @@ class HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
 
               if (!isDesktop) {
                 // Mobile/Tablet: Use drawer instead of sidebar
+                final isOnline = ref.watch(isOnlineProvider);
+                
                 return Scaffold(
                   appBar: AppBar(
                     leading: Builder(
@@ -93,6 +96,40 @@ class HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
                       ),
                     ),
                     title: const Text('Dashboard Guru'),
+                    actions: [
+                      // Online/Offline Indicator
+                      Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: isOnline ? Colors.green[50] : Colors.red[50],
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: isOnline ? Colors.green : Colors.red,
+                            width: 1.5,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              isOnline ? Icons.wifi : Icons.wifi_off,
+                              size: 14,
+                              color: isOnline ? Colors.green[700] : Colors.red[700],
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              isOnline ? 'Online' : 'Offline',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: isOnline ? Colors.green[700] : Colors.red[700],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
                   drawer: buildDrawer(context),
                   body: _buildMainContent(
@@ -187,6 +224,8 @@ class HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
   }
 
   Widget _buildTopBar(BuildContext context) {
+    final isOnline = ref.watch(isOnlineProvider);
+    
     return Row(
       children: [
         Text(
@@ -196,6 +235,37 @@ class HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
           ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
         ),
         const Spacer(),
+        // Online/Offline Indicator
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: isOnline ? Colors.green[50] : Colors.red[50],
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: isOnline ? Colors.green : Colors.red,
+              width: 1.5,
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                isOnline ? Icons.wifi : Icons.wifi_off,
+                size: 16,
+                color: isOnline ? Colors.green[700] : Colors.red[700],
+              ),
+              const SizedBox(width: 6),
+              Text(
+                isOnline ? 'Online' : 'Offline',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: isOnline ? Colors.green[700] : Colors.red[700],
+                ),
+              ),
+            ],
+          ),
+        ),
       ],
     );
   }
