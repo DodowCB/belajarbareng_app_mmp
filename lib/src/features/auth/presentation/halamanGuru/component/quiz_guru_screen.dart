@@ -6,6 +6,7 @@ import '../../../../../core/config/theme.dart';
 import '../../../../../core/providers/user_provider.dart';
 import '../../widgets/guru_app_scaffold.dart';
 import 'quiz_detail_screen.dart';
+import 'create_quiz_screen.dart';
 
 class QuizGuruScreen extends ConsumerStatefulWidget {
   const QuizGuruScreen({super.key});
@@ -128,42 +129,83 @@ class _QuizGuruScreenState extends ConsumerState<QuizGuruScreen> {
             ),
           ),
           const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: DropdownButtonFormField<String>(
-                  value: _selectedKelas,
-                  decoration: InputDecoration(
-                    labelText: 'Filter Kelas',
-                    prefixIcon: const Icon(Icons.class_),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              if (constraints.maxWidth < 600) {
+                // Mobile: Stack vertically
+                return Column(
+                  children: [
+                    DropdownButtonFormField<String>(
+                      value: _selectedKelas,
+                      decoration: InputDecoration(
+                        labelText: 'Filter Kelas',
+                        prefixIcon: const Icon(Icons.class_),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      items: kelasItems
+                          .map((k) => DropdownMenuItem(value: k, child: Text(k)))
+                          .toList(),
+                      onChanged: (v) => setState(() => _selectedKelas = v!),
+                    ),
+                    const SizedBox(height: 16),
+                    DropdownButtonFormField<String>(
+                      value: _selectedMapel,
+                      decoration: InputDecoration(
+                        labelText: 'Filter Mapel',
+                        prefixIcon: const Icon(Icons.book),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      items: mapelItems
+                          .map((m) => DropdownMenuItem(value: m, child: Text(m)))
+                          .toList(),
+                      onChanged: (v) => setState(() => _selectedMapel = v!),
+                    ),
+                  ],
+                );
+              }
+              // Desktop: Row
+              return Row(
+                children: [
+                  Expanded(
+                    child: DropdownButtonFormField<String>(
+                      value: _selectedKelas,
+                      decoration: InputDecoration(
+                        labelText: 'Filter Kelas',
+                        prefixIcon: const Icon(Icons.class_),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      items: kelasItems
+                          .map((k) => DropdownMenuItem(value: k, child: Text(k)))
+                          .toList(),
+                      onChanged: (v) => setState(() => _selectedKelas = v!),
                     ),
                   ),
-                  items: kelasItems
-                      .map((k) => DropdownMenuItem(value: k, child: Text(k)))
-                      .toList(),
-                  onChanged: (v) => setState(() => _selectedKelas = v!),
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: DropdownButtonFormField<String>(
-                  value: _selectedMapel,
-                  decoration: InputDecoration(
-                    labelText: 'Filter Mapel',
-                    prefixIcon: const Icon(Icons.book),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: DropdownButtonFormField<String>(
+                      value: _selectedMapel,
+                      decoration: InputDecoration(
+                        labelText: 'Filter Mapel',
+                        prefixIcon: const Icon(Icons.book),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      items: mapelItems
+                          .map((m) => DropdownMenuItem(value: m, child: Text(m)))
+                          .toList(),
+                      onChanged: (v) => setState(() => _selectedMapel = v!),
                     ),
                   ),
-                  items: mapelItems
-                      .map((m) => DropdownMenuItem(value: m, child: Text(m)))
-                      .toList(),
-                  onChanged: (v) => setState(() => _selectedMapel = v!),
-                ),
-              ),
-            ],
+                ],
+              );
+            },
           ),
         ],
       ),
@@ -501,564 +543,21 @@ class _QuizGuruScreenState extends ConsumerState<QuizGuruScreen> {
     );
   }
 
-  void _showCreateQuizDialog(BuildContext context) {
-    _showQuizFormDialog(context, 'Buat Quiz Baru', null);
-  }
-
-  void _showQuizFormDialog(
-    BuildContext context,
-    String title,
-    Map<String, dynamic>? quizData,
-  ) {
-    showDialog(
-      context: context,
-      builder: (c) => QuizFormDialog(
-        title: title,
-        quizData: quizData,
-        kelasList: _kelasList,
-        mapelList: _mapelList,
-        onSave: (data) async {
-          try {
-            final userProv = UserProvider();
-            final idGuru = userProv.userId;
-
-            if (idGuru == null) {
-              throw Exception('User tidak login');
-            }
-
-            // Save quiz dan soal
-            await _saveQuiz(idGuru, data);
-
-            if (context.mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Quiz berhasil disimpan'),
-                  backgroundColor: Colors.green,
-                ),
-              );
-              setState(() {});
-            }
-          } catch (e) {
-            if (context.mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Error: $e'),
-                  backgroundColor: Colors.red,
-                ),
-              );
-            }
-          }
-        },
+  void _showCreateQuizDialog(BuildContext context) async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => CreateQuizScreen(
+          kelasList: _kelasList,
+          mapelList: _mapelList,
+        ),
       ),
     );
-  }
 
-  Future<void> _saveQuiz(String idGuru, Map<String, dynamic> data) async {
-    final quizSnapshot = await _firestore.collection('quiz').get();
-    final nextQuizId = (quizSnapshot.docs.length + 1).toString();
-
-    // Simpan quiz
-    await _firestore.collection('quiz').doc(nextQuizId).set({
-      'id_guru': int.parse(idGuru),
-      'id_kelas': int.parse(data['id_kelas'].toString()),
-      'id_mapel': int.parse(data['id_mapel'].toString()),
-      'judul': data['judul'],
-      'waktu': int.parse(data['waktu'].toString()),
-      'createdAt': FieldValue.serverTimestamp(),
-    });
-
-    // Simpan soal-soal
-    final soalList = data['soalList'] as List<Map<String, dynamic>>;
-    for (int i = 0; i < soalList.length; i++) {
-      final soal = soalList[i];
-      final soalSnapshot = await _firestore.collection('quiz_soal').get();
-      final nextSoalId = (soalSnapshot.docs.length + 1).toString();
-
-      await _firestore.collection('quiz_soal').doc(nextSoalId).set({
-        'id_quiz': int.parse(nextQuizId),
-        'pertanyaan': soal['pertanyaan'],
-        'tipe': soal['tipe'], // 'single' or 'multiple'
-      });
-
-      // Simpan jawaban-jawaban
-      final jawabanList = soal['jawaban'] as List<Map<String, dynamic>>;
-      for (final jawaban in jawabanList) {
-        final jawabanSnapshot = await _firestore
-            .collection('quiz_jawaban')
-            .get();
-        final nextJawabanId = (jawabanSnapshot.docs.length + 1).toString();
-
-        await _firestore.collection('quiz_jawaban').doc(nextJawabanId).set({
-          'id_soal': int.parse(nextSoalId),
-          'jawaban': jawaban['text'],
-          'is_correct': jawaban['is_correct'],
-        });
-      }
+    // Refresh list if quiz was created
+    if (result == true) {
+      setState(() {});
     }
-  }
-}
-
-class QuizFormDialog extends StatefulWidget {
-  final String title;
-  final Map<String, dynamic>? quizData;
-  final List<Map<String, String>> kelasList;
-  final List<Map<String, String>> mapelList;
-  final Function(Map<String, dynamic>) onSave;
-
-  const QuizFormDialog({
-    super.key,
-    required this.title,
-    this.quizData,
-    required this.kelasList,
-    required this.mapelList,
-    required this.onSave,
-  });
-
-  @override
-  State<QuizFormDialog> createState() => _QuizFormDialogState();
-}
-
-class _QuizFormDialogState extends State<QuizFormDialog> {
-  final formKey = GlobalKey<FormState>();
-  final judulController = TextEditingController();
-  int waktuMenit = 30; // Default 30 menit
-  String? selectedKelasId;
-  String? selectedMapelId;
-
-  List<SoalItem> soalList = [];
-
-  @override
-  void initState() {
-    super.initState();
-    if (widget.quizData != null) {
-      judulController.text = widget.quizData!['judul'] ?? '';
-      // Safely parse waktu with null check
-      final waktuValue = widget.quizData!['waktu'];
-      if (waktuValue != null) {
-        if (waktuValue is int) {
-          waktuMenit = waktuValue;
-        } else if (waktuValue is String) {
-          waktuMenit = int.tryParse(waktuValue) ?? 30;
-        }
-      }
-      selectedKelasId = widget.quizData!['id_kelas']?.toString();
-      selectedMapelId = widget.quizData!['id_mapel']?.toString();
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Container(
-        width: 800,
-        constraints: const BoxConstraints(maxHeight: 700),
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    gradient: AppTheme.sunsetGradient,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Icon(Icons.quiz, color: Colors.white, size: 20),
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  widget.title,
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const Spacer(),
-                IconButton(
-                  onPressed: () => Navigator.pop(context),
-                  icon: const Icon(Icons.close),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-            Expanded(
-              child: SingleChildScrollView(
-                child: Form(
-                  key: formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      TextFormField(
-                        controller: judulController,
-                        decoration: InputDecoration(
-                          labelText: 'Judul Quiz',
-                          prefixIcon: const Icon(Icons.title),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        validator: (v) =>
-                            v?.isEmpty ?? true ? 'Wajib diisi' : null,
-                      ),
-                      const SizedBox(height: 16),
-                      DropdownButtonFormField<String>(
-                        value: selectedKelasId,
-                        decoration: InputDecoration(
-                          labelText: 'Kelas',
-                          prefixIcon: const Icon(Icons.class_),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        items: widget.kelasList
-                            .map(
-                              (k) => DropdownMenuItem(
-                                value: k['id'],
-                                child: Text(k['nama'] ?? ''),
-                              ),
-                            )
-                            .toList(),
-                        onChanged: (v) => setState(() => selectedKelasId = v),
-                        validator: (v) => v == null ? 'Wajib dipilih' : null,
-                      ),
-                      const SizedBox(height: 16),
-                      DropdownButtonFormField<String>(
-                        value: selectedMapelId,
-                        decoration: InputDecoration(
-                          labelText: 'Mata Pelajaran',
-                          prefixIcon: const Icon(Icons.book),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        items: widget.mapelList
-                            .map(
-                              (m) => DropdownMenuItem(
-                                value: m['id'],
-                                child: Text(m['nama'] ?? ''),
-                              ),
-                            )
-                            .toList(),
-                        onChanged: (v) => setState(() => selectedMapelId = v),
-                        validator: (v) => v == null ? 'Wajib dipilih' : null,
-                      ),
-                      const SizedBox(height: 16),
-                      _buildTimerPicker(),
-                      const SizedBox(height: 24),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text(
-                            'Soal-soal',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          ElevatedButton.icon(
-                            onPressed: () {
-                              setState(() {
-                                soalList.add(SoalItem());
-                              });
-                            },
-                            icon: const Icon(Icons.add, size: 18),
-                            label: const Text('Tambah Soal'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppTheme.primaryPurple,
-                              foregroundColor: Colors.white,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      ...soalList.asMap().entries.map((entry) {
-                        final index = entry.key;
-                        final soal = entry.value;
-                        return SoalWidget(
-                          key: ValueKey(soal),
-                          soal: soal,
-                          index: index,
-                          onDelete: () {
-                            setState(() {
-                              soalList.removeAt(index);
-                            });
-                          },
-                          onUpdate: () => setState(() {}),
-                        );
-                      }).toList(),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('Batal'),
-                ),
-                const SizedBox(width: 12),
-                ElevatedButton(
-                  onPressed: () {
-                    if (formKey.currentState!.validate()) {
-                      if (soalList.isEmpty) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Tambahkan minimal 1 soal'),
-                            backgroundColor: Colors.red,
-                          ),
-                        );
-                        return;
-                      }
-
-                      // Validasi setiap soal
-                      for (final soal in soalList) {
-                        if (soal.pertanyaanController.text.isEmpty) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Pertanyaan tidak boleh kosong'),
-                              backgroundColor: Colors.red,
-                            ),
-                          );
-                          return;
-                        }
-                        if (soal.jawaban.isEmpty) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Tambahkan minimal 1 jawaban'),
-                              backgroundColor: Colors.red,
-                            ),
-                          );
-                          return;
-                        }
-                        final hasCorrect = soal.jawaban.any((j) => j.isCorrect);
-                        if (!hasCorrect) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text(
-                                'Pilih minimal 1 jawaban yang benar',
-                              ),
-                              backgroundColor: Colors.red,
-                            ),
-                          );
-                          return;
-                        }
-                      }
-
-                      final data = {
-                        'judul': judulController.text,
-                        'waktu': waktuMenit,
-                        'id_kelas': selectedKelasId,
-                        'id_mapel': selectedMapelId,
-                        'soalList': soalList.map((s) => s.toMap()).toList(),
-                      };
-                      widget.onSave(data);
-                      Navigator.pop(context);
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primaryPurple,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  child: const Text('Simpan'),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTimerPicker() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            AppTheme.primaryPurple.withOpacity(0.1),
-            AppTheme.secondaryTeal.withOpacity(0.1),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: AppTheme.primaryPurple.withOpacity(0.3),
-          width: 2,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: AppTheme.primaryPurple.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(
-                  Icons.timer,
-                  color: AppTheme.primaryPurple,
-                  size: 20,
-                ),
-              ),
-              const SizedBox(width: 12),
-              const Text(
-                'Durasi Quiz',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          // Timer Display
-          Center(
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 20),
-              decoration: BoxDecoration(
-                color: isDark ? AppTheme.cardDark : Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppTheme.primaryPurple.withOpacity(0.2),
-                    blurRadius: 15,
-                    spreadRadius: 2,
-                  ),
-                ],
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.access_time,
-                    size: 40,
-                    color: AppTheme.primaryPurple,
-                  ),
-                  const SizedBox(width: 16),
-                  Column(
-                    children: [
-                      Text(
-                        '$waktuMenit',
-                        style: TextStyle(
-                          fontSize: 48,
-                          fontWeight: FontWeight.bold,
-                          color: AppTheme.primaryPurple,
-                          height: 1,
-                        ),
-                      ),
-                      Text(
-                        'menit',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey[600],
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 24),
-          // Slider
-          SliderTheme(
-            data: SliderTheme.of(context).copyWith(
-              activeTrackColor: AppTheme.primaryPurple,
-              inactiveTrackColor: AppTheme.primaryPurple.withOpacity(0.2),
-              thumbColor: AppTheme.primaryPurple,
-              overlayColor: AppTheme.primaryPurple.withOpacity(0.2),
-              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 12),
-              overlayShape: const RoundSliderOverlayShape(overlayRadius: 24),
-            ),
-            child: Slider(
-              value: waktuMenit.toDouble(),
-              min: 5,
-              max: 180,
-              divisions: 35,
-              label: '$waktuMenit menit',
-              onChanged: (value) {
-                setState(() {
-                  waktuMenit = value.toInt();
-                });
-              },
-            ),
-          ),
-          // Quick Select Buttons
-          const SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              _buildQuickTimeButton(15),
-              _buildQuickTimeButton(30),
-              _buildQuickTimeButton(45),
-              _buildQuickTimeButton(60),
-              _buildQuickTimeButton(90),
-            ],
-          ),
-          const SizedBox(height: 12),
-          // Range Info
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                '5 min',
-                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-              ),
-              Text(
-                '180 min',
-                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildQuickTimeButton(int minutes) {
-    final isSelected = waktuMenit == minutes;
-
-    return InkWell(
-      onTap: () {
-        setState(() {
-          waktuMenit = minutes;
-        });
-      },
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? AppTheme.primaryPurple
-              : AppTheme.primaryPurple.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: AppTheme.primaryPurple.withOpacity(isSelected ? 1 : 0.3),
-            width: isSelected ? 2 : 1,
-          ),
-        ),
-        child: Text(
-          '${minutes}m',
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-            color: isSelected ? Colors.white : AppTheme.primaryPurple,
-          ),
-        ),
-      ),
-    );
   }
 }
 
@@ -1185,8 +684,11 @@ class _SoalWidgetState extends State<SoalWidget> {
             },
           ),
           const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 12,
+            runSpacing: 12,
             children: [
               const Text(
                 'Jawaban:',
@@ -1220,6 +722,7 @@ class _SoalWidgetState extends State<SoalWidget> {
             return Padding(
               padding: const EdgeInsets.only(bottom: 8),
               child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   if (widget.soal.tipe == 'single')
                     Radio<int>(
@@ -1245,9 +748,12 @@ class _SoalWidgetState extends State<SoalWidget> {
                         });
                       },
                     ),
-                  Text(
-                    '$huruf. ',
-                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 12),
+                    child: Text(
+                      '$huruf. ',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
                   ),
                   Expanded(
                     child: TextFormField(

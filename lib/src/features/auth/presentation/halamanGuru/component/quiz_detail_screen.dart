@@ -421,10 +421,16 @@ class _QuizDetailScreenState extends State<QuizDetailScreen> {
       barrierDismissible: false,
       builder: (c) => const AlertDialog(
         content: Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
             CircularProgressIndicator(),
             SizedBox(width: 20),
-            Text('AI sedang memeriksa...'),
+            Flexible(
+              child: Text(
+                'AI sedang memeriksa...',
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
           ],
         ),
       ),
@@ -814,6 +820,7 @@ class _EditSoalDialogState extends State<EditSoalDialog> {
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 8),
                         child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             if (_tipe == 'single')
                               Radio<int>(
@@ -839,10 +846,13 @@ class _EditSoalDialogState extends State<EditSoalDialog> {
                                   });
                                 },
                               ),
-                            Text(
-                              '$huruf. ',
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
+                            Padding(
+                              padding: const EdgeInsets.only(top: 12),
+                              child: Text(
+                                '$huruf. ',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
                             Expanded(
@@ -867,14 +877,15 @@ class _EditSoalDialogState extends State<EditSoalDialog> {
               ),
             ),
             const SizedBox(height: 24),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
+            Wrap(
+              alignment: WrapAlignment.end,
+              spacing: 8,
+              runSpacing: 8,
               children: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
                   child: const Text('Batal'),
                 ),
-                const SizedBox(width: 12),
                 ElevatedButton(
                   onPressed: _saveChanges,
                   style: ElevatedButton.styleFrom(

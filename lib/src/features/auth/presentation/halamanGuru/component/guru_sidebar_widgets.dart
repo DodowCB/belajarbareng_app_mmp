@@ -399,6 +399,19 @@ extension GuruSidebarWidgets on HalamanGuruScreenState {
                     );
                   },
                 ),
+                buildDrawerItem(
+                  icon: Icons.quiz,
+                  title: 'Quiz',
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const QuizGuruScreen(),
+                      ),
+                    );
+                  },
+                ),
                 const Divider(),
                 buildDrawerItem(
                   icon: Icons.logout,

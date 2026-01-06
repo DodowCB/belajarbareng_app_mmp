@@ -10,6 +10,7 @@ import '../halamanGuru/component/kelas_nilai_list_screen.dart';
 import '../halamanGuru/component/tugas_list_screen.dart';
 import '../halamanGuru/component/materi_guru_screen.dart';
 import '../halamanGuru/component/absensi_guru_screen.dart';
+import '../halamanGuru/component/quiz_guru_screen.dart';
 import '../profile/profile_screen.dart';
 import '../settings/settings_screen.dart';
 import '../notifications/notifications_screen.dart';
@@ -213,10 +214,14 @@ class _GuruAppScaffoldState extends ConsumerState<GuruAppScaffold> {
                   title: 'Quiz',
                   isActive: widget.currentRoute == '/quiz',
                   onTap: () {
-                    // TODO: Navigate to Quiz screen
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Fitur Quiz segera hadir!')),
-                    );
+                    if (widget.currentRoute != '/quiz') {
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const QuizGuruScreen(),
+                        ),
+                      );
+                    }
                   },
                 ),
               ],
@@ -819,6 +824,22 @@ class _GuruAppScaffoldState extends ConsumerState<GuruAppScaffold> {
                         context,
                         MaterialPageRoute(
                           builder: (context) => const AbsensiGuruScreen(),
+                        ),
+                      );
+                    }
+                  },
+                ),
+                _buildDrawerItem(
+                  icon: Icons.quiz,
+                  title: 'Quiz',
+                  isActive: widget.currentRoute == '/quiz',
+                  onTap: () {
+                    Navigator.pop(context);
+                    if (widget.currentRoute != '/quiz') {
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const QuizGuruScreen(),
                         ),
                       );
                     }
