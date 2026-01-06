@@ -939,14 +939,11 @@ class _TugasListScreenState extends State<TugasListScreen>
                 isDark,
               ),
               const SizedBox(height: 24),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                alignment: WrapAlignment.end,
                 children: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: const Text('Tutup'),
-                  ),
-                  const SizedBox(width: 8),
                   ElevatedButton.icon(
                     onPressed: () async {
                       Navigator.pop(context);
@@ -957,9 +954,12 @@ class _TugasListScreenState extends State<TugasListScreen>
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.blue,
                       foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
                     ),
                   ),
-                  const SizedBox(width: 8),
                   ElevatedButton.icon(
                     onPressed: () async {
                       Navigator.pop(context);
@@ -978,6 +978,10 @@ class _TugasListScreenState extends State<TugasListScreen>
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppTheme.primaryPurple,
                       foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
                     ),
                   ),
                 ],

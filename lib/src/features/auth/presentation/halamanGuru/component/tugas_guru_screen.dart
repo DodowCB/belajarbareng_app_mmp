@@ -480,17 +480,11 @@ class _TugasGuruScreenState extends ConsumerState<TugasGuruScreen>
                 isDark,
               ),
               const SizedBox(height: 24),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                alignment: WrapAlignment.end,
                 children: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: Text(
-                      'Tutup',
-                      style: TextStyle(color: Colors.grey[600]),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
                   ElevatedButton.icon(
                     onPressed: () {
                       Navigator.pop(context);
@@ -503,6 +497,10 @@ class _TugasGuruScreenState extends ConsumerState<TugasGuruScreen>
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
                       ),
                     ),
                   ),

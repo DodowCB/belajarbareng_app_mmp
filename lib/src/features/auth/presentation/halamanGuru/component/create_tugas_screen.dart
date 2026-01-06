@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import '../../../../../core/config/theme.dart';
 import '../../../../../core/providers/user_provider.dart';
+import '../../widgets/guru_app_scaffold.dart';
 
 class CreateTugasScreen extends StatefulWidget {
   final Map<String, dynamic>? tugas; // For edit mode
@@ -292,60 +293,71 @@ class _CreateTugasScreenState extends State<CreateTugasScreen> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Scaffold(
-      backgroundColor: isDark
-          ? AppTheme.backgroundDark
-          : AppTheme.backgroundLight,
-      appBar: AppBar(
-        title: Text(widget.tugas != null ? 'Edit Tugas' : 'Buat Tugas Baru'),
-        backgroundColor: AppTheme.primaryPurple,
-        foregroundColor: Colors.white,
-        elevation: 0,
-      ),
+    return GuruAppScaffold(
+      title: widget.tugas != null ? 'Edit Tugas' : 'Buat Tugas Baru',
+      icon: widget.tugas != null ? Icons.edit_note : Icons.add_task,
+      currentRoute: widget.tugas != null ? '/edit-tugas' : '/create-tugas',
       body: _isLoadingKelas
           ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    // Info Card
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: AppTheme.primaryPurple.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: AppTheme.primaryPurple.withOpacity(0.3),
+          : Column(
+              children: [
+                // Header info
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: AppTheme.primaryPurple.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(
+                          widget.tugas != null ? Icons.edit_note : Icons.add_task,
+                          color: AppTheme.primaryPurple,
+                          size: 28,
                         ),
                       ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.info_outline,
-                            color: AppTheme.primaryPurple,
-                            size: 24,
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              widget.tugas != null ? 'Edit Tugas' : 'Buat Tugas Baru',
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
                               widget.tugas != null
                                   ? 'Perbarui informasi tugas untuk siswa'
                                   : 'Buat tugas baru untuk siswa di kelas yang Anda ajar',
                               style: TextStyle(
-                                fontSize: 14,
+                                fontSize: 13,
                                 color: isDark
-                                    ? Colors.grey[300]
-                                    : Colors.grey[700],
+                                    ? Colors.grey[400]
+                                    : Colors.grey[600],
                               ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 24),
+                    ],
+                  ),
+                ),
+                const Divider(height: 1),
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(16),
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
 
                     // Judul Tugas
                     Text(
@@ -642,6 +654,9 @@ class _CreateTugasScreenState extends State<CreateTugasScreen> {
                 ),
               ),
             ),
+          ),
+        ],
+      ),
     );
   }
 }
