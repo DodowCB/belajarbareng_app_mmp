@@ -847,61 +847,111 @@ class _AdminScreenState extends State<AdminScreen> {
   void _navigateToAllUsers() {
     Navigator.of(
       context,
-    ).push(MaterialPageRoute(builder: (context) => const AllUsersScreen()));
+    ).push(MaterialPageRoute(
+      builder: (context) => BlocProvider.value(
+        value: _adminBloc,
+        child: const AllUsersScreen(),
+      ),
+    ));
   }
 
   void _navigateToGuruData() {
     Navigator.of(
       context,
-    ).push(MaterialPageRoute(builder: (context) => const TeachersScreen()));
+    ).push(MaterialPageRoute(
+      builder: (context) => BlocProvider.value(
+        value: _adminBloc,
+        child: const TeachersScreen(),
+      ),
+    ));
   }
 
   void _navigateToSiswaData() {
     Navigator.of(
       context,
-    ).push(MaterialPageRoute(builder: (context) => const StudentsScreen()));
+    ).push(MaterialPageRoute(
+      builder: (context) => BlocProvider.value(
+        value: _adminBloc,
+        child: const StudentsScreen(),
+      ),
+    ));
   }
 
   void _navigateToMapel() {
     Navigator.of(
       context,
-    ).push(MaterialPageRoute(builder: (context) => const SubjectsScreen()));
+    ).push(MaterialPageRoute(
+      builder: (context) => BlocProvider.value(
+        value: _adminBloc,
+        child: const SubjectsScreen(),
+      ),
+    ));
   }
 
   void _navigateToKelas() {
     Navigator.of(
       context,
-    ).push(MaterialPageRoute(builder: (context) => const ClassesScreen()));
+    ).push(MaterialPageRoute(
+      builder: (context) => BlocProvider.value(
+        value: _adminBloc,
+        child: const ClassesScreen(),
+      ),
+    ));
   }
 
   void _navigateToPengumuman() {
     Navigator.of(
       context,
-    ).push(MaterialPageRoute(builder: (context) => const PengumumanScreen()));
+    ).push(MaterialPageRoute(
+      builder: (context) => BlocProvider.value(
+        value: _adminBloc,
+        child: const PengumumanScreen(),
+      ),
+    ));
   }
 
   void _navigateToJadwalMengajar() {
     Navigator.of(context).push(
-      MaterialPageRoute(builder: (context) => const JadwalMengajarScreen()),
+      MaterialPageRoute(
+        builder: (context) => BlocProvider.value(
+          value: _adminBloc,
+          child: const JadwalMengajarScreen(),
+        ),
+      ),
     );
   }
 
   void _navigateToReports() {
     Navigator.of(
       context,
-    ).push(MaterialPageRoute(builder: (context) => const ReportsScreen()));
+    ).push(MaterialPageRoute(
+      builder: (context) => BlocProvider.value(
+        value: _adminBloc,
+        child: const ReportsScreen(),
+      ),
+    ));
   }
 
   void _navigateToAnalytics() {
     Navigator.of(
       context,
-    ).push(MaterialPageRoute(builder: (context) => const AnalyticsScreen()));
+    ).push(MaterialPageRoute(
+      builder: (context) => BlocProvider.value(
+        value: _adminBloc,
+        child: const AnalyticsScreen(),
+      ),
+    ));
   }
 
   void _navigateToSettings() {
     Navigator.of(
       context,
-    ).push(MaterialPageRoute(builder: (context) => const SettingsScreen()));
+    ).push(MaterialPageRoute(
+      builder: (context) => BlocProvider.value(
+        value: _adminBloc,
+        child: const SettingsScreen(),
+      ),
+    ));
   }
 
   Widget _buildOfflineBanner(AdminState state) {

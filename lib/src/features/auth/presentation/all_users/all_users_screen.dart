@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../../core/config/theme.dart';
 import '../widgets/admin_header.dart';
+import '../admin/admin_bloc.dart';
 
 class AllUsersScreen extends StatefulWidget {
   const AllUsersScreen({super.key});
@@ -16,18 +18,21 @@ class _AllUsersScreenState extends State<AllUsersScreen> {
   
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: const AdminHeader(
-        title: 'All Users',
-        icon: Icons.people,
-      ),
-      body: Column(
+    return BlocProvider(
+      create: (context) => AdminBloc()..add(LoadAdminData()),
+      child: Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        appBar: const AdminHeader(
+          title: 'All Users',
+          icon: Icons.people,
+        ),
+        body: Column(
         children: [
           _buildSearchAndFilter(),
           Expanded(child: _buildUsersList()),
         ],
       ),
+    ),
     );
   }
 

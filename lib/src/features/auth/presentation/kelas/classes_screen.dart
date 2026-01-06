@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../../core/config/theme.dart';
 import '../widgets/admin_header.dart';
+import '../admin/admin_bloc.dart';
 import 'kelas_bloc.dart';
 import 'kelas_event.dart';
 import 'kelas_state.dart';
@@ -411,11 +412,16 @@ class _ClassesScreenState extends State<ClassesScreen> {
   }
 
   void _navigateToStudents(String kelasId, String namaKelas) {
+    // Get AdminBloc from context before navigation
+    final adminBloc = context.read<AdminBloc>();
+    
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) =>
-            SiswaKelasScreen(kelasId: kelasId, namaKelas: namaKelas),
+        builder: (context) => BlocProvider.value(
+          value: adminBloc,
+          child: SiswaKelasScreen(kelasId: kelasId, namaKelas: namaKelas),
+        ),
       ),
     );
   }
