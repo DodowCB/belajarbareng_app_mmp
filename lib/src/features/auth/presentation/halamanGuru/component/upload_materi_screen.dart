@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../../core/services/google_drive_service.dart';
 import '../../../../../core/config/theme.dart';
 import '../../../../../core/providers/user_provider.dart';
+import '../../widgets/guru_app_scaffold.dart';
 import 'dart:typed_data';
 
 class UploadMateriScreen extends ConsumerStatefulWidget {
@@ -825,27 +826,77 @@ class _UploadMateriScreenState extends ConsumerState<UploadMateriScreen> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Upload Materi'),
-        actions: [
-          if (_isSignedIn)
-            IconButton(
-              icon: const Icon(Icons.logout),
-              onPressed: _signOutFromGoogleDrive,
-              tooltip: 'Sign out from Google Drive',
-            ),
-        ],
-      ),
+    return GuruAppScaffold(
+      title: 'Upload Materi',
+      icon: Icons.cloud_upload,
+      currentRoute: '/upload-materi',
+      additionalActions: [
+        if (_isSignedIn)
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: _signOutFromGoogleDrive,
+            tooltip: 'Sign out from Google Drive',
+          ),
+      ],
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
+          : Column(
+              children: [
+                // Header info
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: AppTheme.primaryPurple.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(
+                          Icons.cloud_upload,
+                          color: AppTheme.primaryPurple,
+                          size: 28,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Upload Materi Pembelajaran',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Upload file atau video pembelajaran untuk siswa',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: isDark
+                                    ? Colors.grey[400]
+                                    : Colors.grey[600],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Divider(height: 1),
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(20),
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
                     // Google Drive Status Card
                     _buildGoogleDriveStatusCard(isDark),
                     const SizedBox(height: 20),
@@ -881,6 +932,9 @@ class _UploadMateriScreenState extends ConsumerState<UploadMateriScreen> {
                 ),
               ),
             ),
+          ),
+        ],
+      ),
     );
   }
 

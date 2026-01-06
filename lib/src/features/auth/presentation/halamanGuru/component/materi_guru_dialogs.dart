@@ -121,8 +121,10 @@ class MateriGuruDialogs {
                 ),
               ),
               const SizedBox(height: 24),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                alignment: WrapAlignment.end,
                 children: [
                   if (details['status'] == 'youtube' &&
                       details['youtubeUrl'] != null)
@@ -164,16 +166,7 @@ class MateriGuruDialogs {
                           borderRadius: BorderRadius.circular(8),
                         ),
                       ),
-                    )
-                  else
-                    const SizedBox.shrink(),
-                  TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: Text(
-                      'Tutup',
-                      style: TextStyle(color: Colors.grey[600]),
                     ),
-                  ),
                 ],
               ),
             ],
@@ -1002,21 +995,6 @@ class MateriGuruDialogs {
               ),
               const SizedBox(height: 16),
               const Divider(),
-              const SizedBox(height: 16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: Text(
-                      'Tutup',
-                      style: TextStyle(
-                        color: isDark ? Colors.grey[400] : Colors.grey[600],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
             ],
           ),
         ),
@@ -1389,18 +1367,6 @@ class MateriGuruDialogs {
                       ),
                     ),
                   ],
-                ),
-              ),
-              const SizedBox(height: 24),
-              // Close button
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: Text(
-                    'Tutup',
-                    style: TextStyle(color: Colors.grey[600]),
-                  ),
                 ),
               ),
             ],
