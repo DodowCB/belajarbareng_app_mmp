@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/config/theme.dart';
 import '../../../../core/providers/theme_provider.dart';
+import '../../../../core/providers/connectivity_provider.dart';
 import '../halamanSiswa/blocs/blocs.dart';
 import '../halamanSiswa/halaman_siswa_screen.dart';
 import '../halamanSiswa/tugas_siswa_screen.dart';
@@ -73,6 +74,7 @@ class _SiswaAppScaffoldState extends ConsumerState<SiswaAppScaffold> {
 
   PreferredSizeWidget _buildAppBar(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isOnline = ref.watch(isOnlineProvider);
 
     return AppBar(
       leading: Builder(
@@ -85,7 +87,41 @@ class _SiswaAppScaffoldState extends ConsumerState<SiswaAppScaffold> {
       title: Text(widget.title),
       backgroundColor: isDark ? AppTheme.backgroundDark : Colors.white,
       elevation: 0,
-      actions: widget.additionalActions,
+      actions: [
+        // Online/Offline Indicator
+        Container(
+          margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: isOnline ? Colors.green[50] : Colors.red[50],
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: isOnline ? Colors.green : Colors.red,
+              width: 1,
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                isOnline ? Icons.wifi : Icons.wifi_off,
+                color: isOnline ? Colors.green : Colors.red,
+                size: 16,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                isOnline ? 'Online' : 'Offline',
+                style: TextStyle(
+                  color: isOnline ? Colors.green[700] : Colors.red[700],
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
+        if (widget.additionalActions != null) ...widget.additionalActions!,
+      ],
     );
   }
 
@@ -203,6 +239,8 @@ class _SiswaAppScaffoldState extends ConsumerState<SiswaAppScaffold> {
               ],
             ),
           ),
+          // Online/Offline Indicator for Desktop
+          if (!_isSidebarCollapsed) _buildOnlineIndicator(context),
           if (!_isSidebarCollapsed) _buildSidebarProfileSection(context),
         ],
       ),
@@ -429,6 +467,41 @@ class _SiswaAppScaffoldState extends ConsumerState<SiswaAppScaffold> {
           trailing: _isSidebarCollapsed ? null : trailing,
           onTap: onTap,
         ),
+      ),
+    );
+  }
+
+  Widget _buildOnlineIndicator(BuildContext context) {
+    final isOnline = ref.watch(isOnlineProvider);
+    
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: isOnline ? Colors.green[50] : Colors.red[50],
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: isOnline ? Colors.green : Colors.red,
+          width: 1,
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            isOnline ? Icons.wifi : Icons.wifi_off,
+            color: isOnline ? Colors.green : Colors.red,
+            size: 20,
+          ),
+          const SizedBox(width: 8),
+          Text(
+            isOnline ? 'Online' : 'Offline',
+            style: TextStyle(
+              color: isOnline ? Colors.green[700] : Colors.red[700],
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
       ),
     );
   }

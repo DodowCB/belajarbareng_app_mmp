@@ -5,6 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../../core/config/theme.dart';
 import '../../../../core/providers/theme_provider.dart';
 import '../../../../core/providers/user_provider.dart';
+import '../../../../core/providers/connectivity_provider.dart';
 import '../../data/models/pengumuman_model.dart';
 import 'blocs/blocs.dart';
 import 'tugas_siswa_screen.dart';
@@ -77,6 +78,58 @@ class _HalamanSiswaScreenState extends ConsumerState<HalamanSiswaScreen> {
                       ),
                     ),
                     title: const Text('Dashboard Siswa'),
+                    actions: [
+                      // Online/Offline Status Indicator
+                      Consumer(
+                        builder: (context, ref, _) {
+                          final isOnline = ref.watch(isOnlineProvider);
+                          return Container(
+                            margin: const EdgeInsets.only(right: 8, top: 12, bottom: 12),
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: isOnline
+                                  ? Colors.green.withOpacity(0.1)
+                                  : Colors.red.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: isOnline ? Colors.green : Colors.red,
+                                width: 1,
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  isOnline ? Icons.wifi : Icons.wifi_off,
+                                  color: isOnline ? Colors.green : Colors.red,
+                                  size: 16,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  isOnline ? 'Online' : 'Offline',
+                                  style: TextStyle(
+                                    color: isOnline ? Colors.green : Colors.red,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.notifications_outlined),
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const NotificationsScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
                   ),
                   drawer: _buildDrawer(context),
                   body: _buildMainContent(
@@ -860,6 +913,56 @@ class _HalamanSiswaScreenState extends ConsumerState<HalamanSiswaScreen> {
           ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
         ),
         const Spacer(),
+        // Online/Offline Status Indicator
+        Consumer(
+          builder: (context, ref, _) {
+            final isOnline = ref.watch(isOnlineProvider);
+            return Container(
+              margin: const EdgeInsets.only(right: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: isOnline
+                    ? Colors.green.withOpacity(0.1)
+                    : Colors.red.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: isOnline ? Colors.green : Colors.red,
+                  width: 1,
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    isOnline ? Icons.wifi : Icons.wifi_off,
+                    color: isOnline ? Colors.green : Colors.red,
+                    size: 16,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    isOnline ? 'Online' : 'Offline',
+                    style: TextStyle(
+                      color: isOnline ? Colors.green : Colors.red,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
+        IconButton(
+          icon: const Icon(Icons.notifications_outlined),
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const NotificationsScreen(),
+              ),
+            );
+          },
+        ),
       ],
     );
   }

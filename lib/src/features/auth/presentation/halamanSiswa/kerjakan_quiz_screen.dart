@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
 import '../../../../core/config/theme.dart';
+import '../../../../core/providers/connectivity_provider.dart';
 
-class KerjakanQuizScreen extends StatefulWidget {
+class KerjakanQuizScreen extends ConsumerStatefulWidget {
   final String quizId;
   final String judulQuiz;
   final int waktu;
@@ -20,10 +22,10 @@ class KerjakanQuizScreen extends StatefulWidget {
   });
 
   @override
-  State<KerjakanQuizScreen> createState() => _KerjakanQuizScreenState();
+  ConsumerState<KerjakanQuizScreen> createState() => _KerjakanQuizScreenState();
 }
 
-class _KerjakanQuizScreenState extends State<KerjakanQuizScreen> {
+class _KerjakanQuizScreenState extends ConsumerState<KerjakanQuizScreen> {
   int _currentQuestionIndex = 0;
   Map<int, dynamic> _answers =
       {}; // Changed to dynamic to support String or List<String>
@@ -223,17 +225,88 @@ class _KerjakanQuizScreenState extends State<KerjakanQuizScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isOnline = ref.watch(isOnlineProvider);
 
     if (_isLoading) {
       return Scaffold(
-        appBar: AppBar(title: Text(widget.judulQuiz)),
+        appBar: AppBar(
+          title: Text(widget.judulQuiz),
+          actions: [
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: isOnline ? Colors.green[50] : Colors.red[50],
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: isOnline ? Colors.green : Colors.red,
+                  width: 1,
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    isOnline ? Icons.wifi : Icons.wifi_off,
+                    color: isOnline ? Colors.green : Colors.red,
+                    size: 16,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    isOnline ? 'Online' : 'Offline',
+                    style: TextStyle(
+                      color: isOnline ? Colors.green[700] : Colors.red[700],
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
         body: Center(child: CircularProgressIndicator(color: widget.color)),
       );
     }
 
     if (_questions.isEmpty) {
       return Scaffold(
-        appBar: AppBar(title: Text(widget.judulQuiz)),
+        appBar: AppBar(
+          title: Text(widget.judulQuiz),
+          actions: [
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: isOnline ? Colors.green[50] : Colors.red[50],
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: isOnline ? Colors.green : Colors.red,
+                  width: 1,
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    isOnline ? Icons.wifi : Icons.wifi_off,
+                    color: isOnline ? Colors.green : Colors.red,
+                    size: 16,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    isOnline ? 'Online' : 'Offline',
+                    style: TextStyle(
+                      color: isOnline ? Colors.green[700] : Colors.red[700],
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -280,8 +353,46 @@ class _KerjakanQuizScreenState extends State<KerjakanQuizScreen> {
         appBar: AppBar(
           title: Text(widget.judulQuiz),
           actions: [
+            // Online/Offline Indicator
+            Consumer(
+              builder: (context, ref, _) {
+                final isOnline = ref.watch(isOnlineProvider);
+                return Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: isOnline ? Colors.green[50] : Colors.red[50],
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: isOnline ? Colors.green : Colors.red,
+                      width: 1,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        isOnline ? Icons.wifi : Icons.wifi_off,
+                        color: isOnline ? Colors.green : Colors.red,
+                        size: 14,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        isOnline ? 'Online' : 'Offline',
+                        style: TextStyle(
+                          color: isOnline ? Colors.green[700] : Colors.red[700],
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+            // Timer
             Container(
-              margin: const EdgeInsets.all(8),
+              margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: BoxDecoration(
                 color: _remainingSeconds < 60

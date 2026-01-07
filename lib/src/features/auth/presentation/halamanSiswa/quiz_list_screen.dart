@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../../core/config/theme.dart';
+import '../../../../core/providers/connectivity_provider.dart';
 import 'kerjakan_quiz_screen.dart';
 
-class QuizListScreen extends StatelessWidget {
+class QuizListScreen extends ConsumerWidget {
   final String namaMapel;
   final String namaGuru;
   final String kelasId;
@@ -20,11 +22,48 @@ class QuizListScreen extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isOnline = ref.watch(isOnlineProvider);
 
     return Scaffold(
-      appBar: AppBar(title: Text('Quiz $namaMapel'), elevation: 0),
+      appBar: AppBar(
+        title: Text('Quiz $namaMapel'),
+        elevation: 0,
+        actions: [
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: isOnline ? Colors.green[50] : Colors.red[50],
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: isOnline ? Colors.green : Colors.red,
+                width: 1,
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  isOnline ? Icons.wifi : Icons.wifi_off,
+                  color: isOnline ? Colors.green : Colors.red,
+                  size: 16,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  isOnline ? 'Online' : 'Offline',
+                  style: TextStyle(
+                    color: isOnline ? Colors.green[700] : Colors.red[700],
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
       body: Column(
         children: [
           // Header

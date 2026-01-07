@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:file_picker/file_picker.dart';
 import '../../../../core/config/theme.dart';
 import '../../../../core/providers/user_provider.dart';
 import '../../../../core/services/google_drive_service.dart';
+import '../../../../core/providers/connectivity_provider.dart';
 
-class DetailTugasKelasScreen extends StatefulWidget {
+class DetailTugasKelasScreen extends ConsumerStatefulWidget {
   final String kelasId;
   final String namaKelas;
   final String namaGuru;
@@ -21,10 +23,10 @@ class DetailTugasKelasScreen extends StatefulWidget {
   });
 
   @override
-  State<DetailTugasKelasScreen> createState() => _DetailTugasKelasScreenState();
+  ConsumerState<DetailTugasKelasScreen> createState() => _DetailTugasKelasScreenState();
 }
 
-class _DetailTugasKelasScreenState extends State<DetailTugasKelasScreen> {
+class _DetailTugasKelasScreenState extends ConsumerState<DetailTugasKelasScreen> {
   String _selectedFilter = 'Semua';
   final GoogleDriveService _driveService = GoogleDriveService();
   bool _isUploading = false;
@@ -106,6 +108,46 @@ class _DetailTugasKelasScreenState extends State<DetailTugasKelasScreen> {
                               ),
                             ],
                           ),
+                        ),
+                        // Online/Offline Indicator
+                        Consumer(
+                          builder: (context, ref, _) {
+                            final isOnline = ref.watch(isOnlineProvider);
+                            return Container(
+                              margin: const EdgeInsets.only(left: 8),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: Colors.white,
+                                  width: 1,
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    isOnline ? Icons.wifi : Icons.wifi_off,
+                                    color: Colors.white,
+                                    size: 16,
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    isOnline ? 'Online' : 'Offline',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
                         ),
                       ],
                     ),
