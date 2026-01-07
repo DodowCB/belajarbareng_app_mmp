@@ -6,7 +6,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../../core/config/theme.dart';
 import '../../../../core/providers/app_user.dart';
-import '../widgets/admin_header.dart';
+import '../widgets/guru_app_scaffold.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -254,23 +254,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AdminHeader(
-        title: 'My Profile',
-        icon: Icons.person,
-        additionalActions: [
-          if (!_isEditing)
-            MouseRegion(
-              cursor: SystemMouseCursors.click,
-              child: IconButton(
-                icon: const Icon(Icons.edit),
-                onPressed: () => setState(() => _isEditing = true),
-                tooltip: 'Edit Profile',
-              ),
+    return GuruAppScaffold(
+      title: 'My Profile',
+      icon: Icons.person,
+      currentRoute: '/profile',
+      additionalActions: [
+        if (!_isEditing)
+          MouseRegion(
+            cursor: SystemMouseCursors.click,
+            child: IconButton(
+              icon: const Icon(Icons.edit),
+              onPressed: () => setState(() => _isEditing = true),
+              tooltip: 'Edit Profile',
             ),
-        ],
-      ),
+          ),
+      ],
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(

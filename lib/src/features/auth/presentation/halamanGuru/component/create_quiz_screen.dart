@@ -45,6 +45,51 @@ class _CreateQuizScreenState extends State<CreateQuizScreen> {
       }
       selectedKelasId = widget.quizData!['id_kelas']?.toString();
       selectedMapelId = widget.quizData!['id_mapel']?.toString();
+      _loadQuizSoal();
+    }
+  }
+
+  Future<void> _loadQuizSoal() async {
+    try {
+      final quizId = widget.quizData!['id']?.toString();
+      if (quizId == null) return;
+
+      // Load soal
+      final soalSnapshot = await _firestore
+          .collection('quiz_soal')
+          .where('id_quiz', isEqualTo: int.parse(quizId))
+          .get();
+
+      for (var soalDoc in soalSnapshot.docs) {
+        final soalData = soalDoc.data();
+        final soalItem = SoalItem();
+        soalItem.pertanyaanController.text = soalData['pertanyaan'] ?? '';
+        soalItem.tipe = soalData['tipe'] ?? 'single';
+        soalItem.idSoal = soalDoc.id;
+
+        // Load jawaban untuk soal ini
+        final jawabanSnapshot = await _firestore
+            .collection('quiz_jawaban')
+            .where('id_soal', isEqualTo: int.parse(soalDoc.id))
+            .get();
+
+        for (var jawabanDoc in jawabanSnapshot.docs) {
+          final jawabanData = jawabanDoc.data();
+          final jawabanItem = JawabanItem();
+          jawabanItem.controller.text = jawabanData['jawaban'] ?? '';
+          jawabanItem.isCorrect = jawabanData['is_correct'] ?? false;
+          jawabanItem.idJawaban = jawabanDoc.id;
+          soalItem.jawaban.add(jawabanItem);
+        }
+
+        soalList.add(soalItem);
+      }
+
+      if (mounted) {
+        setState(() {});
+      }
+    } catch (e) {
+      debugPrint('Error loading quiz soal: $e');
     }
   }
 
@@ -125,9 +170,11 @@ class _CreateQuizScreenState extends State<CreateQuizScreen> {
                 child: const Icon(Icons.info, color: Colors.white, size: 20),
               ),
               const SizedBox(width: 12),
-              const Text(
-                'Informasi Dasar',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              const Flexible(
+                child: Text(
+                  'Informasi Dasar',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
               ),
             ],
           ),
@@ -146,6 +193,7 @@ class _CreateQuizScreenState extends State<CreateQuizScreen> {
           const SizedBox(height: 16),
           DropdownButtonFormField<String>(
             value: selectedKelasId,
+            isExpanded: true,
             decoration: InputDecoration(
               labelText: 'Kelas',
               prefixIcon: const Icon(Icons.class_),
@@ -167,6 +215,7 @@ class _CreateQuizScreenState extends State<CreateQuizScreen> {
           const SizedBox(height: 16),
           DropdownButtonFormField<String>(
             value: selectedMapelId,
+            isExpanded: true,
             decoration: InputDecoration(
               labelText: 'Mata Pelajaran',
               prefixIcon: const Icon(Icons.book),
@@ -225,9 +274,11 @@ class _CreateQuizScreenState extends State<CreateQuizScreen> {
                 ),
               ),
               const SizedBox(width: 12),
-              const Text(
-                'Durasi Quiz',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              const Flexible(
+                child: Text(
+                  'Durasi Quiz',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
               ),
             ],
           ),
@@ -411,9 +462,11 @@ class _CreateQuizScreenState extends State<CreateQuizScreen> {
                     ),
                   ),
                   const SizedBox(width: 12),
-                  const Text(
-                    'Soal-soal',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  const Flexible(
+                    child: Text(
+                      'Soal-soal',
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
                   ),
                 ],
               ),
@@ -607,27 +660,53 @@ class _CreateQuizScreenState extends State<CreateQuizScreen> {
         throw Exception('User tidak login');
       }
 
-      final quizSnapshot = await _firestore.collection('quiz').get();
-      final nextQuizId = (quizSnapshot.docs.length + 1).toString();
+      final isEditing = widget.quizData != null;
+      final quizId = isEditing
+          ? widget.quizData!['id'].toString()
+          : (await _firestore.collection('quiz').get()).docs.length + 1;
 
-      // Simpan quiz
-      await _firestore.collection('quiz').doc(nextQuizId).set({
+      // Simpan atau update quiz
+      await _firestore.collection('quiz').doc(quizId.toString()).set({
         'id_guru': int.parse(idGuru),
         'id_kelas': int.parse(selectedKelasId!),
         'id_mapel': int.parse(selectedMapelId!),
         'judul': judulController.text.trim(),
         'waktu': waktuMenit,
-        'createdAt': FieldValue.serverTimestamp(),
+        if (!isEditing) 'createdAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
       });
 
-      // Simpan soal-soal
+      // Jika editing, hapus soal dan jawaban lama
+      if (isEditing) {
+        final oldSoalSnapshot = await _firestore
+            .collection('quiz_soal')
+            .where('id_quiz', isEqualTo: int.parse(quizId.toString()))
+            .get();
+
+        for (var soalDoc in oldSoalSnapshot.docs) {
+          // Hapus jawaban lama
+          final oldJawabanSnapshot = await _firestore
+              .collection('quiz_jawaban')
+              .where('id_soal', isEqualTo: int.parse(soalDoc.id))
+              .get();
+
+          for (var jawabanDoc in oldJawabanSnapshot.docs) {
+            await jawabanDoc.reference.delete();
+          }
+
+          // Hapus soal
+          await soalDoc.reference.delete();
+        }
+      }
+
+      // Simpan soal-soal baru
       for (int i = 0; i < soalList.length; i++) {
         final soal = soalList[i];
         final soalSnapshot = await _firestore.collection('quiz_soal').get();
         final nextSoalId = (soalSnapshot.docs.length + 1).toString();
 
         await _firestore.collection('quiz_soal').doc(nextSoalId).set({
-          'id_quiz': int.parse(nextQuizId),
+          'id_quiz': int.parse(quizId.toString()),
           'pertanyaan': soal.pertanyaanController.text.trim(),
           'tipe': soal.tipe,
         });
@@ -649,8 +728,12 @@ class _CreateQuizScreenState extends State<CreateQuizScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Quiz berhasil disimpan'),
+          SnackBar(
+            content: Text(
+              isEditing
+                  ? 'Quiz berhasil diperbarui'
+                  : 'Quiz berhasil dibuat',
+            ),
             backgroundColor: Colors.green,
           ),
         );
@@ -677,6 +760,7 @@ class SoalItem {
   final TextEditingController pertanyaanController = TextEditingController();
   String tipe = 'single';
   List<JawabanItem> jawaban = [];
+  String? idSoal;
 
   Map<String, dynamic> toMap() {
     return {
@@ -692,6 +776,7 @@ class SoalItem {
 class JawabanItem {
   final TextEditingController controller = TextEditingController();
   bool isCorrect = false;
+  String? idJawaban;
 }
 
 class SoalWidget extends StatefulWidget {
@@ -779,14 +864,25 @@ class _SoalWidgetState extends State<SoalWidget> {
                 borderRadius: BorderRadius.circular(12),
               ),
             ),
+            isExpanded: true,
             items: const [
               DropdownMenuItem(
                 value: 'single',
-                child: Text('Single Answer (Pilihan Ganda)'),
+                child: Flexible(
+                  child: Text(
+                    'Single Answer (Pilihan Ganda)',
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
               ),
               DropdownMenuItem(
                 value: 'multiple',
-                child: Text('Multiple Answer (Pilihan Ganda Kompleks)'),
+                child: Flexible(
+                  child: Text(
+                    'Multiple Answer (Pilihan Ganda Kompleks)',
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
               ),
             ],
             onChanged: (v) {

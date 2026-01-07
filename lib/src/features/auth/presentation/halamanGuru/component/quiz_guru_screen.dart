@@ -374,12 +374,30 @@ class _QuizGuruScreenState extends ConsumerState<QuizGuruScreen> {
                             ),
                           ),
                         ],
-                        onSelected: (v) {
+                        onSelected: (v) async {
                           if (v == 'edit') {
-                            // TODO: Edit quiz
+                            final result = await Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => CreateQuizScreen(
+                                  kelasList: _kelasList,
+                                  mapelList: _mapelList,
+                                  quizData: {
+                                    'id': quiz['id'],
+                                    'judul': details['judul'],
+                                    'id_kelas': quiz['id_kelas'],
+                                    'id_mapel': quiz['id_mapel'],
+                                    'waktu': details['waktu'],
+                                  },
+                                ),
+                              ),
+                            );
+                            if (result == true) {
+                              setState(() {});
+                            }
                           }
                           if (v == 'delete') {
-                            // TODO: Delete quiz
+                            _showDeleteConfirmation(quiz['id'].toString());
                           }
                         },
                       ),
@@ -557,6 +575,125 @@ class _QuizGuruScreenState extends ConsumerState<QuizGuruScreen> {
     // Refresh list if quiz was created
     if (result == true) {
       setState(() {});
+    }
+  }
+
+  void _showDeleteConfirmation(String quizId) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.warning, color: Colors.orange),
+            SizedBox(width: 12),
+            Text('Konfirmasi Hapus'),
+          ],
+        ),
+        content: const Text(
+          'Apakah kamu yakin ingin menghapus quiz ini? Semua data soal dan jawaban akan terhapus.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Batal'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _deleteQuiz(quizId);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Hapus'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _deleteQuiz(String quizId) async {
+    try {
+      // Show loading
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Row(
+              children: [
+                SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                ),
+                SizedBox(width: 12),
+                Text('Menghapus quiz...'),
+              ],
+            ),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+
+      final firestore = FirebaseFirestore.instance;
+
+      // 1. Get all soal for this quiz
+      final soalSnapshot = await firestore
+          .collection('quiz_soal')
+          .where('id_quiz', isEqualTo: int.parse(quizId))
+          .get();
+
+      // 2. Delete all jawaban for each soal
+      for (var soalDoc in soalSnapshot.docs) {
+        final jawabanSnapshot = await firestore
+            .collection('quiz_jawaban')
+            .where('id_soal', isEqualTo: int.parse(soalDoc.id))
+            .get();
+
+        for (var jawabanDoc in jawabanSnapshot.docs) {
+          await jawabanDoc.reference.delete();
+        }
+
+        // 3. Delete soal
+        await soalDoc.reference.delete();
+      }
+
+      // 4. Delete quiz
+      await firestore.collection('quiz').doc(quizId).delete();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Row(
+              children: [
+                Icon(Icons.check_circle, color: Colors.white),
+                SizedBox(width: 12),
+                Text('Quiz berhasil dihapus'),
+              ],
+            ),
+            backgroundColor: Colors.green,
+          ),
+        );
+        setState(() {});
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.error, color: Colors.white),
+                const SizedBox(width: 12),
+                Expanded(child: Text('Error: $e')),
+              ],
+            ),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 }

@@ -9,12 +9,14 @@ class AdminHeader extends StatelessWidget implements PreferredSizeWidget {
   final String title;
   final IconData icon;
   final List<Widget>? additionalActions;
+  final bool automaticallyImplyLeading;
 
   const AdminHeader({
     super.key,
     required this.title,
     required this.icon,
     this.additionalActions,
+    this.automaticallyImplyLeading = true,
   });
 
   @override
@@ -23,6 +25,7 @@ class AdminHeader extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     return AppBar(
+      automaticallyImplyLeading: automaticallyImplyLeading,
       title: Row(
         children: [
           Container(
