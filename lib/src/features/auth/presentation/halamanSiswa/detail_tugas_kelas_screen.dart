@@ -38,122 +38,118 @@ class _DetailTugasKelasScreenState extends ConsumerState<DetailTugasKelasScreen>
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final siswaId = userProvider.userId;
+    final isOnline = ref.watch(isOnlineProvider);
 
     return Scaffold(
       backgroundColor: isDark
           ? AppTheme.backgroundDark
           : AppTheme.backgroundLight,
-      body: Column(
-        children: [
-          // Header dengan gradient
+      appBar: AppBar(
+        title: Text(widget.namaKelas),
+        elevation: 0,
+        actions: [
           Container(
+            margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [widget.color, widget.color.withOpacity(0.7)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+              color: isOnline ? Colors.green[50] : Colors.red[50],
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: isOnline ? Colors.green : Colors.red,
+                width: 1,
               ),
-              boxShadow: [
-                BoxShadow(
-                  color: widget.color.withOpacity(0.3),
-                  blurRadius: 8,
-                  offset: const Offset(0, 4),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  isOnline ? Icons.wifi : Icons.wifi_off,
+                  color: isOnline ? Colors.green : Colors.red,
+                  size: 16,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  isOnline ? 'Online' : 'Offline',
+                  style: TextStyle(
+                    color: isOnline ? Colors.green[700] : Colors.red[700],
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ],
             ),
-            child: SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        IconButton(
-                          onPressed: () => Navigator.pop(context),
-                          icon: const Icon(
-                            Icons.arrow_back,
-                            color: Colors.white,
-                          ),
-                        ),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                widget.namaKelas,
-                                style: const TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Row(
-                                children: [
-                                  const Icon(
-                                    Icons.person,
-                                    color: Colors.white70,
-                                    size: 16,
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    widget.namaGuru,
-                                    style: const TextStyle(
-                                      fontSize: 14,
-                                      color: Colors.white70,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                        // Online/Offline Indicator
-                        Consumer(
-                          builder: (context, ref, _) {
-                            final isOnline = ref.watch(isOnlineProvider);
-                            return Container(
-                              margin: const EdgeInsets.only(left: 8),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 6,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.2),
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(
-                                  color: Colors.white,
-                                  width: 1,
-                                ),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    isOnline ? Icons.wifi : Icons.wifi_off,
-                                    color: Colors.white,
-                                    size: 16,
-                                  ),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    isOnline ? 'Online' : 'Offline',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            );
-                          },
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+          ),
+        ],
+      ),
+      body: Column(
+        children: [
+          // Info Kelas Card
+          Container(
+            margin: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: isDark ? AppTheme.cardDark : Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: widget.color.withOpacity(0.3),
+                width: 2,
               ),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: widget.color.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    Icons.class_,
+                    color: widget.color,
+                    size: 28,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        widget.namaKelas,
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: isDark ? Colors.white : Colors.black87,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.person,
+                            size: 14,
+                            color: Colors.grey[600],
+                          ),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              widget.namaGuru,
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: Colors.grey[600],
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
           // Filter Status
@@ -299,17 +295,70 @@ class _DetailTugasKelasScreenState extends ConsumerState<DetailTugasKelasScreen>
                       return deadlineA.compareTo(deadlineB);
                     });
 
-                    return ListView.builder(
-                      padding: const EdgeInsets.all(16),
-                      itemCount: tugasList.length,
-                      itemBuilder: (context, index) {
-                        final tugas = tugasList[index];
-                        return _buildTugasCard(
-                          context: context,
-                          tugas: tugas,
-                          isDark: isDark,
-                          siswaId: siswaId,
-                        );
+                    return LayoutBuilder(
+                      builder: (context, constraints) {
+                        final isDesktop = constraints.maxWidth >= 1024;
+                        final isTablet = constraints.maxWidth >= 600 && 
+                                         constraints.maxWidth < 1024;
+                        
+                        if (isDesktop) {
+                          // Desktop: 3 columns grid
+                          return GridView.builder(
+                            padding: const EdgeInsets.all(16),
+                            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 3,
+                              crossAxisSpacing: 12,
+                              mainAxisSpacing: 12,
+                              childAspectRatio: 2.5,
+                            ),
+                            itemCount: tugasList.length,
+                            itemBuilder: (context, index) {
+                              final tugas = tugasList[index];
+                              return _buildTugasCard(
+                                context: context,
+                                tugas: tugas,
+                                isDark: isDark,
+                                siswaId: siswaId,
+                              );
+                            },
+                          );
+                        } else if (isTablet) {
+                          // Tablet: 2 columns grid
+                          return GridView.builder(
+                            padding: const EdgeInsets.all(16),
+                            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 2,
+                              crossAxisSpacing: 12,
+                              mainAxisSpacing: 12,
+                              childAspectRatio: 2.2,
+                            ),
+                            itemCount: tugasList.length,
+                            itemBuilder: (context, index) {
+                              final tugas = tugasList[index];
+                              return _buildTugasCard(
+                                context: context,
+                                tugas: tugas,
+                                isDark: isDark,
+                                siswaId: siswaId,
+                              );
+                            },
+                          );
+                        } else {
+                          // Mobile: ListView
+                          return ListView.builder(
+                            padding: const EdgeInsets.all(16),
+                            itemCount: tugasList.length,
+                            itemBuilder: (context, index) {
+                              final tugas = tugasList[index];
+                              return _buildTugasCard(
+                                context: context,
+                                tugas: tugas,
+                                isDark: isDark,
+                                siswaId: siswaId,
+                              );
+                            },
+                          );
+                        }
                       },
                     );
                   },
@@ -418,8 +467,8 @@ class _DetailTugasKelasScreenState extends ConsumerState<DetailTugasKelasScreen>
     final statusColor = _getColorForStatus(status);
 
     return Card(
-      margin: const EdgeInsets.only(bottom: 16),
-      elevation: 3,
+      margin: const EdgeInsets.only(bottom: 12),
+      elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: InkWell(
         onTap: () {
@@ -430,68 +479,92 @@ class _DetailTugasKelasScreenState extends ConsumerState<DetailTugasKelasScreen>
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
             gradient: LinearGradient(
-              colors: [widget.color.withOpacity(0.05), Colors.transparent],
+              colors: [widget.color.withOpacity(0.08), Colors.transparent],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
           ),
           child: Padding(
             padding: const EdgeInsets.all(16),
-            child: Column(
+            child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
+                // Icon assignment di sisi kiri
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: widget.color.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    Icons.assignment,
+                    color: widget.color,
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                // Content
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Judul tugas
+                      Text(
                         tugas['judul'],
                         style: TextStyle(
-                          fontSize: 16,
+                          fontSize: 15,
                           fontWeight: FontWeight.bold,
                           color: isDark ? Colors.white : Colors.black87,
                         ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
+                      const SizedBox(height: 6),
+                      // Deadline dengan icon
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.access_time,
+                            size: 14,
+                            color: Colors.grey[600],
+                          ),
+                          const SizedBox(width: 4),
+                          Flexible(
+                            child: Text(
+                              _formatDate(deadline),
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey[600],
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
                       ),
-                      decoration: BoxDecoration(
-                        color: statusColor.withOpacity(0.15),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: statusColor, width: 1),
-                      ),
-                      child: Text(
-                        status,
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
+                      const SizedBox(height: 8),
+                      // Status badge
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
                           color: statusColor,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          status,
+                          style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
                         ),
                       ),
-                    ),
-                  ],
-                ),
-                if (tugas['deskripsi'].isNotEmpty) ...[
-                  const SizedBox(height: 8),
-                  Text(
-                    tugas['deskripsi'],
-                    style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
+                    ],
                   ),
-                ],
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Icon(Icons.access_time, size: 16, color: Colors.grey[600]),
-                    const SizedBox(width: 4),
-                    Text(
-                      'Deadline: ${_formatDate(deadline)}',
-                      style: TextStyle(fontSize: 13, color: Colors.grey[600]),
-                    ),
-                  ],
                 ),
               ],
             ),
