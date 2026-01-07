@@ -7,7 +7,7 @@ import '../../../../core/providers/connectivity_provider.dart';
 import '../halamanSiswa/blocs/blocs.dart';
 import '../halamanSiswa/halaman_siswa_screen.dart';
 import '../halamanSiswa/tugas_siswa_screen.dart';
-import '../halamanSiswa/quiz_siswa_screen.dart';
+import '../halamanSiswa/quiz_kelas_siswa_screen.dart';
 import '../halamanSiswa/kelas_siswa_screen.dart';
 import '../halamanSiswa/kalender_siswa_screen.dart';
 import '../profile/profile_screen.dart';
@@ -200,7 +200,7 @@ class _SiswaAppScaffoldState extends ConsumerState<SiswaAppScaffold> {
                       Navigator.pushReplacement(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const QuizSiswaScreen(),
+                          builder: (context) => const QuizKelasSiswaScreen(),
                         ),
                       );
                     }
@@ -704,7 +704,7 @@ class _SiswaAppScaffoldState extends ConsumerState<SiswaAppScaffold> {
                       Navigator.pushReplacement(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const QuizSiswaScreen(),
+                          builder: (context) => const QuizKelasSiswaScreen(),
                         ),
                       );
                     }

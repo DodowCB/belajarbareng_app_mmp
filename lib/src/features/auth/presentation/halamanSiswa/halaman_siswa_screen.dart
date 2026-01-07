@@ -9,7 +9,6 @@ import '../../../../core/providers/connectivity_provider.dart';
 import '../../data/models/pengumuman_model.dart';
 import 'blocs/blocs.dart';
 import 'tugas_siswa_screen.dart';
-import 'quiz_siswa_screen.dart';
 import 'kelas_siswa_screen.dart';
 import 'quiz_kelas_siswa_screen.dart';
 import 'kalender_siswa_screen.dart';
@@ -617,7 +616,7 @@ class _HalamanSiswaScreenState extends ConsumerState<HalamanSiswaScreen> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => const QuizSiswaScreen(),
+                        builder: (context) => const QuizKelasSiswaScreen(),
                       ),
                     );
                   },
@@ -1455,7 +1454,7 @@ class _HalamanSiswaScreenState extends ConsumerState<HalamanSiswaScreen> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const QuizSiswaScreen(),
+                          builder: (context) => const QuizKelasSiswaScreen(),
                         ),
                       );
                     },
@@ -1517,7 +1516,7 @@ class _HalamanSiswaScreenState extends ConsumerState<HalamanSiswaScreen> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const QuizSiswaScreen(),
+                          builder: (context) => const QuizKelasSiswaScreen(),
                         ),
                       );
                     },
