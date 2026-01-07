@@ -473,7 +473,7 @@ class _SiswaAppScaffoldState extends ConsumerState<SiswaAppScaffold> {
 
   Widget _buildOnlineIndicator(BuildContext context) {
     final isOnline = ref.watch(isOnlineProvider);
-    
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),

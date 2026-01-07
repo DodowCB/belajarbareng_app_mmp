@@ -83,8 +83,15 @@ class _HalamanSiswaScreenState extends ConsumerState<HalamanSiswaScreen> {
                         builder: (context, ref, _) {
                           final isOnline = ref.watch(isOnlineProvider);
                           return Container(
-                            margin: const EdgeInsets.only(right: 8, top: 12, bottom: 12),
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            margin: const EdgeInsets.only(
+                              right: 8,
+                              top: 12,
+                              bottom: 12,
+                            ),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
                             decoration: BoxDecoration(
                               color: isOnline
                                   ? Colors.green.withOpacity(0.1)
@@ -1185,7 +1192,7 @@ class _HalamanSiswaScreenState extends ConsumerState<HalamanSiswaScreen> {
 
     // Langsung query collection pengumpulan, auto-update real-time
     return StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance
+      stream: FirebaseFirestore.instance
           .collection('pengumpulan')
           .where('siswa_id', isEqualTo: querySiswaId)
           .snapshots(),
