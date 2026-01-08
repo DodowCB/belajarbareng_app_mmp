@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/config/theme.dart';
 import '../../../../core/providers/theme_provider.dart';
-import '../widgets/admin_header.dart';
+import '../../../../core/providers/app_user.dart';
+import '../widgets/guru_app_scaffold.dart';
+import '../widgets/siswa_app_scaffold.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -25,16 +27,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   Widget build(BuildContext context) {
     final themeMode = ref.watch(themeModeProvider);
     final isDarkMode = themeMode == ThemeMode.dark;
+    final isSiswa = AppUser.isSiswa;
 
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AdminHeader(
-        title: 'Settings',
-        icon: Icons.settings,
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(20),
-        children: [
+    // Build settings body
+    final settingsBody = ListView(
+      padding: const EdgeInsets.all(20),
+      children: [
           _buildSectionTitle('Appearance'),
           _buildSettingCard(
             icon: Icons.dark_mode,
@@ -219,8 +217,24 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             onTap: () => _showTermsOfService(),
           ),
         ],
-      ),
-    );
+      );
+
+    // Return appropriate scaffold based on user role
+    if (isSiswa) {
+      return SiswaAppScaffold(
+        title: 'Settings',
+        icon: Icons.settings,
+        currentRoute: '/settings',
+        body: settingsBody,
+      );
+    } else {
+      return GuruAppScaffold(
+        title: 'Settings',
+        icon: Icons.settings,
+        currentRoute: '/settings',
+        body: settingsBody,
+      );
+    }
   }
 
   Widget _buildSectionTitle(String title) {

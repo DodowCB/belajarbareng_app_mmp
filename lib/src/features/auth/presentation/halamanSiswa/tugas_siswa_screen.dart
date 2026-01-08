@@ -258,7 +258,7 @@ class _TugasSiswaScreenState extends State<TugasSiswaScreen> {
                         fontWeight: FontWeight.bold,
                         color: isDark ? Colors.white : Colors.black87,
                       ),
-                      maxLines: 1,
+                      maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 4),
@@ -266,7 +266,7 @@ class _TugasSiswaScreenState extends State<TugasSiswaScreen> {
                       children: [
                         Icon(Icons.person, size: 14, color: Colors.grey[600]),
                         const SizedBox(width: 4),
-                        Expanded(
+                        Flexible(
                           child: Text(
                             namaGuru,
                             style: TextStyle(

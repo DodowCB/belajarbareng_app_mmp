@@ -228,7 +228,7 @@ class KelasSiswaScreen extends StatelessWidget {
                                       crossAxisCount: 2,
                                       crossAxisSpacing: 12,
                                       mainAxisSpacing: 12,
-                                      childAspectRatio: 1.1,
+                                      childAspectRatio: 0.95,
                                     ),
                                 itemCount: kelasList.length,
                                 itemBuilder: (context, index) {
