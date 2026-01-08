@@ -1370,8 +1370,11 @@ class HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
                   style: Theme.of(
                     context,
                   ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
                 ),
               ),
+              const SizedBox(width: 12),
               Expanded(
                 flex: 2,
                 child: Container(
@@ -1390,6 +1393,8 @@ class HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
                       fontWeight: FontWeight.w600,
                     ),
                     textAlign: TextAlign.center,
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
                   ),
                 ),
               ),
@@ -1404,10 +1409,13 @@ class HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
                       color: isDark ? Colors.grey[400] : Colors.grey[600],
                     ),
                     const SizedBox(width: 6),
-                    Text(
-                      dueDate,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: isDark ? Colors.grey[400] : Colors.grey[600],
+                    Flexible(
+                      child: Text(
+                        dueDate,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: isDark ? Colors.grey[400] : Colors.grey[600],
+                        ),
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                   ],
@@ -1470,32 +1478,38 @@ class HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
               const SizedBox(height: 12),
               Row(
                 children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppTheme.accentGreen.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.class_,
-                          size: 14,
-                          color: AppTheme.accentGreen,
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          className,
-                          style: Theme.of(context).textTheme.bodySmall
-                              ?.copyWith(
-                                color: AppTheme.accentGreen,
-                                fontWeight: FontWeight.w600,
-                              ),
-                        ),
-                      ],
+                  Flexible(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppTheme.accentGreen.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.class_,
+                            size: 14,
+                            color: AppTheme.accentGreen,
+                          ),
+                          const SizedBox(width: 6),
+                          Flexible(
+                            child: Text(
+                              className,
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(
+                                    color: AppTheme.accentGreen,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -1505,10 +1519,13 @@ class HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
                     color: isDark ? Colors.grey[400] : Colors.grey[600],
                   ),
                   const SizedBox(width: 6),
-                  Text(
-                    dueDate,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: isDark ? Colors.grey[400] : Colors.grey[600],
+                  Flexible(
+                    child: Text(
+                      dueDate,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: isDark ? Colors.grey[400] : Colors.grey[600],
+                      ),
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                 ],

@@ -385,135 +385,274 @@ class _AbsensiDialogState extends State<_AbsensiDialog> {
             const Divider(),
             const SizedBox(height: 16),
             // Actions
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: Text(
-                    'Batal',
-                    style: TextStyle(
-                      color: widget.isDark
-                          ? Colors.grey[400]
-                          : Colors.grey[600],
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                ElevatedButton(
-                  onPressed: () async {
-                    // Delete existing absensi for this date if in edit mode
-                    if (widget.isEdit) {
-                      final dateString = DateFormat(
-                        'yyyy-MM-dd',
-                      ).format(widget.selectedDate);
-                      Query deleteQuery = widget.firestore
-                          .collection('absensi')
-                          .where('kelas_id', isEqualTo: widget.kelasId)
-                          .where('tipe_absen', isEqualTo: widget.tipeAbsen);
+            LayoutBuilder(
+              builder: (context, constraints) {
+                if (constraints.maxWidth < 400) {
+                  // Mobile: Stack buttons vertically
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      ElevatedButton(
+                        onPressed: () async {
+                          // Delete existing absensi for this date if in edit mode
+                          if (widget.isEdit) {
+                            final dateString = DateFormat(
+                              'yyyy-MM-dd',
+                            ).format(widget.selectedDate);
+                            Query deleteQuery = widget.firestore
+                                .collection('absensi')
+                                .where('kelas_id', isEqualTo: widget.kelasId)
+                                .where('tipe_absen', isEqualTo: widget.tipeAbsen);
 
-                      if (widget.tipeAbsen == 'mapel' &&
-                          widget.jadwalId != null) {
-                        deleteQuery = deleteQuery.where(
-                          'jadwal_id',
-                          isEqualTo: widget.jadwalId,
-                        );
-                      }
+                            if (widget.tipeAbsen == 'mapel' &&
+                                widget.jadwalId != null) {
+                              deleteQuery = deleteQuery.where(
+                                'jadwal_id',
+                                isEqualTo: widget.jadwalId,
+                              );
+                            }
 
-                      final deleteSnapshot = await deleteQuery.get();
-                      final batch = widget.firestore.batch();
+                            final deleteSnapshot = await deleteQuery.get();
+                            final batch = widget.firestore.batch();
 
-                      for (final doc in deleteSnapshot.docs) {
-                        final data = doc.data() as Map<String, dynamic>;
-                        final timestamp = data['tanggal'] as Timestamp?;
-                        if (timestamp != null) {
-                          final docDate = timestamp.toDate();
-                          final docDateString = DateFormat(
-                            'yyyy-MM-dd',
-                          ).format(docDate);
-                          if (docDateString == dateString) {
-                            batch.delete(doc.reference);
+                            for (final doc in deleteSnapshot.docs) {
+                              final data = doc.data() as Map<String, dynamic>;
+                              final timestamp = data['tanggal'] as Timestamp?;
+                              if (timestamp != null) {
+                                final docDate = timestamp.toDate();
+                                final docDateString = DateFormat(
+                                  'yyyy-MM-dd',
+                                ).format(docDate);
+                                if (docDateString == dateString) {
+                                  batch.delete(doc.reference);
+                                }
+                              }
+                            }
+
+                            await batch.commit();
                           }
-                        }
-                      }
 
-                      await batch.commit();
-                    }
+                          // Get current max ID to generate next sequential ID
+                          final allAbsensiSnapshot = await widget.firestore
+                              .collection('absensi')
+                              .get();
 
-                    // Get current max ID to generate next sequential ID
-                    final allAbsensiSnapshot = await widget.firestore
-                        .collection('absensi')
-                        .get();
+                          int maxId = 0;
+                          for (final doc in allAbsensiSnapshot.docs) {
+                            final docId = doc.id;
+                            final numericId = int.tryParse(docId);
+                            if (numericId != null && numericId > maxId) {
+                              maxId = numericId;
+                            }
+                          }
 
-                    int maxId = 0;
-                    for (final doc in allAbsensiSnapshot.docs) {
-                      final docId = doc.id;
-                      final numericId = int.tryParse(docId);
-                      if (numericId != null && numericId > maxId) {
-                        maxId = numericId;
-                      }
-                    }
+                          // Save new absensi with sequential IDs
+                          final batch = widget.firestore.batch();
+                          int currentId = maxId;
 
-                    // Save new absensi with sequential IDs
-                    final batch = widget.firestore.batch();
-                    int currentId = maxId;
+                          for (final entry in absensiStatus.entries) {
+                            currentId++;
+                            final docRef = widget.firestore
+                                .collection('absensi')
+                                .doc(currentId.toString());
+                            batch.set(docRef, {
+                              'siswa_id': entry.key,
+                              'kelas_id': widget.kelasId,
+                              'jadwal_id': widget.tipeAbsen == 'mapel'
+                                  ? widget.jadwalId
+                                  : null,
+                              'status': entry.value,
+                              'tanggal': Timestamp.fromDate(widget.selectedDate),
+                              'tipe_absen': widget.tipeAbsen,
+                              'diabsen_oleh': widget.guruId,
+                              'createdAt': FieldValue.serverTimestamp(),
+                              'updatedAt': FieldValue.serverTimestamp(),
+                            });
+                          }
 
-                    for (final entry in absensiStatus.entries) {
-                      currentId++;
-                      final docRef = widget.firestore
-                          .collection('absensi')
-                          .doc(currentId.toString());
-                      batch.set(docRef, {
-                        'siswa_id': entry.key,
-                        'kelas_id': widget.kelasId,
-                        'jadwal_id': widget.tipeAbsen == 'mapel'
-                            ? widget.jadwalId
-                            : null,
-                        'status': entry.value,
-                        'tanggal': Timestamp.fromDate(widget.selectedDate),
-                        'tipe_absen': widget.tipeAbsen,
-                        'diabsen_oleh': widget.guruId,
-                        'createdAt': FieldValue.serverTimestamp(),
-                        'updatedAt': FieldValue.serverTimestamp(),
-                      });
-                    }
-
-                    try {
-                      await batch.commit();
-                      if (!context.mounted) return;
-                      Navigator.pop(context);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            widget.isEdit
-                                ? 'Absensi berhasil diperbarui'
-                                : 'Absensi berhasil disimpan',
+                          try {
+                            await batch.commit();
+                            if (!context.mounted) return;
+                            Navigator.pop(context);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  widget.isEdit
+                                      ? 'Absensi berhasil diperbarui'
+                                      : 'Absensi berhasil disimpan',
+                                ),
+                                backgroundColor: Colors.green,
+                              ),
+                            );
+                          } catch (e) {
+                            if (!context.mounted) return;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Error: $e'),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.primaryPurple,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
                           ),
-                          backgroundColor: Colors.green,
                         ),
-                      );
-                    } catch (e) {
-                      if (!context.mounted) return;
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Error: $e'),
-                          backgroundColor: Colors.red,
+                        child: Text(
+                          widget.isEdit ? 'Update Absensi' : 'Simpan Absensi',
                         ),
-                      );
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primaryPurple,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  child: Text(
-                    widget.isEdit ? 'Update Absensi' : 'Simpan Absensi',
-                  ),
-                ),
-              ],
+                      ),
+                      const SizedBox(height: 8),
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: Text(
+                          'Batal',
+                          style: TextStyle(
+                            color: widget.isDark
+                                ? Colors.grey[400]
+                                : Colors.grey[600],
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                } else {
+                  // Desktop/Tablet: Row layout
+                  return Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: Text(
+                          'Batal',
+                          style: TextStyle(
+                            color: widget.isDark
+                                ? Colors.grey[400]
+                                : Colors.grey[600],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      ElevatedButton(
+                        onPressed: () async {
+                          // Delete existing absensi for this date if in edit mode
+                          if (widget.isEdit) {
+                            final dateString = DateFormat(
+                              'yyyy-MM-dd',
+                            ).format(widget.selectedDate);
+                            Query deleteQuery = widget.firestore
+                                .collection('absensi')
+                                .where('kelas_id', isEqualTo: widget.kelasId)
+                                .where('tipe_absen', isEqualTo: widget.tipeAbsen);
+
+                            if (widget.tipeAbsen == 'mapel' &&
+                                widget.jadwalId != null) {
+                              deleteQuery = deleteQuery.where(
+                                'jadwal_id',
+                                isEqualTo: widget.jadwalId,
+                              );
+                            }
+
+                            final deleteSnapshot = await deleteQuery.get();
+                            final batch = widget.firestore.batch();
+
+                            for (final doc in deleteSnapshot.docs) {
+                              final data = doc.data() as Map<String, dynamic>;
+                              final timestamp = data['tanggal'] as Timestamp?;
+                              if (timestamp != null) {
+                                final docDate = timestamp.toDate();
+                                final docDateString = DateFormat(
+                                  'yyyy-MM-dd',
+                                ).format(docDate);
+                                if (docDateString == dateString) {
+                                  batch.delete(doc.reference);
+                                }
+                              }
+                            }
+
+                            await batch.commit();
+                          }
+
+                          // Get current max ID to generate next sequential ID
+                          final allAbsensiSnapshot = await widget.firestore
+                              .collection('absensi')
+                              .get();
+
+                          int maxId = 0;
+                          for (final doc in allAbsensiSnapshot.docs) {
+                            final docId = doc.id;
+                            final numericId = int.tryParse(docId);
+                            if (numericId != null && numericId > maxId) {
+                              maxId = numericId;
+                            }
+                          }
+
+                          // Save new absensi with sequential IDs
+                          final batch = widget.firestore.batch();
+                          int currentId = maxId;
+
+                          for (final entry in absensiStatus.entries) {
+                            currentId++;
+                            final docRef = widget.firestore
+                                .collection('absensi')
+                                .doc(currentId.toString());
+                            batch.set(docRef, {
+                              'siswa_id': entry.key,
+                              'kelas_id': widget.kelasId,
+                              'jadwal_id': widget.tipeAbsen == 'mapel'
+                                  ? widget.jadwalId
+                                  : null,
+                              'status': entry.value,
+                              'tanggal': Timestamp.fromDate(widget.selectedDate),
+                              'tipe_absen': widget.tipeAbsen,
+                              'diabsen_oleh': widget.guruId,
+                              'createdAt': FieldValue.serverTimestamp(),
+                              'updatedAt': FieldValue.serverTimestamp(),
+                            });
+                          }
+
+                          try {
+                            await batch.commit();
+                            if (!context.mounted) return;
+                            Navigator.pop(context);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  widget.isEdit
+                                      ? 'Absensi berhasil diperbarui'
+                                      : 'Absensi berhasil disimpan',
+                                ),
+                                backgroundColor: Colors.green,
+                              ),
+                            );
+                          } catch (e) {
+                            if (!context.mounted) return;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Error: $e'),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.primaryPurple,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        child: Text(
+                          widget.isEdit ? 'Update Absensi' : 'Simpan Absensi',
+                        ),
+                      ),
+                    ],
+                  );
+                }
+              },
             ),
           ],
         ),

@@ -263,48 +263,96 @@ class _MateriGuruScreenState extends ConsumerState<MateriGuruScreen> {
             ),
           ),
           const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: DropdownButtonFormField<String>(
-                  value: _selectedKelas,
-                  decoration: InputDecoration(
-                    labelText: 'Filter Kelas',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              if (constraints.maxWidth < 600) {
+                // Mobile: Stack vertically
+                return Column(
+                  children: [
+                    DropdownButtonFormField<String>(
+                      value: _selectedKelas,
+                      decoration: InputDecoration(
+                        labelText: 'Filter Kelas',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
+                      ),
+                      items: kelasItems
+                          .map((k) => DropdownMenuItem(value: k, child: Text(k)))
+                          .toList(),
+                      onChanged: (v) => setState(() => _selectedKelas = v!),
                     ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<String>(
+                      value: _selectedMapel,
+                      decoration: InputDecoration(
+                        labelText: 'Filter Mapel',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
+                      ),
+                      items: mapelItems
+                          .map((t) => DropdownMenuItem(value: t, child: Text(t)))
+                          .toList(),
+                      onChanged: (v) => setState(() => _selectedMapel = v!),
                     ),
-                  ),
-                  items: kelasItems
-                      .map((k) => DropdownMenuItem(value: k, child: Text(k)))
-                      .toList(),
-                  onChanged: (v) => setState(() => _selectedKelas = v!),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: DropdownButtonFormField<String>(
-                  value: _selectedMapel,
-                  decoration: InputDecoration(
-                    labelText: 'Filter Mapel',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
+                  ],
+                );
+              } else {
+                // Desktop/Tablet: Row layout
+                return Row(
+                  children: [
+                    Expanded(
+                      child: DropdownButtonFormField<String>(
+                        value: _selectedKelas,
+                        decoration: InputDecoration(
+                          labelText: 'Filter Kelas',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
+                          ),
+                        ),
+                        items: kelasItems
+                            .map((k) => DropdownMenuItem(value: k, child: Text(k)))
+                            .toList(),
+                        onChanged: (v) => setState(() => _selectedKelas = v!),
+                      ),
                     ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: DropdownButtonFormField<String>(
+                        value: _selectedMapel,
+                        decoration: InputDecoration(
+                          labelText: 'Filter Mapel',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
+                          ),
+                        ),
+                        items: mapelItems
+                            .map((t) => DropdownMenuItem(value: t, child: Text(t)))
+                            .toList(),
+                        onChanged: (v) => setState(() => _selectedMapel = v!),
+                      ),
                     ),
-                  ),
-                  items: mapelItems
-                      .map((t) => DropdownMenuItem(value: t, child: Text(t)))
-                      .toList(),
-                  onChanged: (v) => setState(() => _selectedMapel = v!),
-                ),
-              ),
-            ],
+                  ],
+                );
+              }
+            },
           ),
         ],
       ),

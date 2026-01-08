@@ -112,8 +112,8 @@ class MateriGuruDialogs {
                     Expanded(
                       child: Text(
                         details['status'] == 'youtube'
-                            ? 'Klik tombol \"Watch Video\" untuk memutar video'
-                            : 'Fitur preview lengkap akan segera hadir!',
+                            ? 'Klik tombol "Watch Video" untuk memutar video'
+                            : 'Klik tombol "Lihat List PDF" untuk melihat dan mendownload PDF',
                         style: const TextStyle(fontSize: 13),
                       ),
                     ),
@@ -1158,59 +1158,124 @@ class MateriGuruDialogs {
               ),
             ),
             const SizedBox(width: 12),
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IconButton(
-                  onPressed: downloadUrl.isEmpty
-                      ? null
-                      : () {
-                          debugPrint('View button clicked: $downloadUrl');
-                          _openFile(downloadUrl);
-                        },
-                  icon: const Icon(Icons.visibility),
-                  color: downloadUrl.isEmpty
-                      ? Colors.grey
-                      : AppTheme.primaryPurple,
-                  tooltip: downloadUrl.isEmpty
-                      ? 'URL tidak tersedia'
-                      : 'Lihat File',
-                  style: IconButton.styleFrom(
-                    backgroundColor: downloadUrl.isEmpty
-                        ? Colors.grey.withOpacity(0.1)
-                        : AppTheme.primaryPurple.withOpacity(0.1),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                IconButton(
-                  onPressed: downloadUrl.isEmpty
-                      ? null
-                      : () {
-                          debugPrint('Download button clicked: $downloadUrl');
-                          // Untuk download, gunakan driveFileId
-                          final driveFileId = file['driveFileId'] ?? '';
-                          if (driveFileId.isNotEmpty) {
-                            final downloadLink =
-                                'https://drive.google.com/uc?export=download&id=$driveFileId';
-                            _downloadFile(downloadLink, fileName);
-                          } else {
-                            _downloadFile(downloadUrl, fileName);
-                          }
-                        },
-                  icon: const Icon(Icons.download),
-                  color: downloadUrl.isEmpty
-                      ? Colors.grey
-                      : AppTheme.secondaryTeal,
-                  tooltip: downloadUrl.isEmpty
-                      ? 'URL tidak tersedia'
-                      : 'Download File',
-                  style: IconButton.styleFrom(
-                    backgroundColor: downloadUrl.isEmpty
-                        ? Colors.grey.withOpacity(0.1)
-                        : AppTheme.secondaryTeal.withOpacity(0.1),
-                  ),
-                ),
-              ],
+            LayoutBuilder(
+              builder: (context, constraints) {
+                // If the parent is narrow, stack the buttons vertically
+                final parentWidth = constraints.maxWidth;
+                if (parentWidth < 150) {
+                  return Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        onPressed: downloadUrl.isEmpty
+                            ? null
+                            : () {
+                                debugPrint('View button clicked: $downloadUrl');
+                                _openFile(downloadUrl);
+                              },
+                        icon: const Icon(Icons.visibility, size: 20),
+                        color: downloadUrl.isEmpty
+                            ? Colors.grey
+                            : AppTheme.primaryPurple,
+                        tooltip: downloadUrl.isEmpty
+                            ? 'URL tidak tersedia'
+                            : 'Lihat File',
+                        style: IconButton.styleFrom(
+                          backgroundColor: downloadUrl.isEmpty
+                              ? Colors.grey.withOpacity(0.1)
+                              : AppTheme.primaryPurple.withOpacity(0.1),
+                          padding: const EdgeInsets.all(8),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      IconButton(
+                        onPressed: downloadUrl.isEmpty
+                            ? null
+                            : () {
+                                debugPrint('Download button clicked: $downloadUrl');
+                                // Untuk download, gunakan driveFileId
+                                final driveFileId = file['driveFileId'] ?? '';
+                                if (driveFileId.isNotEmpty) {
+                                  final downloadLink =
+                                      'https://drive.google.com/uc?export=download&id=$driveFileId';
+                                  _downloadFile(downloadLink, fileName);
+                                } else {
+                                  _downloadFile(downloadUrl, fileName);
+                                }
+                              },
+                        icon: const Icon(Icons.download, size: 20),
+                        color: downloadUrl.isEmpty
+                            ? Colors.grey
+                            : AppTheme.secondaryTeal,
+                        tooltip: downloadUrl.isEmpty
+                            ? 'URL tidak tersedia'
+                            : 'Download File',
+                        style: IconButton.styleFrom(
+                          backgroundColor: downloadUrl.isEmpty
+                              ? Colors.grey.withOpacity(0.1)
+                              : AppTheme.secondaryTeal.withOpacity(0.1),
+                          padding: const EdgeInsets.all(8),
+                        ),
+                      ),
+                    ],
+                  );
+                } else {
+                  return Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        onPressed: downloadUrl.isEmpty
+                            ? null
+                            : () {
+                                debugPrint('View button clicked: $downloadUrl');
+                                _openFile(downloadUrl);
+                              },
+                        icon: const Icon(Icons.visibility),
+                        color: downloadUrl.isEmpty
+                            ? Colors.grey
+                            : AppTheme.primaryPurple,
+                        tooltip: downloadUrl.isEmpty
+                            ? 'URL tidak tersedia'
+                            : 'Lihat File',
+                        style: IconButton.styleFrom(
+                          backgroundColor: downloadUrl.isEmpty
+                              ? Colors.grey.withOpacity(0.1)
+                              : AppTheme.primaryPurple.withOpacity(0.1),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      IconButton(
+                        onPressed: downloadUrl.isEmpty
+                            ? null
+                            : () {
+                                debugPrint('Download button clicked: $downloadUrl');
+                                // Untuk download, gunakan driveFileId
+                                final driveFileId = file['driveFileId'] ?? '';
+                                if (driveFileId.isNotEmpty) {
+                                  final downloadLink =
+                                      'https://drive.google.com/uc?export=download&id=$driveFileId';
+                                  _downloadFile(downloadLink, fileName);
+                                } else {
+                                  _downloadFile(downloadUrl, fileName);
+                                }
+                              },
+                        icon: const Icon(Icons.download),
+                        color: downloadUrl.isEmpty
+                            ? Colors.grey
+                            : AppTheme.secondaryTeal,
+                        tooltip: downloadUrl.isEmpty
+                            ? 'URL tidak tersedia'
+                            : 'Download File',
+                        style: IconButton.styleFrom(
+                          backgroundColor: downloadUrl.isEmpty
+                              ? Colors.grey.withOpacity(0.1)
+                              : AppTheme.secondaryTeal.withOpacity(0.1),
+                        ),
+                      ),
+                    ],
+                  );
+                }
+              },
             ),
           ],
         ),
