@@ -287,12 +287,16 @@ class _JadwalMengajarScreenState extends State<JadwalMengajarScreen> {
                             getGuruName(jadwal['id_guru']),
                             style: Theme.of(context).textTheme.titleMedium
                                 ?.copyWith(fontWeight: FontWeight.bold),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
                           ),
                           const SizedBox(height: 4),
                           Text(
                             '${getKelasName(jadwal['id_kelas'])} - ${getMapelName(jadwal['id_mapel'])}',
                             style: Theme.of(context).textTheme.bodyMedium
                                 ?.copyWith(color: Colors.grey[600]),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ],
                       ),
@@ -344,11 +348,15 @@ class _JadwalMengajarScreenState extends State<JadwalMengajarScreen> {
                     children: [
                       Icon(Icons.access_time, size: 16, color: Colors.teal),
                       const SizedBox(width: 8),
-                      Text(
-                        '${jadwal['hari'] ?? 'No day'} - ${jadwal['jam'] ?? 'No time'}',
-                        style: TextStyle(
-                          color: Colors.teal,
-                          fontWeight: FontWeight.w500,
+                      Flexible(
+                        child: Text(
+                          '${jadwal['hari'] ?? 'No day'} - ${jadwal['jam'] ?? 'No time'}',
+                          style: TextStyle(
+                            color: Colors.teal,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                     ],
@@ -576,26 +584,30 @@ class _JadwalMengajarScreenState extends State<JadwalMengajarScreen> {
         children: [
           Icon(icon, size: 20, color: Colors.teal),
           const SizedBox(width: 12),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey[600],
-                  fontWeight: FontWeight.w500,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey[600],
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                value,
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
+                const SizedBox(height: 4),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ],
       ),

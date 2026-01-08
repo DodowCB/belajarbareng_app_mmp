@@ -3,7 +3,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../../core/config/theme.dart';
 import '../profile_menu/profile_menu_widget.dart';
-import '../all_users/all_users_screen.dart';
 import '../guru_data/teachers_screen.dart';
 import '../siswa/students_screen.dart';
 import '../mapel/subjects_screen.dart';
@@ -110,7 +109,7 @@ class _AdminScreenState extends State<AdminScreen> {
                       style: Theme.of(context).textTheme.headlineMedium
                           ?.copyWith(
                             fontWeight: FontWeight.bold,
-                            fontSize: isCollapsed ? 18 : 24,
+                            fontSize: isCollapsed ? 18 : 20,
                           ),
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -125,9 +124,15 @@ class _AdminScreenState extends State<AdminScreen> {
         // Connection Status Indicator
         BlocBuilder<AdminBloc, AdminState>(
           builder: (context, state) {
+            final screenWidth = MediaQuery.of(context).size.width;
+            final showText = screenWidth >= 450;
+
             return Container(
               margin: const EdgeInsets.only(right: 8, top: 12, bottom: 12),
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              padding: EdgeInsets.symmetric(
+                horizontal: showText ? 8 : 6,
+                vertical: 4,
+              ),
               decoration: BoxDecoration(
                 color: state.isOnline
                     ? Colors.green.withOpacity(0.1)
@@ -146,15 +151,19 @@ class _AdminScreenState extends State<AdminScreen> {
                     color: state.isOnline ? Colors.green : Colors.red,
                     size: 16,
                   ),
-                  const SizedBox(width: 4),
-                  Text(
-                    state.isOnline ? 'Online' : 'Offline',
-                    style: TextStyle(
-                      color: state.isOnline ? Colors.green : Colors.red,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
+                  if (showText) ...[
+                    const SizedBox(width: 4),
+                    Text(
+                      state.isOnline ? 'Online' : 'Offline',
+                      style: TextStyle(
+                        color: state.isOnline ? Colors.green : Colors.red,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                  ),
+                  ],
                 ],
               ),
             );
@@ -208,6 +217,7 @@ class _AdminScreenState extends State<AdminScreen> {
         ),
         IconButton(
           icon: const Icon(Icons.notifications_outlined),
+          tooltip: 'Notifications',
           onPressed: () {
             Navigator.of(context).push(
               MaterialPageRoute(
@@ -217,7 +227,7 @@ class _AdminScreenState extends State<AdminScreen> {
           },
         ),
         Padding(
-          padding: const EdgeInsets.only(right: 12, left: 8),
+          padding: const EdgeInsets.only(right: 8, left: 4),
           child: ProfileDropdownMenu(
             userName: 'Administrator',
             userEmail: 'Administrator@gmail.com',
@@ -324,7 +334,7 @@ class _AdminScreenState extends State<AdminScreen> {
               icon: Icons.people,
               color: AppTheme.primaryPurple,
               onTap: state.isOnline
-                  ? () => _navigateToAllUsers()
+                  ? () => _showAllUsersModal()
                   : () => _showOfflineMessage(),
               isOffline: !state.isOnline,
             ),
@@ -497,6 +507,7 @@ class _AdminScreenState extends State<AdminScreen> {
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
             children: [
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -504,7 +515,7 @@ class _AdminScreenState extends State<AdminScreen> {
                   Expanded(
                     child: Row(
                       children: [
-                        Expanded(
+                        Flexible(
                           child: Text(
                             title,
                             style: Theme.of(context).textTheme.titleMedium
@@ -513,11 +524,13 @@ class _AdminScreenState extends State<AdminScreen> {
                                   fontWeight: FontWeight.w600,
                                   fontSize: screenWidth >= 1200 ? 16 : 14,
                                 ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                         if (isOffline) ...[
                           const SizedBox(width: 4),
-                          Icon(
+                          const Icon(
                             Icons.offline_bolt,
                             color: Colors.grey,
                             size: 16,
@@ -526,6 +539,7 @@ class _AdminScreenState extends State<AdminScreen> {
                       ],
                     ),
                   ),
+                  const SizedBox(width: 8),
                   Icon(
                     icon,
                     color: isOffline ? Colors.grey : color,
@@ -541,6 +555,8 @@ class _AdminScreenState extends State<AdminScreen> {
                   color: isOffline ? Colors.grey : color,
                   fontSize: screenWidth >= 1200 ? 36 : 28,
                 ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
               const SizedBox(height: 4),
               Text(
@@ -552,6 +568,8 @@ class _AdminScreenState extends State<AdminScreen> {
                   fontSize: screenWidth >= 1200 ? 14 : 12,
                   fontWeight: isOffline ? FontWeight.w500 : FontWeight.normal,
                 ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             ],
           ),
@@ -837,22 +855,359 @@ class _AdminScreenState extends State<AdminScreen> {
 
   void _navigateBasedOnActivity(String title) {
     if (title.contains('user') || title.contains('registered')) {
-      _navigateToAllUsers();
+      _showAllUsersModal();
     } else if (title.contains('Teacher')) {
       _navigateToGuruData();
     }
     // Add more navigation logic based on activity type
   }
 
-  void _navigateToAllUsers() {
-    Navigator.of(
-      context,
-    ).push(MaterialPageRoute(
-      builder: (context) => BlocProvider.value(
-        value: _adminBloc,
-        child: const AllUsersScreen(),
-      ),
-    ));
+  void _showAllUsersModal() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Container(
+            width: MediaQuery.of(context).size.width * 0.9,
+            constraints: const BoxConstraints(
+              maxWidth: 600,
+              maxHeight: 700,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Header
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    gradient: AppTheme.sunsetGradient,
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(16),
+                      topRight: Radius.circular(16),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(
+                          Icons.people,
+                          color: Colors.white,
+                          size: 24,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      const Expanded(
+                        child: Text(
+                          'All Users',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () => Navigator.pop(context),
+                        icon: const Icon(Icons.close, color: Colors.white),
+                        tooltip: 'Close',
+                      ),
+                    ],
+                  ),
+                ),
+                // Content
+                Expanded(
+                  child: StreamBuilder<QuerySnapshot>(
+                    stream: FirebaseFirestore.instance
+                        .collection('guru')
+                        .snapshots(),
+                    builder: (context, guruSnapshot) {
+                      if (guruSnapshot.connectionState ==
+                          ConnectionState.waiting) {
+                        return const Center(
+                          child: CircularProgressIndicator(),
+                        );
+                      }
+
+                      return StreamBuilder<QuerySnapshot>(
+                        stream: FirebaseFirestore.instance
+                            .collection('siswa')
+                            .snapshots(),
+                        builder: (context, siswaSnapshot) {
+                          if (siswaSnapshot.connectionState ==
+                              ConnectionState.waiting) {
+                            return const Center(
+                              child: CircularProgressIndicator(),
+                            );
+                          }
+
+                          if (guruSnapshot.hasError ||
+                              siswaSnapshot.hasError) {
+                            return Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Icon(
+                                    Icons.error_outline,
+                                    size: 64,
+                                    color: Colors.red,
+                                  ),
+                                  const SizedBox(height: 16),
+                                  Text(
+                                    'Error loading users',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      color: Colors.grey[600],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }
+
+                          // Combine all users
+                          final List<Map<String, String>> allUsers = [];
+
+                          // Add teachers
+                          if (guruSnapshot.hasData) {
+                            for (var doc in guruSnapshot.data!.docs) {
+                              final data = doc.data() as Map<String, dynamic>;
+                              final name = data['nama_lengkap'] ?? 'Unknown';
+                              allUsers.add({
+                                'name': name,
+                                'role': 'Teacher',
+                              });
+                            }
+                          }
+
+                          // Add students
+                          if (siswaSnapshot.hasData) {
+                            for (var doc in siswaSnapshot.data!.docs) {
+                              final data = doc.data() as Map<String, dynamic>;
+                              final name = data['nama'] ?? 'Unknown';
+                              allUsers.add({
+                                'name': name,
+                                'role': 'Student',
+                              });
+                            }
+                          }
+
+                          // Sort by name
+                          allUsers.sort(
+                            (a, b) => a['name']!.compareTo(b['name']!),
+                          );
+
+                          if (allUsers.isEmpty) {
+                            return Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.people_outline,
+                                    size: 64,
+                                    color: Colors.grey[400],
+                                  ),
+                                  const SizedBox(height: 16),
+                                  Text(
+                                    'No users found',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      color: Colors.grey[600],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }
+
+                          return Column(
+                            children: [
+                              // Summary
+                              Container(
+                                padding: const EdgeInsets.all(16),
+                                color: Theme.of(context)
+                                    .brightness ==
+                                    Brightness.dark
+                                    ? Colors.grey[850]
+                                    : Colors.grey[100],
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceEvenly,
+                                  children: [
+                                    Flexible(
+                                      child: _buildUserSummaryItem(
+                                        'Total',
+                                        allUsers.length.toString(),
+                                        AppTheme.primaryPurple,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Flexible(
+                                      child: _buildUserSummaryItem(
+                                        'Teachers',
+                                        guruSnapshot.data!.docs.length
+                                            .toString(),
+                                        AppTheme.secondaryTeal,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Flexible(
+                                      child: _buildUserSummaryItem(
+                                        'Students',
+                                        siswaSnapshot.data!.docs.length
+                                            .toString(),
+                                        AppTheme.accentGreen,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const Divider(height: 1),
+                              // User list
+                              Expanded(
+                                child: ListView.separated(
+                                  padding: const EdgeInsets.all(16),
+                                  itemCount: allUsers.length,
+                                  separatorBuilder: (context, index) =>
+                                      const SizedBox(height: 8),
+                                  itemBuilder: (context, index) {
+                                    final user = allUsers[index];
+                                    final isTeacher =
+                                        user['role'] == 'Teacher';
+
+                                    return Container(
+                                      padding: const EdgeInsets.all(12),
+                                      decoration: BoxDecoration(
+                                        color: Theme.of(context)
+                                                    .brightness ==
+                                                Brightness.dark
+                                            ? Colors.grey[850]
+                                            : Colors.white,
+                                        borderRadius:
+                                            BorderRadius.circular(8),
+                                        border: Border.all(
+                                          color: isTeacher
+                                              ? AppTheme.secondaryTeal
+                                                  .withOpacity(0.3)
+                                              : AppTheme.accentGreen
+                                                  .withOpacity(0.3),
+                                        ),
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          CircleAvatar(
+                                            backgroundColor: isTeacher
+                                                ? AppTheme.secondaryTeal
+                                                    .withOpacity(0.2)
+                                                : AppTheme.accentGreen
+                                                    .withOpacity(0.2),
+                                            child: Icon(
+                                              isTeacher
+                                                  ? Icons.school
+                                                  : Icons.person,
+                                              color: isTeacher
+                                                  ? AppTheme.secondaryTeal
+                                                  : AppTheme.accentGreen,
+                                              size: 20,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 12),
+                                          Expanded(
+                                            child: Text(
+                                              '${user['name']} - ${user['role']}',
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .bodyMedium
+                                                  ?.copyWith(
+                                                    fontWeight:
+                                                        FontWeight.w500,
+                                                  ),
+                                              maxLines: 1,
+                                              overflow:
+                                                  TextOverflow.ellipsis,
+                                            ),
+                                          ),
+                                          Container(
+                                            padding:
+                                                const EdgeInsets.symmetric(
+                                              horizontal: 8,
+                                              vertical: 4,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: isTeacher
+                                                  ? AppTheme.secondaryTeal
+                                                      .withOpacity(0.1)
+                                                  : AppTheme.accentGreen
+                                                      .withOpacity(0.1),
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                            ),
+                                            child: Text(
+                                              user['role']!,
+                                              style: TextStyle(
+                                                fontSize: 11,
+                                                fontWeight: FontWeight.w600,
+                                                color: isTeacher
+                                                    ? AppTheme.secondaryTeal
+                                                    : AppTheme.accentGreen,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ),
+                            ],
+                          );
+                        },
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildUserSummaryItem(String label, String value, Color color) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+            color: color,
+          ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        const SizedBox(height: 4),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            color: Colors.grey[600],
+            fontWeight: FontWeight.w500,
+          ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+      ],
+    );
   }
 
   void _navigateToGuruData() {

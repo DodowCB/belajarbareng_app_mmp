@@ -54,9 +54,15 @@ class AdminHeader extends StatelessWidget implements PreferredSizeWidget {
         // Online/Offline Status Indicator
         BlocBuilder<AdminBloc, AdminState>(
           builder: (context, state) {
+            final screenWidth = MediaQuery.of(context).size.width;
+            final showText = screenWidth >= 400;
+
             return Container(
               margin: const EdgeInsets.only(right: 8, top: 12, bottom: 12),
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              padding: EdgeInsets.symmetric(
+                horizontal: showText ? 8 : 6,
+                vertical: 4,
+              ),
               decoration: BoxDecoration(
                 color: state.isOnline
                     ? Colors.green.withOpacity(0.1)
@@ -75,15 +81,19 @@ class AdminHeader extends StatelessWidget implements PreferredSizeWidget {
                     color: state.isOnline ? Colors.green : Colors.red,
                     size: 16,
                   ),
-                  const SizedBox(width: 4),
-                  Text(
-                    state.isOnline ? 'Online' : 'Offline',
-                    style: TextStyle(
-                      color: state.isOnline ? Colors.green : Colors.red,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
+                  if (showText) ...[
+                    const SizedBox(width: 4),
+                    Text(
+                      state.isOnline ? 'Online' : 'Offline',
+                      style: TextStyle(
+                        color: state.isOnline ? Colors.green : Colors.red,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                  ),
+                  ],
                 ],
               ),
             );
@@ -94,6 +104,7 @@ class AdminHeader extends StatelessWidget implements PreferredSizeWidget {
           cursor: SystemMouseCursors.click,
           child: IconButton(
             icon: const Icon(Icons.notifications_outlined),
+            tooltip: 'Notifications',
             onPressed: () {
               Navigator.push(
                 context,
@@ -105,7 +116,7 @@ class AdminHeader extends StatelessWidget implements PreferredSizeWidget {
           ),
         ),
         Padding(
-          padding: const EdgeInsets.only(right: 12, left: 8),
+          padding: const EdgeInsets.only(right: 8, left: 4),
           child: ProfileDropdownMenu(
             userName: 'Administrator',
             userEmail: 'Administrator@gmail.com',

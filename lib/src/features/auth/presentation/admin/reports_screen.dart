@@ -58,6 +58,8 @@ class _ReportsScreenState extends State<ReportsScreen>
               labelColor: Theme.of(context).textTheme.titleMedium?.color ?? AppTheme.textPrimary,
               unselectedLabelColor: (Theme.of(context).textTheme.titleMedium?.color ?? AppTheme.textPrimary).withOpacity(0.7),
               indicatorColor: AppTheme.primaryPurple,
+              isScrollable: false,
+              labelPadding: const EdgeInsets.symmetric(horizontal: 8),
               tabs: const [
                 Tab(icon: Icon(Icons.check_circle), text: 'Absensi'),
                 Tab(icon: Icon(Icons.assignment), text: 'Tugas'),
@@ -403,11 +405,15 @@ class _ReportsScreenState extends State<ReportsScreen>
                 child: Icon(icon, color: color, size: 24),
               ),
               const SizedBox(width: 12),
-              Text(
-                title,
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+              Expanded(
+                child: Text(
+                  title,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
             ],
           ),
@@ -428,6 +434,7 @@ class _ReportsScreenState extends State<ReportsScreen>
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
           Text(
             label,
@@ -436,6 +443,8 @@ class _ReportsScreenState extends State<ReportsScreen>
               color: color,
               fontWeight: FontWeight.w600,
             ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
           const SizedBox(height: 4),
           Text(
@@ -445,6 +454,8 @@ class _ReportsScreenState extends State<ReportsScreen>
               fontWeight: FontWeight.bold,
               color: color,
             ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),
@@ -503,8 +514,16 @@ class _ReportsScreenState extends State<ReportsScreen>
           backgroundColor: statusColor.withOpacity(0.2),
           child: Icon(Icons.person, color: statusColor),
         ),
-        title: Text('Siswa ID: ${data['siswa_id'] ?? '-'}'),
-        subtitle: Text('Kelas ID: ${data['kelas_id'] ?? '-'}\n$dateStr'),
+        title: Text(
+          'Siswa ID: ${data['siswa_id'] ?? '-'}',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        subtitle: Text(
+          'Kelas ID: ${data['kelas_id'] ?? '-'}\n$dateStr',
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+        ),
         trailing: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
@@ -514,6 +533,8 @@ class _ReportsScreenState extends State<ReportsScreen>
           child: Text(
             displayStatus,
             style: TextStyle(color: statusColor, fontWeight: FontWeight.bold),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ),
       ),
@@ -546,8 +567,16 @@ class _ReportsScreenState extends State<ReportsScreen>
           backgroundColor: Colors.orange,
           child: Icon(Icons.assignment, color: Colors.white),
         ),
-        title: Text('Siswa ID: ${data['siswa_id'] ?? '-'}'),
-        subtitle: Text('Tugas ID: ${data['tugas_id'] ?? '-'}\n$dateStr'),
+        title: Text(
+          'Siswa ID: ${data['siswa_id'] ?? '-'}',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        subtitle: Text(
+          'Tugas ID: ${data['tugas_id'] ?? '-'}\n$dateStr',
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+        ),
         trailing: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
@@ -557,6 +586,8 @@ class _ReportsScreenState extends State<ReportsScreen>
           child: const Text(
             'Terkumpul',
             style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ),
       ),
@@ -591,7 +622,11 @@ class _ReportsScreenState extends State<ReportsScreen>
           backgroundColor: Colors.purple,
           child: Icon(Icons.library_books, color: Colors.white),
         ),
-        title: Text(data['judul'] ?? 'Materi'),
+        title: Text(
+          data['judul'] ?? 'Materi',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
         subtitle: idGuru != null
             ? FutureBuilder<DocumentSnapshot>(
                 future: _firestore.collection('guru').doc(idGuru).get(),
@@ -613,6 +648,8 @@ class _ReportsScreenState extends State<ReportsScreen>
                     'Kelas ID: ${data['id_kelas'] ?? '-'}\n'
                     'Upload: $dateStr\n'
                     'Oleh: $namaGuru',
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
                   );
                 },
               )
@@ -620,6 +657,8 @@ class _ReportsScreenState extends State<ReportsScreen>
                 'Kelas ID: ${data['id_kelas'] ?? '-'}\n'
                 'Upload: $dateStr\n'
                 'Oleh: -',
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
               ),
       ),
     );
@@ -651,11 +690,17 @@ class _ReportsScreenState extends State<ReportsScreen>
           backgroundColor: Colors.teal,
           child: Icon(Icons.quiz, color: Colors.white),
         ),
-        title: Text(data['judul'] ?? 'Quiz'),
+        title: Text(
+          data['judul'] ?? 'Quiz',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
         subtitle: Text(
           'Kelas ID: ${data['id_kelas'] ?? '-'}\n'
           'Waktu: ${data['waktu'] ?? 0} menit\n'
           'Dibuat: $dateStr',
+          maxLines: 3,
+          overflow: TextOverflow.ellipsis,
         ),
       ),
     );
