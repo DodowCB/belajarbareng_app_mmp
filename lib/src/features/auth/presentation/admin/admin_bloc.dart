@@ -4,7 +4,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../../core/services/connectivity_service.dart';
 import '../../../../core/services/local_storage_service.dart';
 import '../../../../core/services/auto_sync_service.dart';
-import '../../../../core/services/recent_activity_service.dart';
 import '../../../../core/providers/app_user.dart';
 import 'dart:async';
 
@@ -24,11 +23,6 @@ class TriggerManualSync extends AdminEvent {}
 
 class GetSyncStatus extends AdminEvent {}
 
-class RecentActivitiesChanged extends AdminEvent {
-  final List<Map<String, dynamic>> activities;
-  RecentActivitiesChanged(this.activities);
-}
-
 // Admin State
 class AdminState {
   final bool isLoading;
@@ -39,7 +33,6 @@ class AdminState {
   final int totalClasses;
   final int totalPengumuman;
   final int totalJadwalMengajar;
-  final List<Map<String, dynamic>> recentActivities;
   final String? error;
   final bool isOnline;
   final DateTime? lastSync;
@@ -53,7 +46,6 @@ class AdminState {
     this.totalClasses = 0,
     this.totalPengumuman = 0,
     this.totalJadwalMengajar = 0,
-    this.recentActivities = const [],
     this.error,
     this.isOnline = true,
     this.lastSync,
@@ -68,7 +60,6 @@ class AdminState {
     int? totalClasses,
     int? totalPengumuman,
     int? totalJadwalMengajar,
-    List<Map<String, dynamic>>? recentActivities,
     String? error,
     bool? isOnline,
     DateTime? lastSync,
@@ -82,7 +73,6 @@ class AdminState {
       totalClasses: totalClasses ?? this.totalClasses,
       totalPengumuman: totalPengumuman ?? this.totalPengumuman,
       totalJadwalMengajar: totalJadwalMengajar ?? this.totalJadwalMengajar,
-      recentActivities: recentActivities ?? this.recentActivities,
       error: error,
       isOnline: isOnline ?? this.isOnline,
       lastSync: lastSync ?? this.lastSync,
@@ -96,7 +86,6 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
   final ConnectivityService _connectivityService = ConnectivityService();
   final LocalStorageService _localStorageService = LocalStorageService();
   final AutoSyncService _autoSyncService = AutoSyncService();
-  final RecentActivityService _recentActivityService = RecentActivityService();
 
   AdminBloc() : super(AdminState()) {
     on<LoadAdminData>(_onLoadAdminData);
@@ -104,14 +93,11 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
     on<UpdateUserStats>(_onUpdateUserStats);
     on<TriggerManualSync>(_onTriggerManualSync);
     on<GetSyncStatus>(_onGetSyncStatus);
-    on<RecentActivitiesChanged>(_onRecentActivitiesChanged);
 
     // Initialize services and setup connectivity listener
     _initializeServices();
     _setupConnectivityListener();
   }
-
-  StreamSubscription<List<Map<String, dynamic>>>? _recentActivitiesSub;
 
   Future<void> _initializeServices() async {
     await _connectivityService.initialize();
@@ -120,17 +106,6 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
     // Start auto background sync after services are initialized
     await _autoSyncService.startAutoSync();
     debugPrint('🚀 AdminBloc initialized with auto sync service');
-    // Subscribe to recent activities from Firestore
-    try {
-      _recentActivitiesSub = _recentActivityService
-          .recentActivitiesStream()
-          .listen((activities) {
-        add(RecentActivitiesChanged(activities));
-      });
-      debugPrint('🔔 Subscribed to recent activities stream');
-    } catch (e) {
-      debugPrint('⚠️ Failed to subscribe to recent activities: $e');
-    }
   }
 
   void _setupConnectivityListener() {
@@ -171,34 +146,6 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
         final totalPengumuman = pengumumanSnapshot.docs.length;
         final totalJadwalMengajar = kelasNgajarSnapshot.docs.length;
 
-        final recentActivities = [
-          {
-            'title': 'New user registered',
-            'time': '2 minutes ago',
-            'icon': Icons.person_add,
-          },
-          {
-            'title': 'Teacher uploaded material',
-            'time': '15 minutes ago',
-            'icon': Icons.upload_file,
-          },
-          {
-            'title': 'System backup completed',
-            'time': '1 hour ago',
-            'icon': Icons.backup,
-          },
-          {
-            'title': 'Database optimized',
-            'time': '3 hours ago',
-            'icon': Icons.tune,
-          },
-          {
-            'title': 'Security scan completed',
-            'time': '6 hours ago',
-            'icon': Icons.security,
-          },
-        ];
-
         yield AdminState(
           isLoading: false,
           totalUsers: totalUsers,
@@ -208,7 +155,6 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
           totalClasses: totalClasses,
           totalPengumuman: totalPengumuman,
           totalJadwalMengajar: totalJadwalMengajar,
-          recentActivities: recentActivities,
         );
       } catch (e) {
         yield AdminState(
@@ -318,9 +264,6 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
         totalPengumuman: totalPengumuman,
       );
 
-        // recent activities are supplied asynchronously via RecentActivitiesChanged event
-        List<Map<String, dynamic>> recentActivities = [];
-
         emit(
           state.copyWith(
             isLoading: false,
@@ -331,7 +274,6 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
             totalClasses: totalClasses,
             totalPengumuman: totalPengumuman,
             totalJadwalMengajar: totalJadwalMengajar,
-            recentActivities: recentActivities,
             isOnline: _connectivityService.isOnline,
             lastSync: DateTime.now(),
           ),
@@ -390,19 +332,6 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
         );
         await _localStorageService.printAllOfflineData();
 
-        final recentActivities = [
-          {
-            'title': 'Data loaded from cache',
-            'time': 'Offline mode',
-            'icon': Icons.offline_bolt,
-          },
-          {
-            'title': 'Last sync: ${_formatDateTime(lastSync)}',
-            'time': lastSync != null ? _getTimeAgo(lastSync) : 'Never',
-            'icon': Icons.sync,
-          },
-        ];
-
         emit(
           state.copyWith(
             isLoading: false,
@@ -412,7 +341,6 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
             totalMapels: localData['totalMapel'],
             totalClasses: localData['totalKelas'],
             totalPengumuman: localData['totalPengumuman'],
-            recentActivities: recentActivities,
             isOnline: _connectivityService.isOnline,
             lastSync: lastSync,
           ),
@@ -429,19 +357,6 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
         // Try loading again after creating sample data
         final sampleData = await _localStorageService.getAdminStats();
         if (sampleData != null) {
-          final sampleActivities = [
-            {
-              'title': 'Sample data loaded',
-              'time': 'Offline mode',
-              'icon': Icons.offline_bolt,
-            },
-            {
-              'title': 'Using test database',
-              'time': 'Demo mode',
-              'icon': Icons.science,
-            },
-          ];
-
           emit(
             state.copyWith(
               isLoading: false,
@@ -451,7 +366,6 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
               totalMapels: sampleData['totalMapel'],
               totalClasses: sampleData['totalKelas'],
               totalPengumuman: sampleData['totalPengumuman'],
-              recentActivities: sampleActivities,
               isOnline: _connectivityService.isOnline,
               lastSync: DateTime.now(),
             ),
@@ -512,31 +426,6 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
       }
     } catch (e) {
       emit(state.copyWith(error: 'Failed to refresh data: ${e.toString()}'));
-    }
-  }
-
-  void _onRecentActivitiesChanged(
-    RecentActivitiesChanged event,
-    Emitter<AdminState> emit,
-  ) {
-    try {
-      final mapped = event.activities.map((data) {
-        final ts = data['created_at'];
-        final DateTime dt = ts is Timestamp ? ts.toDate() : (data['created_at'] is DateTime ? data['created_at'] as DateTime : DateTime.now());
-        return {
-          'id': data['id'],
-          'title': data['title'] ?? '',
-          'time': _getTimeAgo(dt),
-          'icon': _mapIconFromString(data['icon'] as String?),
-          'details': data['details'] ?? '',
-          'created_at': dt,
-          'created_by': data['created_by'] ?? '',
-        };
-      }).toList();
-
-      emit(state.copyWith(recentActivities: mapped));
-    } catch (e) {
-      debugPrint('❌ Error mapping recent activities: $e');
     }
   }
 
@@ -705,81 +594,33 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
   // Helper methods for admin operations
   Future<void> addUser(String email, String role) async {
     debugPrint('Adding user: $email with role: $role');
-    try {
-      // Here should be code to add user to Firebase (omitted)
-      // Record activity
-      await _recentActivityService.addActivity({
-        'title': 'New user registered: $email',
-        'details': 'Role: $role',
-        'icon': 'person_add',
-      });
-    } catch (e) {
-      debugPrint('Failed to add recent activity for addUser: $e');
-    }
+    // Here should be code to add user to Firebase (omitted)
   }
 
   Future<void> removeUser(String userId) async {
     debugPrint('Removing user: $userId');
-    try {
-      // Remove user logic (omitted)
-      await _recentActivityService.addActivity({
-        'title': 'User removed: $userId',
-        'details': '',
-        'icon': 'person_remove',
-      });
-    } catch (e) {
-      debugPrint('Failed to add recent activity for removeUser: $e');
-    }
+    // Remove user logic (omitted)
   }
 
   Future<void> updateUserRole(String userId, String newRole) async {
     debugPrint('Updating user $userId to role: $newRole');
-    try {
-      // Update role logic (omitted)
-      await _recentActivityService.addActivity({
-        'title': 'User role updated: $userId',
-        'details': 'New role: $newRole',
-        'icon': 'security',
-      });
-    } catch (e) {
-      debugPrint('Failed to add recent activity for updateUserRole: $e');
-    }
+    // Update role logic (omitted)
   }
 
   Future<void> generateReport() async {
     debugPrint('Generating admin report...');
-    try {
-      // Report generation (omitted)
-      await _recentActivityService.addActivity({
-        'title': 'Report generated',
-        'details': 'Admin generated a system report',
-        'icon': 'analytics',
-      });
-    } catch (e) {
-      debugPrint('Failed to add recent activity for generateReport: $e');
-    }
+    // Report generation (omitted)
   }
 
   Future<void> backupData() async {
     debugPrint('Starting data backup...');
-    try {
-      // Backup logic (omitted)
-      await _recentActivityService.addActivity({
-        'title': 'System backup completed',
-        'details': 'Backup performed by admin',
-        'icon': 'backup',
-      });
-    } catch (e) {
-      debugPrint('Failed to add recent activity for backupData: $e');
-    }
+    // Backup logic (omitted)
   }
 
   @override
   Future<void> close() {
     // Dispose auto sync service when bloc is closed
     _autoSyncService.dispose();
-    // Cancel recent activities subscription
-    _recentActivitiesSub?.cancel();
     debugPrint('🛑 AdminBloc disposed - auto sync stopped');
     return super.close();
   }
