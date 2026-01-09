@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import '../../../../../core/config/theme.dart';
 import '../../../../../core/providers/user_provider.dart';
+import '../../../../../core/providers/connectivity_provider.dart';
 import '../../widgets/guru_app_scaffold.dart';
 import 'quiz_detail_screen.dart';
 import 'create_quiz_screen.dart';
@@ -49,6 +50,9 @@ class _QuizGuruScreenState extends ConsumerState<QuizGuruScreen> {
     final userProv = UserProvider();
     final guruId = userProv.userId;
 
+    // Watch connectivity status for real-time updates
+    final isOnline = ref.watch(isOnlineProvider);
+
     return GuruAppScaffold(
       title: 'Quiz & Ujian',
       icon: Icons.quiz,
@@ -56,12 +60,26 @@ class _QuizGuruScreenState extends ConsumerState<QuizGuruScreen> {
       additionalActions: [
         IconButton(
           icon: const Icon(Icons.add_circle_outline),
-          onPressed: () => _showCreateQuizDialog(context),
+          onPressed: () {
+            final isOnline = ref.read(isOnlineProvider);
+            if (!isOnline) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Anda harus online untuk membuat quiz.'),
+                  backgroundColor: Colors.orange,
+                  duration: Duration(seconds: 3),
+                ),
+              );
+              return;
+            }
+            _showCreateQuizDialog(context);
+          },
           tooltip: 'Buat Quiz',
         ),
       ],
       body: Column(
         children: [
+          if (!isOnline) _buildOfflineBanner(),
           _buildFilterBar(),
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
@@ -145,7 +163,9 @@ class _QuizGuruScreenState extends ConsumerState<QuizGuruScreen> {
                         ),
                       ),
                       items: kelasItems
-                          .map((k) => DropdownMenuItem(value: k, child: Text(k)))
+                          .map(
+                            (k) => DropdownMenuItem(value: k, child: Text(k)),
+                          )
                           .toList(),
                       onChanged: (v) => setState(() => _selectedKelas = v!),
                     ),
@@ -160,7 +180,9 @@ class _QuizGuruScreenState extends ConsumerState<QuizGuruScreen> {
                         ),
                       ),
                       items: mapelItems
-                          .map((m) => DropdownMenuItem(value: m, child: Text(m)))
+                          .map(
+                            (m) => DropdownMenuItem(value: m, child: Text(m)),
+                          )
                           .toList(),
                       onChanged: (v) => setState(() => _selectedMapel = v!),
                     ),
@@ -181,7 +203,9 @@ class _QuizGuruScreenState extends ConsumerState<QuizGuruScreen> {
                         ),
                       ),
                       items: kelasItems
-                          .map((k) => DropdownMenuItem(value: k, child: Text(k)))
+                          .map(
+                            (k) => DropdownMenuItem(value: k, child: Text(k)),
+                          )
                           .toList(),
                       onChanged: (v) => setState(() => _selectedKelas = v!),
                     ),
@@ -198,7 +222,9 @@ class _QuizGuruScreenState extends ConsumerState<QuizGuruScreen> {
                         ),
                       ),
                       items: mapelItems
-                          .map((m) => DropdownMenuItem(value: m, child: Text(m)))
+                          .map(
+                            (m) => DropdownMenuItem(value: m, child: Text(m)),
+                          )
                           .toList(),
                       onChanged: (v) => setState(() => _selectedMapel = v!),
                     ),
@@ -376,6 +402,19 @@ class _QuizGuruScreenState extends ConsumerState<QuizGuruScreen> {
                         ],
                         onSelected: (v) async {
                           if (v == 'edit') {
+                            final isOnline = ref.read(isOnlineProvider);
+                            if (!isOnline) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                    'Anda harus online untuk mengedit quiz.',
+                                  ),
+                                  backgroundColor: Colors.orange,
+                                  duration: Duration(seconds: 3),
+                                ),
+                              );
+                              return;
+                            }
                             final result = await Navigator.push(
                               context,
                               MaterialPageRoute(
@@ -565,10 +604,8 @@ class _QuizGuruScreenState extends ConsumerState<QuizGuruScreen> {
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => CreateQuizScreen(
-          kelasList: _kelasList,
-          mapelList: _mapelList,
-        ),
+        builder: (context) =>
+            CreateQuizScreen(kelasList: _kelasList, mapelList: _mapelList),
       ),
     );
 
@@ -614,6 +651,21 @@ class _QuizGuruScreenState extends ConsumerState<QuizGuruScreen> {
   }
 
   Future<void> _deleteQuiz(String quizId) async {
+    // Check connectivity before deleting
+    final isOnline = ref.read(isOnlineProvider);
+    if (!isOnline) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Anda harus online untuk menghapus quiz.'),
+            backgroundColor: Colors.orange,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+      return;
+    }
+
     try {
       // Show loading
       if (mounted) {
@@ -695,6 +747,54 @@ class _QuizGuruScreenState extends ConsumerState<QuizGuruScreen> {
         );
       }
     }
+  }
+
+  Widget _buildOfflineBanner() {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.orange.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.orange.withOpacity(0.3)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.orange.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(Icons.wifi_off, color: Colors.orange, size: 20),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Offline Mode',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: Colors.orange,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'You can view cached data. Adding/editing/deleting is disabled.',
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodySmall?.copyWith(color: Colors.orange[700]),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../../core/config/theme.dart';
+import '../../../../core/services/connectivity_service.dart';
 import '../widgets/admin_header.dart';
 import 'guru_data_bloc.dart';
 import 'guru_data_event.dart';
@@ -17,11 +17,52 @@ class TeachersScreen extends StatefulWidget {
 class _TeachersScreenState extends State<TeachersScreen> {
   late GuruDataBloc _guruDataBloc;
   String _searchQuery = '';
+  final ConnectivityService _connectivityService = ConnectivityService();
 
   @override
   void initState() {
     super.initState();
     _guruDataBloc = GuruDataBloc();
+    _connectivityService.initialize();
+    // Listen to connectivity changes to update UI
+    _connectivityService.addListener(() {
+      if (mounted) setState(() {});
+    });
+  }
+
+  bool get _isOffline => !_connectivityService.isOnline;
+
+  void _showOfflineDialog(String action) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            const Icon(Icons.wifi_off, color: Colors.orange),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'Offline Mode',
+                style: Theme.of(
+                  context,
+                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
+        content: Text(
+          'Cannot $action while offline. Please connect to internet to perform this action.',
+          style: Theme.of(context).textTheme.bodyMedium,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -40,11 +81,26 @@ class _TeachersScreenState extends State<TeachersScreen> {
           title: 'Teachers Management',
           icon: Icons.school,
           additionalActions: [
+            // Connection status indicator
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: Icon(
+                _isOffline ? Icons.wifi_off : Icons.wifi,
+                color: _isOffline ? Colors.orange : Colors.green,
+                size: 24,
+              ),
+            ),
             MouseRegion(
               cursor: SystemMouseCursors.click,
               child: IconButton(
                 icon: const Icon(Icons.add_circle_outline),
-                onPressed: () => _showTeacherForm(),
+                onPressed: () {
+                  if (_isOffline) {
+                    _showOfflineDialog('add teacher');
+                    return;
+                  }
+                  _showTeacherForm();
+                },
                 tooltip: 'Add Teacher',
               ),
             ),
@@ -61,6 +117,7 @@ class _TeachersScreenState extends State<TeachersScreen> {
           child: Column(
             children: [
               _buildSearchBar(),
+              if (_isOffline) _buildOfflineBanner(),
               Expanded(child: _buildTeachersList()),
             ],
           ),
@@ -68,7 +125,13 @@ class _TeachersScreenState extends State<TeachersScreen> {
         floatingActionButton: MouseRegion(
           cursor: SystemMouseCursors.click,
           child: FloatingActionButton.extended(
-            onPressed: () => _showImportDialog(),
+            onPressed: () {
+              if (_isOffline) {
+                _showOfflineDialog('import data');
+                return;
+              }
+              _showImportDialog();
+            },
             backgroundColor: AppTheme.accentGreen,
             icon: const Icon(Icons.file_upload, color: Colors.white),
             label: const Text(
@@ -95,7 +158,8 @@ class _TeachersScreenState extends State<TeachersScreen> {
         ],
       ),
       child: TextField(
-        onChanged: (value) => setState(() => _searchQuery = value.toLowerCase()),
+        onChanged: (value) =>
+            setState(() => _searchQuery = value.toLowerCase()),
         decoration: InputDecoration(
           hintText: 'Search teachers by name, email, NIG, or subject...',
           prefixIcon: const Icon(Icons.search),
@@ -107,8 +171,57 @@ class _TeachersScreenState extends State<TeachersScreen> {
             borderRadius: BorderRadius.circular(12),
             borderSide: BorderSide.none,
           ),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 12,
+          ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildOfflineBanner() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.orange.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.orange.withOpacity(0.3)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.orange.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Icon(Icons.wifi_off, color: Colors.orange, size: 24),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Offline Mode',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.orange[800],
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'You can view cached data. Adding/editing/deleting is disabled.',
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodySmall?.copyWith(color: Colors.orange[700]),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -142,11 +255,13 @@ class _TeachersScreenState extends State<TeachersScreen> {
             final name = (teacher['nama'] ?? '').toString().toLowerCase();
             final email = (teacher['email'] ?? '').toString().toLowerCase();
             final nig = (teacher['nig'] ?? '').toString().toLowerCase();
-            final subject = (teacher['mataPelajaran'] ?? '').toString().toLowerCase();
+            final subject = (teacher['mataPelajaran'] ?? '')
+                .toString()
+                .toLowerCase();
             return name.contains(_searchQuery) ||
-                   email.contains(_searchQuery) ||
-                   nig.contains(_searchQuery) ||
-                   subject.contains(_searchQuery);
+                email.contains(_searchQuery) ||
+                nig.contains(_searchQuery) ||
+                subject.contains(_searchQuery);
           }).toList();
         }
 
@@ -180,7 +295,11 @@ class _TeachersScreenState extends State<TeachersScreen> {
           builder: (context, constraints) {
             final isDesktop = constraints.maxWidth >= 1200;
             final isTablet = constraints.maxWidth >= 768;
-            final crossAxisCount = isDesktop ? 3 : isTablet ? 2 : 1;
+            final crossAxisCount = isDesktop
+                ? 3
+                : isTablet
+                ? 2
+                : 1;
 
             return GridView.builder(
               padding: const EdgeInsets.all(20),
@@ -188,10 +307,15 @@ class _TeachersScreenState extends State<TeachersScreen> {
                 crossAxisCount: crossAxisCount,
                 crossAxisSpacing: 16,
                 mainAxisSpacing: 16,
-                childAspectRatio: isDesktop ? 1.4 : isTablet ? 1.2 : 1.5,
+                childAspectRatio: isDesktop
+                    ? 1.4
+                    : isTablet
+                    ? 1.2
+                    : 1.5,
               ),
               itemCount: teachers.length,
-              itemBuilder: (context, index) => _buildTeacherCard(teachers[index]),
+              itemBuilder: (context, index) =>
+                  _buildTeacherCard(teachers[index]),
             );
           },
         );
@@ -202,7 +326,7 @@ class _TeachersScreenState extends State<TeachersScreen> {
   Widget _buildTeacherCard(Map<String, dynamic> teacher) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isDisabled = teacher['isDisabled'] ?? false;
-    
+
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       child: Card(
@@ -228,7 +352,9 @@ class _TeachersScreenState extends State<TeachersScreen> {
                       children: [
                         CircleAvatar(
                           radius: 28,
-                          backgroundColor: AppTheme.secondaryTeal.withOpacity(0.2),
+                          backgroundColor: AppTheme.secondaryTeal.withOpacity(
+                            0.2,
+                          ),
                           child: Text(
                             (teacher['nama'] ?? 'T')[0].toUpperCase(),
                             style: const TextStyle(
@@ -245,19 +371,19 @@ class _TeachersScreenState extends State<TeachersScreen> {
                             children: [
                               Text(
                                 teacher['nama'] ?? 'N/A',
-                                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  color: AppTheme.secondaryTeal,
-                                ),
+                                style: Theme.of(context).textTheme.titleMedium
+                                    ?.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                      color: AppTheme.secondaryTeal,
+                                    ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
                               const SizedBox(height: 2),
                               Text(
                                 'NIG: ${teacher['nig'] ?? 'N/A'}',
-                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  color: Colors.grey[600],
-                                ),
+                                style: Theme.of(context).textTheme.bodySmall
+                                    ?.copyWith(color: Colors.grey[600]),
                               ),
                             ],
                           ),
@@ -265,11 +391,20 @@ class _TeachersScreenState extends State<TeachersScreen> {
                       ],
                     ),
                     const SizedBox(height: 16),
-                    _buildInfoRow(Icons.book, teacher['mataPelajaran'] ?? 'N/A'),
+                    _buildInfoRow(
+                      Icons.book,
+                      teacher['mataPelajaran'] ?? 'N/A',
+                    ),
                     const SizedBox(height: 8),
-                    _buildInfoRow(Icons.email_outlined, teacher['email'] ?? 'N/A'),
+                    _buildInfoRow(
+                      Icons.email_outlined,
+                      teacher['email'] ?? 'N/A',
+                    ),
                     const SizedBox(height: 8),
-                    _buildInfoRow(Icons.location_city, teacher['sekolah'] ?? 'N/A'),
+                    _buildInfoRow(
+                      Icons.location_city,
+                      teacher['sekolah'] ?? 'N/A',
+                    ),
                     const Spacer(),
                     Row(
                       children: [
@@ -291,13 +426,25 @@ class _TeachersScreenState extends State<TeachersScreen> {
                         _buildActionButton(
                           icon: Icons.edit,
                           color: Colors.blue,
-                          onPressed: () => _showTeacherForm(teacher: teacher),
+                          onPressed: () {
+                            if (_isOffline) {
+                              _showOfflineDialog('edit teacher');
+                              return;
+                            }
+                            _showTeacherForm(teacher: teacher);
+                          },
                         ),
                         const SizedBox(width: 4),
                         _buildActionButton(
                           icon: Icons.delete,
                           color: Colors.red,
-                          onPressed: () => _showDeleteDialog(teacher),
+                          onPressed: () {
+                            if (_isOffline) {
+                              _showOfflineDialog('delete teacher');
+                              return;
+                            }
+                            _showDeleteDialog(teacher);
+                          },
                         ),
                       ],
                     ),
@@ -392,13 +539,15 @@ class _TeachersScreenState extends State<TeachersScreen> {
                         children: [
                           Text(
                             teacher['nama'] ?? 'N/A',
-                            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
+                            style: Theme.of(context).textTheme.headlineSmall
+                                ?.copyWith(fontWeight: FontWeight.bold),
                           ),
                           Container(
                             margin: const EdgeInsets.only(top: 4),
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 2,
+                            ),
                             decoration: BoxDecoration(
                               color: AppTheme.secondaryTeal.withOpacity(0.2),
                               borderRadius: BorderRadius.circular(8),
@@ -426,9 +575,15 @@ class _TeachersScreenState extends State<TeachersScreen> {
                 const SizedBox(height: 16),
                 _buildDetailRow('NIG', teacher['nig']?.toString() ?? 'N/A'),
                 _buildDetailRow('Email', teacher['email'] ?? 'N/A'),
-                _buildDetailRow('Mata Pelajaran', teacher['mataPelajaran'] ?? 'N/A'),
+                _buildDetailRow(
+                  'Mata Pelajaran',
+                  teacher['mataPelajaran'] ?? 'N/A',
+                ),
                 _buildDetailRow('Sekolah', teacher['sekolah'] ?? 'N/A'),
-                _buildDetailRow('Jenis Kelamin', teacher['jenisKelamin'] ?? 'N/A'),
+                _buildDetailRow(
+                  'Jenis Kelamin',
+                  teacher['jenisKelamin'] ?? 'N/A',
+                ),
                 _buildDetailRow(
                   'Status',
                   (teacher['isDisabled'] ?? false) ? 'Inactive' : 'Active',
@@ -439,6 +594,11 @@ class _TeachersScreenState extends State<TeachersScreen> {
                     Expanded(
                       child: ElevatedButton.icon(
                         onPressed: () {
+                          if (_isOffline) {
+                            Navigator.pop(context);
+                            _showOfflineDialog('edit teacher');
+                            return;
+                          }
                           Navigator.pop(context);
                           _showTeacherForm(teacher: teacher);
                         },
@@ -458,6 +618,11 @@ class _TeachersScreenState extends State<TeachersScreen> {
                     Expanded(
                       child: ElevatedButton.icon(
                         onPressed: () {
+                          if (_isOffline) {
+                            Navigator.pop(context);
+                            _showOfflineDialog('delete teacher');
+                            return;
+                          }
                           Navigator.pop(context);
                           _showDeleteDialog(teacher);
                         },
@@ -501,10 +666,7 @@ class _TeachersScreenState extends State<TeachersScreen> {
           ),
           const SizedBox(width: 12),
           Expanded(
-            child: Text(
-              value,
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
+            child: Text(value, style: Theme.of(context).textTheme.bodyMedium),
           ),
         ],
       ),
@@ -514,12 +676,20 @@ class _TeachersScreenState extends State<TeachersScreen> {
   void _showTeacherForm({Map<String, dynamic>? teacher}) {
     final isEdit = teacher != null;
     final formKey = GlobalKey<FormState>();
-    
+
     final namaController = TextEditingController(text: teacher?['nama'] ?? '');
-    final nigController = TextEditingController(text: teacher?['nig']?.toString() ?? '');
-    final emailController = TextEditingController(text: teacher?['email'] ?? '');
-    final mataPelajaranController = TextEditingController(text: teacher?['mataPelajaran'] ?? '');
-    final sekolahController = TextEditingController(text: teacher?['sekolah'] ?? '');
+    final nigController = TextEditingController(
+      text: teacher?['nig']?.toString() ?? '',
+    );
+    final emailController = TextEditingController(
+      text: teacher?['email'] ?? '',
+    );
+    final mataPelajaranController = TextEditingController(
+      text: teacher?['mataPelajaran'] ?? '',
+    );
+    final sekolahController = TextEditingController(
+      text: teacher?['sekolah'] ?? '',
+    );
     final passwordController = TextEditingController();
     String selectedJenisKelamin = teacher?['jenisKelamin'] ?? 'L';
 
@@ -527,7 +697,9 @@ class _TeachersScreenState extends State<TeachersScreen> {
       context: context,
       builder: (dialogContext) => StatefulBuilder(
         builder: (context, setDialogState) => Dialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
           child: Container(
             constraints: const BoxConstraints(maxWidth: 600),
             padding: const EdgeInsets.all(24),
@@ -556,9 +728,8 @@ class _TeachersScreenState extends State<TeachersScreen> {
                         Expanded(
                           child: Text(
                             isEdit ? 'Edit Teacher' : 'Add New Teacher',
-                            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
+                            style: Theme.of(context).textTheme.headlineSmall
+                                ?.copyWith(fontWeight: FontWeight.bold),
                           ),
                         ),
                         IconButton(
@@ -606,8 +777,9 @@ class _TeachersScreenState extends State<TeachersScreen> {
                       keyboardType: TextInputType.emailAddress,
                       validator: (value) {
                         if (value?.isEmpty ?? true) return 'Email harus diisi';
-                        if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
-                            .hasMatch(value!)) {
+                        if (!RegExp(
+                          r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                        ).hasMatch(value!)) {
                           return 'Email tidak valid';
                         }
                         return null;
@@ -697,7 +869,8 @@ class _TeachersScreenState extends State<TeachersScreen> {
                                   'nama_lengkap': namaController.text.trim(),
                                   'nig': nigController.text.trim(),
                                   'email': emailController.text.trim(),
-                                  'mata_pelajaran': mataPelajaranController.text.trim(),
+                                  'mata_pelajaran': mataPelajaranController.text
+                                      .trim(),
                                   'jenis_kelamin': selectedJenisKelamin,
                                   'sekolah': sekolahController.text.trim(),
                                   'status': 'active',
@@ -706,13 +879,16 @@ class _TeachersScreenState extends State<TeachersScreen> {
                                 };
 
                                 if (passwordController.text.isNotEmpty) {
-                                  guruData['password'] = passwordController.text.trim();
+                                  guruData['password'] = passwordController.text
+                                      .trim();
                                 }
 
                                 Navigator.pop(dialogContext);
 
                                 if (isEdit) {
-                                  _guruDataBloc.add(UpdateGuru(teacher['id'], guruData));
+                                  _guruDataBloc.add(
+                                    UpdateGuru(teacher['id'], guruData),
+                                  );
                                 } else {
                                   _guruDataBloc.add(AddGuru(guruData));
                                 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../../core/config/theme.dart';
+import '../../../../core/services/connectivity_service.dart';
 import '../widgets/admin_header.dart';
 
 class SubjectsScreen extends StatefulWidget {
@@ -13,6 +14,48 @@ class SubjectsScreen extends StatefulWidget {
 class _SubjectsScreenState extends State<SubjectsScreen> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   String _searchQuery = '';
+  final ConnectivityService _connectivityService = ConnectivityService();
+
+  @override
+  void initState() {
+    super.initState();
+    _connectivityService.initialize();
+  }
+
+  bool get _isOffline => !_connectivityService.isOnline;
+
+  void _showOfflineDialog(String action) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            const Icon(Icons.wifi_off, color: Colors.orange),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'Offline Mode',
+                style: Theme.of(
+                  context,
+                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
+        content: Text(
+          'Cannot $action while offline. Please connect to internet to perform this action.',
+          style: Theme.of(context).textTheme.bodyMedium,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
 
   /// Cleanup function to remove 'id' field from all mapel documents
   Future<void> _cleanupIdField() async {
@@ -125,7 +168,13 @@ class _SubjectsScreenState extends State<SubjectsScreen> {
             cursor: SystemMouseCursors.click,
             child: IconButton(
               icon: const Icon(Icons.add_circle_outline),
-              onPressed: () => _showSubjectForm(),
+              onPressed: () {
+                if (_isOffline) {
+                  _showOfflineDialog('add subject');
+                  return;
+                }
+                _showSubjectForm();
+              },
               tooltip: 'Add Subject',
             ),
           ),
@@ -345,14 +394,25 @@ class _SubjectsScreenState extends State<SubjectsScreen> {
                     _buildActionButton(
                       icon: Icons.edit,
                       color: Colors.blue,
-                      onPressed: () =>
-                          _showSubjectForm(docId: docId, data: data),
+                      onPressed: () {
+                        if (_isOffline) {
+                          _showOfflineDialog('edit subject');
+                          return;
+                        }
+                        _showSubjectForm(docId: docId, data: data);
+                      },
                     ),
                     const SizedBox(width: 4),
                     _buildActionButton(
                       icon: Icons.delete,
                       color: Colors.red,
-                      onPressed: () => _showDeleteDialog(docId, namaMapel),
+                      onPressed: () {
+                        if (_isOffline) {
+                          _showOfflineDialog('delete subject');
+                          return;
+                        }
+                        _showDeleteDialog(docId, namaMapel);
+                      },
                     ),
                   ],
                 ),

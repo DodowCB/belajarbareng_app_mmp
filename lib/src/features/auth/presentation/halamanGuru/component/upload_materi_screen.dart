@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../../core/services/google_drive_service.dart';
 import '../../../../../core/config/theme.dart';
 import '../../../../../core/providers/user_provider.dart';
+import '../../../../../core/providers/connectivity_provider.dart';
 import '../../widgets/guru_app_scaffold.dart';
 import 'dart:typed_data';
 
@@ -183,6 +184,21 @@ class _UploadMateriScreenState extends ConsumerState<UploadMateriScreen> {
   Future<void> _pickAndUploadFile() async {
     try {
       debugPrint('=== PICK AND UPLOAD FILE STARTED ===');
+
+      // Check connectivity before uploading
+      final isOnline = ref.read(isOnlineProvider);
+      if (!isOnline) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Anda harus online untuk mengupload file.'),
+              backgroundColor: Colors.orange,
+              duration: Duration(seconds: 3),
+            ),
+          );
+        }
+        return;
+      }
 
       if (!_isSignedIn) {
         debugPrint('❌ User not signed in');
@@ -739,6 +755,21 @@ class _UploadMateriScreenState extends ConsumerState<UploadMateriScreen> {
       return;
     }
 
+    // Check connectivity before saving
+    final isOnline = ref.read(isOnlineProvider);
+    if (!isOnline) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Anda harus online untuk menyimpan materi.'),
+            backgroundColor: Colors.orange,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+      return;
+    }
+
     try {
       setState(() => _isLoading = true);
 
@@ -897,44 +928,46 @@ class _UploadMateriScreenState extends ConsumerState<UploadMateriScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                    // Google Drive Status Card
-                    _buildGoogleDriveStatusCard(isDark),
-                    const SizedBox(height: 20),
+                          // Google Drive Status Card
+                          _buildGoogleDriveStatusCard(isDark),
+                          const SizedBox(height: 20),
 
-                    if (_isSignedIn) ...[
-                      // Form Section
-                      _buildFormSection(isDark),
-                      const SizedBox(height: 20),
+                          if (_isSignedIn) ...[
+                            // Form Section
+                            _buildFormSection(isDark),
+                            const SizedBox(height: 20),
 
-                      // Upload Files Section
-                      _buildUploadSection(isDark),
-                      const SizedBox(height: 20),
+                            // Upload Files Section
+                            _buildUploadSection(isDark),
+                            const SizedBox(height: 20),
 
-                      // Uploaded Files List
-                      if (_uploadedFiles.isNotEmpty) ...[
-                        _buildUploadedFilesList(isDark),
-                        const SizedBox(height: 20),
-                      ],
+                            // Uploaded Files List
+                            if (_uploadedFiles.isNotEmpty) ...[
+                              _buildUploadedFilesList(isDark),
+                              const SizedBox(height: 20),
+                            ],
 
-                      // Save Button
-                      ElevatedButton.icon(
-                        onPressed: _isLoading ? null : _saveMateriToFirestore,
-                        icon: const Icon(Icons.save),
-                        label: const Text('Simpan Materi'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppTheme.primaryPurple,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.all(16),
-                        ),
+                            // Save Button
+                            ElevatedButton.icon(
+                              onPressed: _isLoading
+                                  ? null
+                                  : _saveMateriToFirestore,
+                              icon: const Icon(Icons.save),
+                              label: const Text('Simpan Materi'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppTheme.primaryPurple,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.all(16),
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
-                    ],
-                  ],
+                    ),
+                  ),
                 ),
-              ),
+              ],
             ),
-          ),
-        ],
-      ),
     );
   }
 

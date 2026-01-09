@@ -1,60 +1,35 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../../../core/services/connectivity_service.dart';
+import '../../../../core/services/local_storage_service.dart';
 import 'jadwal_mengajar_event.dart';
 import 'jadwal_mengajar_state.dart';
 
 class JadwalMengajarBloc
     extends Bloc<JadwalMengajarEvent, JadwalMengajarState> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final ConnectivityService _connectivityService = ConnectivityService();
+  final LocalStorageService _localStorageService = LocalStorageService();
 
   JadwalMengajarBloc() : super(JadwalMengajarInitial()) {
+    _initializeServices();
+
     on<LoadJadwalMengajar>((event, emit) async {
       emit(JadwalMengajarLoading());
       try {
-        final jadwalSnapshot = await _firestore
-            .collection('kelas_ngajar')
-            .orderBy('createdAt', descending: true)
-            .get();
+        final isOnline = _connectivityService.isOnline;
+        debugPrint('🔄 Loading jadwal mengajar - Online: $isOnline');
 
-        final guruSnapshot = await _firestore.collection('guru').get();
-        final kelasSnapshot = await _firestore.collection('kelas').get();
-        final mapelSnapshot = await _firestore.collection('mapel').get();
-
-        final jadwalList = jadwalSnapshot.docs.map((doc) {
-          final data = doc.data();
-          data['id'] = doc.id;
-          return data;
-        }).toList();
-
-        final guruList = guruSnapshot.docs.map((doc) {
-          final data = doc.data();
-          data['id'] = doc.id;
-          return data;
-        }).toList();
-
-        final kelasList = kelasSnapshot.docs.map((doc) {
-          final data = doc.data();
-          data['id'] = doc.id;
-          return data;
-        }).toList();
-
-        final mapelList = mapelSnapshot.docs.map((doc) {
-          final data = doc.data();
-          data['id'] = doc.id;
-          return data;
-        }).toList();
-
-        emit(
-          JadwalMengajarLoaded(
-            jadwalList: jadwalList,
-            filteredJadwalList: jadwalList,
-            guruList: guruList,
-            kelasList: kelasList,
-            mapelList: mapelList,
-          ),
-        );
+        if (isOnline) {
+          await _loadFromFirebase(emit);
+        } else {
+          await _loadFromLocalStorage(emit);
+        }
       } catch (e) {
-        emit(JadwalMengajarError('Failed to load data: ${e.toString()}'));
+        debugPrint('❌ Failed to load jadwal mengajar: $e');
+        // Try fallback to local storage
+        await _loadFromLocalStorage(emit);
       }
     });
 
@@ -181,6 +156,101 @@ class JadwalMengajarBloc
         );
       }
     });
+  }
+
+  Future<void> _initializeServices() async {
+    await _connectivityService.initialize();
+    await _localStorageService.initialize();
+  }
+
+  Future<void> _loadFromFirebase(Emitter<JadwalMengajarState> emit) async {
+    try {
+      debugPrint('🔥 Loading jadwal mengajar from Firebase...');
+
+      final jadwalSnapshot = await _firestore
+          .collection('kelas_ngajar')
+          .orderBy('createdAt', descending: true)
+          .get()
+          .timeout(const Duration(seconds: 10));
+
+      final guruSnapshot = await _firestore.collection('guru').get();
+      final kelasSnapshot = await _firestore.collection('kelas').get();
+      final mapelSnapshot = await _firestore.collection('mapel').get();
+
+      final jadwalList = jadwalSnapshot.docs.map((doc) {
+        final data = doc.data();
+        data['id'] = doc.id;
+        return data;
+      }).toList();
+
+      final guruList = guruSnapshot.docs.map((doc) {
+        final data = doc.data();
+        data['id'] = doc.id;
+        return data;
+      }).toList();
+
+      final kelasList = kelasSnapshot.docs.map((doc) {
+        final data = doc.data();
+        data['id'] = doc.id;
+        return data;
+      }).toList();
+
+      final mapelList = mapelSnapshot.docs.map((doc) {
+        final data = doc.data();
+        data['id'] = doc.id;
+        return data;
+      }).toList();
+
+      debugPrint('🔥 Firebase data loaded: ${jadwalList.length} jadwal');
+
+      emit(
+        JadwalMengajarLoaded(
+          jadwalList: jadwalList,
+          filteredJadwalList: jadwalList,
+          guruList: guruList,
+          kelasList: kelasList,
+          mapelList: mapelList,
+        ),
+      );
+    } catch (e) {
+      debugPrint('❌ Firebase failed: $e, falling back to local storage');
+      await _loadFromLocalStorage(emit);
+    }
+  }
+
+  Future<void> _loadFromLocalStorage(Emitter<JadwalMengajarState> emit) async {
+    try {
+      debugPrint('💾 Loading jadwal mengajar from local storage...');
+
+      final jadwalData = await _localStorageService.getKelasNgajarData();
+      final guruData = await _localStorageService.getGuruData();
+      final kelasData = await _localStorageService.getKelasData();
+      final mapelData = await _localStorageService.getMapelData();
+
+      if (jadwalData != null && jadwalData.isNotEmpty) {
+        debugPrint('💾 Local data found: ${jadwalData.length} jadwal');
+
+        emit(
+          JadwalMengajarLoaded(
+            jadwalList: jadwalData,
+            filteredJadwalList: jadwalData,
+            guruList: guruData ?? [],
+            kelasList: kelasData ?? [],
+            mapelList: mapelData ?? [],
+          ),
+        );
+      } else {
+        debugPrint('❌ No local data available');
+        emit(
+          JadwalMengajarError(
+            'No offline data available. Please connect to internet.',
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint('❌ Failed to load from local storage: $e');
+      emit(JadwalMengajarError('Failed to load offline data: ${e.toString()}'));
+    }
   }
 
   Stream<QuerySnapshot> getJadwalStream() {

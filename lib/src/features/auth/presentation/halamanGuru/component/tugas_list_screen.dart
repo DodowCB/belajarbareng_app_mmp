@@ -1,21 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../../core/config/theme.dart';
 import '../../../../../core/providers/user_provider.dart';
+import '../../../../../core/providers/connectivity_provider.dart';
 import 'create_tugas_screen.dart';
 import '../../widgets/guru_app_scaffold.dart';
 
-class TugasListScreen extends StatefulWidget {
+class TugasListScreen extends ConsumerStatefulWidget {
   const TugasListScreen({super.key});
 
   @override
-  State<TugasListScreen> createState() => _TugasListScreenState();
+  ConsumerState<TugasListScreen> createState() => _TugasListScreenState();
 }
 
-class _TugasListScreenState extends State<TugasListScreen>
+class _TugasListScreenState extends ConsumerState<TugasListScreen>
     with SingleTickerProviderStateMixin {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   late TabController _tabController;
@@ -343,11 +345,41 @@ class _TugasListScreenState extends State<TugasListScreen>
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    // Watch connectivity status for real-time updates
+    final isOnline = ref.watch(isOnlineProvider);
+
     return GuruAppScaffold(
       title: 'Manajemen Tugas',
       icon: Icons.assignment,
       currentRoute: '/tugas',
       additionalActions: [
+        IconButton(
+          icon: const Icon(Icons.add_circle_outline),
+          onPressed: () {
+            final isOnline = ref.read(isOnlineProvider);
+            if (!isOnline) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Anda harus online untuk membuat tugas.'),
+                  backgroundColor: Colors.orange,
+                  duration: Duration(seconds: 3),
+                ),
+              );
+              return;
+            }
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const CreateTugasScreen(),
+              ),
+            ).then((result) {
+              if (result == true) {
+                _loadTugas();
+              }
+            });
+          },
+          tooltip: 'Buat Tugas',
+        ),
         IconButton(
           icon: const Icon(Icons.refresh),
           onPressed: _loadTugas,
@@ -356,6 +388,7 @@ class _TugasListScreenState extends State<TugasListScreen>
       ],
       body: Column(
         children: [
+          if (!isOnline) _buildOfflineBanner(),
           // Search and Tabs
           Container(
             color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
@@ -409,20 +442,30 @@ class _TugasListScreenState extends State<TugasListScreen>
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () async {
-          final result = await Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const CreateTugasScreen()),
-          );
-          if (result == true) {
-            _loadTugas();
-          }
-        },
-        backgroundColor: AppTheme.primaryPurple,
-        foregroundColor: Colors.white,
-        icon: const Icon(Icons.add),
-        label: const Text('Buat Tugas'),
+      floatingActionButton: null, // Removed since we have action in header
+    );
+  }
+
+  Widget _buildOfflineBanner() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      color: Colors.orange.shade100,
+      child: Row(
+        children: [
+          Icon(Icons.wifi_off, color: Colors.orange.shade900, size: 20),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              'Mode Offline - Fitur CRUD tidak tersedia',
+              style: TextStyle(
+                color: Colors.orange.shade900,
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -969,7 +1012,8 @@ class _TugasListScreenState extends State<TugasListScreen>
                             final result = await Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => CreateTugasScreen(tugas: tugas),
+                                builder: (context) =>
+                                    CreateTugasScreen(tugas: tugas),
                               ),
                             );
                             if (result == true) {
@@ -1017,7 +1061,8 @@ class _TugasListScreenState extends State<TugasListScreen>
                             final result = await Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => CreateTugasScreen(tugas: tugas),
+                                builder: (context) =>
+                                    CreateTugasScreen(tugas: tugas),
                               ),
                             );
                             if (result == true) {

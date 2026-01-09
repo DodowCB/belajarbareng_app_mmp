@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import '../../../../../core/config/theme.dart';
 import '../../../../../core/providers/user_provider.dart';
+import '../../../../../core/providers/connectivity_provider.dart';
 import '../../../../../core/services/google_drive_service.dart';
 import '../../widgets/guru_app_scaffold.dart';
 import 'materi_guru_dialogs.dart';
@@ -90,6 +91,9 @@ class _MateriGuruScreenState extends ConsumerState<MateriGuruScreen> {
     final userProv = UserProvider();
     final guruId = userProv.userId;
 
+    // Watch connectivity status for real-time updates
+    final isOnline = ref.watch(isOnlineProvider);
+
     return GuruAppScaffold(
       title: 'Materi Pembelajaran',
       icon: Icons.book,
@@ -97,12 +101,26 @@ class _MateriGuruScreenState extends ConsumerState<MateriGuruScreen> {
       additionalActions: [
         IconButton(
           icon: const Icon(Icons.add_circle_outline),
-          onPressed: () => _showUploadDialog(context),
+          onPressed: () {
+            final isOnline = ref.read(isOnlineProvider);
+            if (!isOnline) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Anda harus online untuk mengupload materi.'),
+                  backgroundColor: Colors.orange,
+                  duration: Duration(seconds: 3),
+                ),
+              );
+              return;
+            }
+            _showUploadDialog(context);
+          },
           tooltip: 'Upload Materi',
         ),
       ],
       body: Column(
         children: [
+          if (!isOnline) _buildOfflineBanner(),
           _buildFilterBar(),
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
@@ -132,14 +150,30 @@ class _MateriGuruScreenState extends ConsumerState<MateriGuruScreen> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showUploadDialog(context),
-        icon: const Icon(Icons.upload_file, color: Colors.white),
-        label: const Text(
-          'Upload Materi',
-          style: TextStyle(color: Colors.white),
-        ),
-        backgroundColor: AppTheme.primaryPurple,
+      floatingActionButton: null, // Removed since we have action in header
+    );
+  }
+
+  Widget _buildOfflineBanner() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      color: Colors.orange.shade100,
+      child: Row(
+        children: [
+          Icon(Icons.wifi_off, color: Colors.orange.shade900, size: 20),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              'Mode Offline - Fitur upload dan edit tidak tersedia',
+              style: TextStyle(
+                color: Colors.orange.shade900,
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -282,7 +316,9 @@ class _MateriGuruScreenState extends ConsumerState<MateriGuruScreen> {
                         ),
                       ),
                       items: kelasItems
-                          .map((k) => DropdownMenuItem(value: k, child: Text(k)))
+                          .map(
+                            (k) => DropdownMenuItem(value: k, child: Text(k)),
+                          )
                           .toList(),
                       onChanged: (v) => setState(() => _selectedKelas = v!),
                     ),
@@ -300,7 +336,9 @@ class _MateriGuruScreenState extends ConsumerState<MateriGuruScreen> {
                         ),
                       ),
                       items: mapelItems
-                          .map((t) => DropdownMenuItem(value: t, child: Text(t)))
+                          .map(
+                            (t) => DropdownMenuItem(value: t, child: Text(t)),
+                          )
                           .toList(),
                       onChanged: (v) => setState(() => _selectedMapel = v!),
                     ),
@@ -324,7 +362,9 @@ class _MateriGuruScreenState extends ConsumerState<MateriGuruScreen> {
                           ),
                         ),
                         items: kelasItems
-                            .map((k) => DropdownMenuItem(value: k, child: Text(k)))
+                            .map(
+                              (k) => DropdownMenuItem(value: k, child: Text(k)),
+                            )
                             .toList(),
                         onChanged: (v) => setState(() => _selectedKelas = v!),
                       ),
@@ -344,7 +384,9 @@ class _MateriGuruScreenState extends ConsumerState<MateriGuruScreen> {
                           ),
                         ),
                         items: mapelItems
-                            .map((t) => DropdownMenuItem(value: t, child: Text(t)))
+                            .map(
+                              (t) => DropdownMenuItem(value: t, child: Text(t)),
+                            )
                             .toList(),
                         onChanged: (v) => setState(() => _selectedMapel = v!),
                       ),

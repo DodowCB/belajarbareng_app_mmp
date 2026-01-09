@@ -82,10 +82,11 @@ class HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
               final isDesktop = constraints.maxWidth >= 1024;
               final isTablet = constraints.maxWidth >= 768;
 
+              // Watch connectivity status here for all layouts
+              final isOnline = ref.watch(isOnlineProvider);
+
               if (!isDesktop) {
                 // Mobile/Tablet: Use drawer instead of sidebar
-                final isOnline = ref.watch(isOnlineProvider);
-                
                 return Scaffold(
                   appBar: AppBar(
                     leading: Builder(
@@ -99,13 +100,21 @@ class HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
                     actions: [
                       // Online/Offline Indicator
                       Container(
-                        margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        margin: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 8,
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
                         decoration: BoxDecoration(
-                          color: isOnline ? Colors.green[50] : Colors.red[50],
+                          color: isOnline
+                              ? Colors.green[50]
+                              : Colors.orange[50],
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(
-                            color: isOnline ? Colors.green : Colors.red,
+                            color: isOnline ? Colors.green : Colors.orange,
                             width: 1.5,
                           ),
                         ),
@@ -115,7 +124,9 @@ class HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
                             Icon(
                               isOnline ? Icons.wifi : Icons.wifi_off,
                               size: 14,
-                              color: isOnline ? Colors.green[700] : Colors.red[700],
+                              color: isOnline
+                                  ? Colors.green[700]
+                                  : Colors.orange[700],
                             ),
                             const SizedBox(width: 4),
                             Text(
@@ -123,7 +134,9 @@ class HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
                               style: TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.w600,
-                                color: isOnline ? Colors.green[700] : Colors.red[700],
+                                color: isOnline
+                                    ? Colors.green[700]
+                                    : Colors.orange[700],
                               ),
                             ),
                           ],
@@ -225,7 +238,7 @@ class HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
 
   Widget _buildTopBar(BuildContext context) {
     final isOnline = ref.watch(isOnlineProvider);
-    
+
     return Row(
       children: [
         Text(
@@ -239,10 +252,10 @@ class HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
-            color: isOnline ? Colors.green[50] : Colors.red[50],
+            color: isOnline ? Colors.green[50] : Colors.orange[50],
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: isOnline ? Colors.green : Colors.red,
+              color: isOnline ? Colors.green : Colors.orange,
               width: 1.5,
             ),
           ),
@@ -252,7 +265,7 @@ class HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
               Icon(
                 isOnline ? Icons.wifi : Icons.wifi_off,
                 size: 16,
-                color: isOnline ? Colors.green[700] : Colors.red[700],
+                color: isOnline ? Colors.green[700] : Colors.orange[700],
               ),
               const SizedBox(width: 6),
               Text(
@@ -260,7 +273,7 @@ class HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
-                  color: isOnline ? Colors.green[700] : Colors.red[700],
+                  color: isOnline ? Colors.green[700] : Colors.orange[700],
                 ),
               ),
             ],
@@ -407,6 +420,19 @@ class HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
                     Icons.add,
                     isDesktop: isDesktop,
                     onPressed: () {
+                      final isOnline = ref.read(isOnlineProvider);
+                      if (!isOnline) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'Anda harus online untuk menginput nilai.',
+                            ),
+                            backgroundColor: Colors.orange,
+                            duration: Duration(seconds: 3),
+                          ),
+                        );
+                        return;
+                      }
                       Navigator.push(
                         context,
                         MaterialPageRoute(
@@ -422,6 +448,19 @@ class HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
                     Icons.assignment_add,
                     isDesktop: isDesktop,
                     onPressed: () {
+                      final isOnline = ref.read(isOnlineProvider);
+                      if (!isOnline) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'Anda harus online untuk membuat tugas.',
+                            ),
+                            backgroundColor: Colors.orange,
+                            duration: Duration(seconds: 3),
+                          ),
+                        );
+                        return;
+                      }
                       Navigator.push(
                         context,
                         MaterialPageRoute(
@@ -437,6 +476,19 @@ class HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
                     Icons.upload_file,
                     isDesktop: isDesktop,
                     onPressed: () {
+                      final isOnline = ref.read(isOnlineProvider);
+                      if (!isOnline) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'Anda harus online untuk mengunggah materi.',
+                            ),
+                            backgroundColor: Colors.orange,
+                            duration: Duration(seconds: 3),
+                          ),
+                        );
+                        return;
+                      }
                       Navigator.push(
                         context,
                         MaterialPageRoute(
@@ -459,6 +511,19 @@ class HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
                     Icons.add,
                     isDesktop: isDesktop,
                     onPressed: () {
+                      final isOnline = ref.read(isOnlineProvider);
+                      if (!isOnline) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'Anda harus online untuk menginput nilai.',
+                            ),
+                            backgroundColor: Colors.orange,
+                            duration: Duration(seconds: 3),
+                          ),
+                        );
+                        return;
+                      }
                       Navigator.push(
                         context,
                         MaterialPageRoute(
@@ -473,6 +538,19 @@ class HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
                     Icons.assignment_add,
                     isDesktop: isDesktop,
                     onPressed: () {
+                      final isOnline = ref.read(isOnlineProvider);
+                      if (!isOnline) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'Anda harus online untuk membuat tugas.',
+                            ),
+                            backgroundColor: Colors.orange,
+                            duration: Duration(seconds: 3),
+                          ),
+                        );
+                        return;
+                      }
                       Navigator.push(
                         context,
                         MaterialPageRoute(
@@ -487,6 +565,19 @@ class HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
                     Icons.upload_file,
                     isDesktop: isDesktop,
                     onPressed: () {
+                      final isOnline = ref.read(isOnlineProvider);
+                      if (!isOnline) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'Anda harus online untuk mengunggah materi.',
+                            ),
+                            backgroundColor: Colors.orange,
+                            duration: Duration(seconds: 3),
+                          ),
+                        );
+                        return;
+                      }
                       Navigator.push(
                         context,
                         MaterialPageRoute(
@@ -2072,6 +2163,19 @@ class HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
                           margin: const EdgeInsets.only(bottom: 16),
                           child: ElevatedButton.icon(
                             onPressed: () {
+                              final isOnline = ref.read(isOnlineProvider);
+                              if (!isOnline) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                      'Anda harus online untuk mengisi absensi.',
+                                    ),
+                                    backgroundColor: Colors.orange,
+                                    duration: Duration(seconds: 3),
+                                  ),
+                                );
+                                return;
+                              }
                               Navigator.pop(dialogContext);
                               Future.delayed(
                                 const Duration(milliseconds: 100),
@@ -2485,6 +2589,21 @@ class HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
     String guruId,
     DateTime tanggal,
   ) async {
+    // Check connectivity before saving
+    final isOnline = ref.read(isOnlineProvider);
+    if (!isOnline) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Anda harus online untuk menyimpan absensi.'),
+            backgroundColor: Colors.orange,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+      return;
+    }
+
     try {
       final firestore = FirebaseFirestore.instance;
 
@@ -2693,6 +2812,20 @@ class HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
                   ),
                   ElevatedButton.icon(
                     onPressed: () async {
+                      // Check connectivity before opening absensi dialog
+                      final isOnline = ref.read(isOnlineProvider);
+                      if (!isOnline) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'Anda harus online untuk mengisi absensi.',
+                            ),
+                            backgroundColor: Colors.orange,
+                            duration: Duration(seconds: 3),
+                          ),
+                        );
+                        return;
+                      }
                       // Tutup dialog detail siswa terlebih dahulu
                       Navigator.pop(dialogContext);
                       // Tunggu sedikit agar dialog tertutup sempurna
@@ -3517,6 +3650,21 @@ class HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
     DateTime tanggal,
     bool isEditMode,
   ) async {
+    // Check connectivity before saving
+    final isOnline = ref.read(isOnlineProvider);
+    if (!isOnline) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Anda harus online untuk menyimpan absensi.'),
+            backgroundColor: Colors.orange,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+      return;
+    }
+
     try {
       final firestore = FirebaseFirestore.instance;
 

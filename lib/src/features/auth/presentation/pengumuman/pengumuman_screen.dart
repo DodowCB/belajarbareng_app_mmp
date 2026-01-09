@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/services/connectivity_service.dart';
 import 'pengumuman_bloc.dart';
 import 'pengumuman_event.dart';
 import 'pengumuman_state.dart';
@@ -15,6 +16,48 @@ class PengumumanScreen extends StatefulWidget {
 
 class _PengumumanScreenState extends State<PengumumanScreen> {
   String _searchQuery = '';
+  final ConnectivityService _connectivityService = ConnectivityService();
+
+  @override
+  void initState() {
+    super.initState();
+    _connectivityService.initialize();
+  }
+
+  bool get _isOffline => !_connectivityService.isOnline;
+
+  void _showOfflineDialog(String action) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            const Icon(Icons.wifi_off, color: Colors.orange),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'Offline Mode',
+                style: Theme.of(
+                  context,
+                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
+        content: Text(
+          'Cannot $action while offline. Please connect to internet to perform this action.',
+          style: Theme.of(context).textTheme.bodyMedium,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -36,7 +79,13 @@ class _PengumumanScreenState extends State<PengumumanScreen> {
               ),
               IconButton(
                 icon: const Icon(Icons.add_circle_outline),
-                onPressed: () => _showAddPengumumanDialog(context),
+                onPressed: () {
+                  if (_isOffline) {
+                    _showOfflineDialog('add announcement');
+                    return;
+                  }
+                  _showAddPengumumanDialog(context);
+                },
                 tooltip: 'Add Announcement',
               ),
             ],
@@ -268,8 +317,16 @@ class _PengumumanScreenState extends State<PengumumanScreen> {
                       ],
                       onSelected: (value) {
                         if (value == 'edit') {
+                          if (_isOffline) {
+                            _showOfflineDialog('edit announcement');
+                            return;
+                          }
                           _showEditPengumumanDialog(context, pengumuman);
                         } else if (value == 'delete') {
+                          if (_isOffline) {
+                            _showOfflineDialog('delete announcement');
+                            return;
+                          }
                           _showDeleteConfirmation(context, pengumuman);
                         }
                       },

@@ -1,20 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import '../../../../../core/config/theme.dart';
 import '../../../../../core/providers/user_provider.dart' as user_prov;
+import '../../../../../core/providers/connectivity_provider.dart';
 import 'absensi_dialog_helper.dart';
 import '../../widgets/guru_app_scaffold.dart';
 
-class AbsensiGuruScreen extends StatefulWidget {
+class AbsensiGuruScreen extends ConsumerStatefulWidget {
   const AbsensiGuruScreen({super.key});
 
   @override
-  State<AbsensiGuruScreen> createState() => _AbsensiGuruScreenState();
+  ConsumerState<AbsensiGuruScreen> createState() => _AbsensiGuruScreenState();
 }
 
-class _AbsensiGuruScreenState extends State<AbsensiGuruScreen> {
+class _AbsensiGuruScreenState extends ConsumerState<AbsensiGuruScreen> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   DateTime _selectedDate = DateTime.now();
   String _selectedTab = 'wali_kelas'; // 'wali_kelas' or 'kelas_diajar'
@@ -30,12 +32,16 @@ class _AbsensiGuruScreenState extends State<AbsensiGuruScreen> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    // Watch connectivity status for real-time updates
+    final isOnline = ref.watch(isOnlineProvider);
+
     return GuruAppScaffold(
       title: 'Absensi',
       icon: Icons.fact_check,
       currentRoute: '/absensi',
       body: Column(
         children: [
+          if (!isOnline) _buildOfflineBanner(),
           // Date Picker Section
           Container(
             padding: const EdgeInsets.all(16),
@@ -138,6 +144,30 @@ class _AbsensiGuruScreenState extends State<AbsensiGuruScreen> {
             child: _selectedTab == 'wali_kelas'
                 ? _buildWaliKelasContent()
                 : _buildKelasDiajarContent(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOfflineBanner() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      color: Colors.orange.shade100,
+      child: Row(
+        children: [
+          Icon(Icons.wifi_off, color: Colors.orange.shade900, size: 20),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              'Mode Offline - Fitur simpan absensi tidak tersedia',
+              style: TextStyle(
+                color: Colors.orange.shade900,
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
           ),
         ],
       ),

@@ -66,6 +66,8 @@ class QuizListScreen extends ConsumerWidget {
       ),
       body: Column(
         children: [
+          // Offline banner
+          if (!isOnline) _buildOfflineBanner(),
           // Header
           Container(
             width: double.infinity,
@@ -175,6 +177,7 @@ class QuizListScreen extends ConsumerWidget {
 
                     return _buildQuizCard(
                       context: context,
+                      ref: ref,
                       quizId: quizDoc.id,
                       quizData: quizData,
                       color: color,
@@ -192,6 +195,7 @@ class QuizListScreen extends ConsumerWidget {
 
   Widget _buildQuizCard({
     required BuildContext context,
+    required WidgetRef ref,
     required String quizId,
     required Map<String, dynamic> quizData,
     required Color color,
@@ -373,6 +377,35 @@ class QuizListScreen extends ConsumerWidget {
               fontSize: 12,
               fontWeight: FontWeight.w600,
               color: color,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOfflineBanner() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.orange.shade100,
+        border: Border(
+          bottom: BorderSide(color: Colors.orange.shade300, width: 1),
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.wifi_off, color: Colors.orange.shade700, size: 20),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              'Mode Offline - Fitur AI Helper tidak tersedia',
+              style: TextStyle(
+                color: Colors.orange.shade900,
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ),
         ],

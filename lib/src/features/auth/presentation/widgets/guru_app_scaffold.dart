@@ -501,7 +501,7 @@ class _GuruAppScaffoldState extends ConsumerState<GuruAppScaffold> {
 
   Widget _buildHeader(BuildContext context, bool isDark) {
     final isOnline = ref.watch(isOnlineProvider);
-    
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
       decoration: BoxDecoration(
@@ -528,10 +528,10 @@ class _GuruAppScaffoldState extends ConsumerState<GuruAppScaffold> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: isOnline ? Colors.green[50] : Colors.red[50],
+              color: isOnline ? Colors.green[50] : Colors.orange[50],
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: isOnline ? Colors.green : Colors.red,
+                color: isOnline ? Colors.green : Colors.orange,
                 width: 1.5,
               ),
             ),
@@ -541,7 +541,7 @@ class _GuruAppScaffoldState extends ConsumerState<GuruAppScaffold> {
                 Icon(
                   isOnline ? Icons.wifi : Icons.wifi_off,
                   size: 16,
-                  color: isOnline ? Colors.green[700] : Colors.red[700],
+                  color: isOnline ? Colors.green[700] : Colors.orange[700],
                 ),
                 const SizedBox(width: 6),
                 Text(
@@ -549,7 +549,7 @@ class _GuruAppScaffoldState extends ConsumerState<GuruAppScaffold> {
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: isOnline ? Colors.green[700] : Colors.red[700],
+                    color: isOnline ? Colors.green[700] : Colors.orange[700],
                   ),
                 ),
               ],
@@ -566,7 +566,7 @@ class _GuruAppScaffoldState extends ConsumerState<GuruAppScaffold> {
 
   PreferredSizeWidget _buildAppBar(BuildContext context, bool isDark) {
     final isOnline = ref.watch(isOnlineProvider);
-    
+
     return AppBar(
       leading: Builder(
         builder: (context) => IconButton(
@@ -584,10 +584,10 @@ class _GuruAppScaffoldState extends ConsumerState<GuruAppScaffold> {
           margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
           decoration: BoxDecoration(
-            color: isOnline ? Colors.green[50] : Colors.red[50],
+            color: isOnline ? Colors.green[50] : Colors.orange[50],
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: isOnline ? Colors.green : Colors.red,
+              color: isOnline ? Colors.green : Colors.orange,
               width: 1.5,
             ),
           ),
@@ -597,7 +597,7 @@ class _GuruAppScaffoldState extends ConsumerState<GuruAppScaffold> {
               Icon(
                 isOnline ? Icons.wifi : Icons.wifi_off,
                 size: 14,
-                color: isOnline ? Colors.green[700] : Colors.red[700],
+                color: isOnline ? Colors.green[700] : Colors.orange[700],
               ),
               const SizedBox(width: 4),
               Text(
@@ -605,7 +605,7 @@ class _GuruAppScaffoldState extends ConsumerState<GuruAppScaffold> {
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
-                  color: isOnline ? Colors.green[700] : Colors.red[700],
+                  color: isOnline ? Colors.green[700] : Colors.orange[700],
                 ),
               ),
             ],

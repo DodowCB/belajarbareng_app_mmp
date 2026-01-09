@@ -87,6 +87,10 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
   final LocalStorageService _localStorageService = LocalStorageService();
   final AutoSyncService _autoSyncService = AutoSyncService();
 
+  // Track previous connectivity state to avoid unnecessary reloads
+  bool _previousConnectivityState = true;
+  Timer? _connectivityDebounceTimer;
+
   AdminBloc() : super(AdminState()) {
     on<LoadAdminData>(_onLoadAdminData);
     on<RefreshAdminData>(_onRefreshAdminData);
@@ -103,6 +107,9 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
     await _connectivityService.initialize();
     await _localStorageService.initialize();
 
+    // Store initial connectivity state
+    _previousConnectivityState = _connectivityService.isOnline;
+
     // Start auto background sync after services are initialized
     await _autoSyncService.startAutoSync();
     debugPrint('🚀 AdminBloc initialized with auto sync service');
@@ -110,10 +117,31 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
 
   void _setupConnectivityListener() {
     _connectivityService.addListener(() {
-      // When connectivity changes, reload data from appropriate source
-      debugPrint('🌐🔄 Connectivity changed - triggering data reload');
-      add(LoadAdminData());
+      final currentState = _connectivityService.isOnline;
+
+      // Only trigger reload if connectivity state actually changed
+      if (currentState != _previousConnectivityState) {
+        // Cancel any pending reload
+        _connectivityDebounceTimer?.cancel();
+
+        // Debounce the reload to avoid rapid fire reloads
+        _connectivityDebounceTimer = Timer(const Duration(milliseconds: 500), () {
+          debugPrint(
+            '🌐🔄 Connectivity changed: ${_previousConnectivityState ? "Online" : "Offline"} → ${currentState ? "Online" : "Offline"}',
+          );
+          _previousConnectivityState = currentState;
+          add(LoadAdminData());
+        });
+      }
     });
+  }
+
+  @override
+  Future<void> close() {
+    _connectivityDebounceTimer?.cancel();
+    _autoSyncService.dispose();
+    debugPrint('🛑 AdminBloc disposed - auto sync stopped');
+    return super.close();
   }
 
   // Stream untuk real-time admin data
@@ -169,7 +197,12 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
     LoadAdminData event,
     Emitter<AdminState> emit,
   ) async {
-    emit(state.copyWith(isLoading: true));
+    // Don't show loading if we're just refreshing with existing data
+    final hasExistingData = state.totalUsers > 0;
+
+    if (!hasExistingData) {
+      emit(state.copyWith(isLoading: true));
+    }
 
     try {
       // Check connectivity
@@ -193,12 +226,8 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
           await _loadDataFromLocalStorage(emit);
         }
       } else {
-        // Load from local storage when offline
-        debugPrint('🔄⚠️ Offline detected - checking for local data...');
-
-        // Wait a bit for connectivity status to settle
-        await Future.delayed(const Duration(milliseconds: 500));
-
+        // Load from local storage when offline - no delay needed
+        debugPrint('📴 Offline mode - loading from local storage...');
         await _loadDataFromLocalStorage(emit);
       }
     } catch (e) {
@@ -254,6 +283,7 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
         kelasSnapshot: kelasSnapshot,
         mapelSnapshot: mapelSnapshot,
         pengumumanSnapshot: pengumumanSnapshot,
+        kelasNgajarSnapshot: kelasNgajarSnapshot,
       );
 
       await _localStorageService.saveAdminStats(
@@ -262,22 +292,23 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
         totalKelas: totalClasses,
         totalMapel: totalMapels,
         totalPengumuman: totalPengumuman,
+        totalJadwalMengajar: totalJadwalMengajar,
       );
 
-        emit(
-          state.copyWith(
-            isLoading: false,
-            totalUsers: totalUsers,
-            totalTeachers: totalTeachers,
-            totalStudents: totalStudents,
-            totalMapels: totalMapels,
-            totalClasses: totalClasses,
-            totalPengumuman: totalPengumuman,
-            totalJadwalMengajar: totalJadwalMengajar,
-            isOnline: _connectivityService.isOnline,
-            lastSync: DateTime.now(),
-          ),
-        );
+      emit(
+        state.copyWith(
+          isLoading: false,
+          totalUsers: totalUsers,
+          totalTeachers: totalTeachers,
+          totalStudents: totalStudents,
+          totalMapels: totalMapels,
+          totalClasses: totalClasses,
+          totalPengumuman: totalPengumuman,
+          totalJadwalMengajar: totalJadwalMengajar,
+          isOnline: _connectivityService.isOnline,
+          lastSync: DateTime.now(),
+        ),
+      );
     } catch (e) {
       emit(
         state.copyWith(
@@ -484,6 +515,7 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
     required QuerySnapshot kelasSnapshot,
     required QuerySnapshot mapelSnapshot,
     required QuerySnapshot pengumumanSnapshot,
+    required QuerySnapshot kelasNgajarSnapshot,
   }) async {
     try {
       debugPrint('🔄 Starting full Firestore → Local Storage sync...');
@@ -495,7 +527,7 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
         final data = doc.data() as Map<String, dynamic>;
         return {
           'id': doc.id,
-          'nama': data['nama'] ?? '',
+          'nama_lengkap': data['nama_lengkap'] ?? data['nama'] ?? '',
           'email': data['email'] ?? '',
           'mapel': data['mapel'] ?? '',
           'created_at':
@@ -525,7 +557,7 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
         final data = doc.data() as Map<String, dynamic>;
         return {
           'id': doc.id,
-          'nama': data['nama'] ?? '',
+          'nama_kelas': data['nama_kelas'] ?? data['nama'] ?? '',
           'wali_kelas': data['wali_kelas'] ?? '',
           'jumlah_siswa': data['jumlah_siswa'] ?? 0,
           'created_at':
@@ -540,7 +572,7 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
         final data = doc.data() as Map<String, dynamic>;
         return {
           'id': doc.id,
-          'nama': data['nama'] ?? '',
+          'namaMapel': data['namaMapel'] ?? data['nama'] ?? '',
           'kode': data['kode'] ?? '',
           'sks': data['sks'] ?? 0,
           'deskripsi': data['deskripsi'] ?? '',
@@ -569,6 +601,25 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
         };
       }).toList();
 
+      // 6. Sync Kelas Ngajar (Teaching Schedule) data
+      final kelasNgajarData = kelasNgajarSnapshot.docs.map((doc) {
+        final data = doc.data() as Map<String, dynamic>;
+        return {
+          'id': doc.id,
+          'id_guru': data['id_guru'] ?? '',
+          'id_kelas': data['id_kelas'] ?? '',
+          'id_mapel': data['id_mapel'] ?? '',
+          'hari': data['hari'] ?? '',
+          'jam': data['jam'] ?? '',
+          'tanggal':
+              data['tanggal']?.toString() ?? DateTime.now().toIso8601String(),
+          'createdAt':
+              data['createdAt']?.toString() ?? DateTime.now().toIso8601String(),
+          'updatedAt':
+              data['updatedAt']?.toString() ?? DateTime.now().toIso8601String(),
+        };
+      }).toList();
+
       // Save all data to local storage
       await Future.wait([
         _localStorageService.saveGuruData(guruData),
@@ -576,11 +627,12 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
         _localStorageService.saveKelasData(kelasData),
         _localStorageService.saveMapelData(mapelData),
         _localStorageService.savePengumumanData(pengumumanData),
+        _localStorageService.saveKelasNgajarData(kelasNgajarData),
       ]);
 
       debugPrint('✅ Firestore → Local Storage sync completed!');
       debugPrint(
-        '📊 Synced: ${guruData.length} guru, ${siswaData.length} siswa, ${kelasData.length} kelas, ${mapelData.length} mapel, ${pengumumanData.length} pengumuman',
+        '📊 Synced: ${guruData.length} guru, ${siswaData.length} siswa, ${kelasData.length} kelas, ${mapelData.length} mapel, ${pengumumanData.length} pengumuman, ${kelasNgajarData.length} jadwal mengajar',
       );
 
       // Print all synced data for verification
@@ -615,13 +667,5 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
   Future<void> backupData() async {
     debugPrint('Starting data backup...');
     // Backup logic (omitted)
-  }
-
-  @override
-  Future<void> close() {
-    // Dispose auto sync service when bloc is closed
-    _autoSyncService.dispose();
-    debugPrint('🛑 AdminBloc disposed - auto sync stopped');
-    return super.close();
   }
 }

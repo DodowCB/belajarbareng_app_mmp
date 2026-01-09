@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:excel/excel.dart' as excel_lib;
 
+import '../../../../core/services/connectivity_service.dart';
 import '../widgets/admin_header.dart';
 import 'jadwal_mengajar_bloc.dart';
 import 'jadwal_mengajar_event.dart';
@@ -18,12 +19,49 @@ class JadwalMengajarScreen extends StatefulWidget {
 
 class _JadwalMengajarScreenState extends State<JadwalMengajarScreen> {
   late JadwalMengajarBloc _jadwalBloc;
+  final ConnectivityService _connectivityService = ConnectivityService();
 
   @override
   void initState() {
     super.initState();
     _jadwalBloc = JadwalMengajarBloc();
     _jadwalBloc.add(LoadJadwalMengajar());
+    _connectivityService.initialize();
+  }
+
+  bool get _isOffline => !_connectivityService.isOnline;
+
+  void _showOfflineDialog(String action) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            const Icon(Icons.wifi_off, color: Colors.orange),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'Offline Mode',
+                style: Theme.of(
+                  context,
+                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
+        content: Text(
+          'Cannot $action while offline. Please connect to internet to perform this action.',
+          style: Theme.of(context).textTheme.bodyMedium,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -45,9 +83,15 @@ class _JadwalMengajarScreenState extends State<JadwalMengajarScreen> {
             BlocBuilder<JadwalMengajarBloc, JadwalMengajarState>(
               builder: (context, state) => IconButton(
                 icon: const Icon(Icons.add_circle_outline),
-                onPressed: () => _showJadwalForm(
-                  state: state is JadwalMengajarLoaded ? state : null,
-                ),
+                onPressed: () {
+                  if (_isOffline) {
+                    _showOfflineDialog('add teaching schedule');
+                    return;
+                  }
+                  _showJadwalForm(
+                    state: state is JadwalMengajarLoaded ? state : null,
+                  );
+                },
                 tooltip: 'Add Teaching Schedule',
               ),
             ),
@@ -115,9 +159,15 @@ class _JadwalMengajarScreenState extends State<JadwalMengajarScreen> {
               Expanded(
                 child: BlocBuilder<JadwalMengajarBloc, JadwalMengajarState>(
                   builder: (context, state) => ElevatedButton.icon(
-                    onPressed: () => _showJadwalForm(
-                      state: state is JadwalMengajarLoaded ? state : null,
-                    ),
+                    onPressed: () {
+                      if (_isOffline) {
+                        _showOfflineDialog('add teaching schedule');
+                        return;
+                      }
+                      _showJadwalForm(
+                        state: state is JadwalMengajarLoaded ? state : null,
+                      );
+                    },
                     icon: const Icon(Icons.add, size: 18),
                     label: const Text('Add Manual'),
                     style: ElevatedButton.styleFrom(
@@ -131,7 +181,13 @@ class _JadwalMengajarScreenState extends State<JadwalMengajarScreen> {
               const SizedBox(width: 12),
               Expanded(
                 child: ElevatedButton.icon(
-                  onPressed: () => _showImportDialog(),
+                  onPressed: () {
+                    if (_isOffline) {
+                      _showOfflineDialog('import data');
+                      return;
+                    }
+                    _showImportDialog();
+                  },
                   icon: const Icon(Icons.file_upload, size: 18),
                   label: const Text('Import Excel'),
                   style: ElevatedButton.styleFrom(
@@ -304,8 +360,16 @@ class _JadwalMengajarScreenState extends State<JadwalMengajarScreen> {
                     PopupMenuButton<String>(
                       onSelected: (value) {
                         if (value == 'edit') {
+                          if (_isOffline) {
+                            _showOfflineDialog('edit teaching schedule');
+                            return;
+                          }
                           _showJadwalForm(jadwal: jadwal, state: state);
                         } else if (value == 'delete') {
+                          if (_isOffline) {
+                            _showOfflineDialog('delete teaching schedule');
+                            return;
+                          }
                           _deleteJadwal(jadwal['id']);
                         }
                       },

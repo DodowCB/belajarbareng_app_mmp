@@ -358,8 +358,14 @@ class _KerjakanQuizScreenState extends ConsumerState<KerjakanQuizScreen> {
               builder: (context, ref, _) {
                 final isOnline = ref.watch(isOnlineProvider);
                 return Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  margin: const EdgeInsets.symmetric(
+                    horizontal: 4,
+                    vertical: 8,
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: isOnline ? Colors.green[50] : Colors.red[50],
                     borderRadius: BorderRadius.circular(20),
@@ -423,6 +429,8 @@ class _KerjakanQuizScreenState extends ConsumerState<KerjakanQuizScreen> {
         ),
         body: Column(
           children: [
+            // Offline banner
+            if (!isOnline) _buildOfflineBanner(),
             // Progress Indicator
             Container(
               padding: const EdgeInsets.all(16),
@@ -747,10 +755,39 @@ class _KerjakanQuizScreenState extends ConsumerState<KerjakanQuizScreen> {
       ),
     );
   }
+
+  Widget _buildOfflineBanner() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.orange.shade100,
+        border: Border(
+          bottom: BorderSide(color: Colors.orange.shade300, width: 1),
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.wifi_off, color: Colors.orange.shade700, size: 20),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              'Mode Offline - Fitur AI Helper tidak tersedia',
+              style: TextStyle(
+                color: Colors.orange.shade900,
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 // Result Screen
-class QuizResultScreen extends StatefulWidget {
+class QuizResultScreen extends ConsumerStatefulWidget {
   final int score;
   final int correctAnswers;
   final int totalQuestions;
@@ -769,10 +806,10 @@ class QuizResultScreen extends StatefulWidget {
   });
 
   @override
-  State<QuizResultScreen> createState() => _QuizResultScreenState();
+  ConsumerState<QuizResultScreen> createState() => _QuizResultScreenState();
 }
 
-class _QuizResultScreenState extends State<QuizResultScreen> {
+class _QuizResultScreenState extends ConsumerState<QuizResultScreen> {
   String? _geminiApiKey;
   final Map<int, String> _aiExplanations = {};
   final Map<int, bool> _loadingExplanations = {};
@@ -800,6 +837,19 @@ class _QuizResultScreenState extends State<QuizResultScreen> {
   }
 
   Future<void> _getAIExplanation(int questionIndex) async {
+    // Check connectivity first
+    final isOnline = ref.read(isOnlineProvider);
+    if (!isOnline) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Anda harus online untuk menggunakan AI Helper.'),
+          backgroundColor: Colors.orange,
+          duration: Duration(seconds: 3),
+        ),
+      );
+      return;
+    }
+
     if (_geminiApiKey == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(

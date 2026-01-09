@@ -53,16 +53,16 @@ class AutoSyncService {
       return false;
     }
 
+    // Check connectivity first before setting flag
+    final hasConnection = _connectivity.hasConnection;
+    if (!hasConnection) {
+      debugPrint('📴 No internet connection, skipping sync');
+      return false;
+    }
+
     _isSyncing = true;
 
     try {
-      // Check connectivity
-      final hasConnection = _connectivity.hasConnection;
-      if (!hasConnection) {
-        debugPrint('❌ No internet connection, skipping sync');
-        return false;
-      }
-
       debugPrint('🔄 Starting background sync from Firebase...');
       final startTime = DateTime.now();
 

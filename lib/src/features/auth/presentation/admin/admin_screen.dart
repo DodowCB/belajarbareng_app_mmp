@@ -47,8 +47,10 @@ class _AdminScreenState extends State<AdminScreen> {
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         body: BlocBuilder<AdminBloc, AdminState>(
           builder: (context, state) {
-            if (state.isLoading) return const Center(child: CircularProgressIndicator());
-            if (state.error != null) return Center(child: Text('Error: ${state.error}'));
+            if (state.isLoading)
+              return const Center(child: CircularProgressIndicator());
+            if (state.error != null)
+              return Center(child: Text('Error: ${state.error}'));
 
             return CustomScrollView(
               slivers: [
@@ -331,9 +333,7 @@ class _AdminScreenState extends State<AdminScreen> {
               subtitle: state.isOnline ? 'Registered' : 'Cached data',
               icon: Icons.people,
               color: AppTheme.primaryPurple,
-              onTap: state.isOnline
-                  ? () => _showAllUsersModal()
-                  : () => _showOfflineMessage(),
+              onTap: () => _showAllUsersModal(),
               isOffline: !state.isOnline,
             ),
             _buildStatCard(
@@ -342,9 +342,7 @@ class _AdminScreenState extends State<AdminScreen> {
               subtitle: state.isOnline ? 'Active' : 'Cached data',
               icon: Icons.school,
               color: AppTheme.secondaryTeal,
-              onTap: state.isOnline
-                  ? () => _navigateToGuruData()
-                  : () => _showOfflineMessage(),
+              onTap: () => _navigateToGuruData(),
               isOffline: !state.isOnline,
             ),
             _buildStatCard(
@@ -353,9 +351,7 @@ class _AdminScreenState extends State<AdminScreen> {
               subtitle: state.isOnline ? 'Enrolled' : 'Cached data',
               icon: Icons.groups,
               color: AppTheme.accentGreen,
-              onTap: state.isOnline
-                  ? () => _navigateToSiswaData()
-                  : () => _showOfflineMessage(),
+              onTap: () => _navigateToSiswaData(),
               isOffline: !state.isOnline,
             ),
             _buildStatCard(
@@ -364,9 +360,7 @@ class _AdminScreenState extends State<AdminScreen> {
               subtitle: state.isOnline ? 'Available' : 'Cached data',
               icon: Icons.library_books,
               color: AppTheme.accentOrange,
-              onTap: state.isOnline
-                  ? () => _navigateToMapel()
-                  : () => _showOfflineMessage(),
+              onTap: () => _navigateToMapel(),
               isOffline: !state.isOnline,
             ),
             _buildStatCard(
@@ -375,9 +369,7 @@ class _AdminScreenState extends State<AdminScreen> {
               subtitle: state.isOnline ? 'Available' : 'Cached data',
               icon: Icons.class_,
               color: AppTheme.accentPink,
-              onTap: state.isOnline
-                  ? () => _navigateToKelas()
-                  : () => _showOfflineMessage(),
+              onTap: () => _navigateToKelas(),
               isOffline: !state.isOnline,
             ),
             _buildStatCard(
@@ -386,9 +378,7 @@ class _AdminScreenState extends State<AdminScreen> {
               subtitle: state.isOnline ? 'Posts Available' : 'Cached data',
               icon: Icons.announcement,
               color: Colors.orange,
-              onTap: state.isOnline
-                  ? () => _navigateToPengumuman()
-                  : () => _showOfflineMessage(),
+              onTap: () => _navigateToPengumuman(),
               isOffline: !state.isOnline,
             ),
             _buildStatCard(
@@ -397,9 +387,7 @@ class _AdminScreenState extends State<AdminScreen> {
               subtitle: state.isOnline ? 'Teaching Classes' : 'Cached data',
               icon: Icons.schedule,
               color: AppTheme.primaryPurple.withOpacity(0.8),
-              onTap: state.isOnline
-                  ? () => _navigateToJadwalMengajar()
-                  : () => _showOfflineMessage(),
+              onTap: () => _navigateToJadwalMengajar(),
               isOffline: !state.isOnline,
             ),
             _buildStatCard(
@@ -408,9 +396,7 @@ class _AdminScreenState extends State<AdminScreen> {
               subtitle: 'View detailed reports',
               icon: Icons.assessment,
               color: Colors.blue,
-              onTap: state.isOnline
-                  ? () => _navigateToReports()
-                  : () => _showOfflineMessage(),
+              onTap: () => _navigateToReports(),
               isOffline: !state.isOnline,
             ),
             _buildStatCard(
@@ -419,9 +405,7 @@ class _AdminScreenState extends State<AdminScreen> {
               subtitle: 'View analytics',
               icon: Icons.analytics,
               color: Colors.deepPurple,
-              onTap: state.isOnline
-                  ? () => _navigateToAnalytics()
-                  : () => _showOfflineMessage(),
+              onTap: () => _navigateToAnalytics(),
               isOffline: !state.isOnline,
             ),
             _buildStatCard(
@@ -430,9 +414,7 @@ class _AdminScreenState extends State<AdminScreen> {
               subtitle: 'System configuration',
               icon: Icons.settings,
               color: Colors.blueGrey,
-              onTap: state.isOnline
-                  ? () => _navigateToSettings()
-                  : () => _showOfflineMessage(),
+              onTap: () => _navigateToSettings(),
               isOffline: !state.isOnline,
             ),
           ];
@@ -586,10 +568,7 @@ class _AdminScreenState extends State<AdminScreen> {
           ),
           child: Container(
             width: MediaQuery.of(context).size.width * 0.9,
-            constraints: const BoxConstraints(
-              maxWidth: 600,
-              maxHeight: 700,
-            ),
+            constraints: const BoxConstraints(maxWidth: 600, maxHeight: 700),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -645,9 +624,7 @@ class _AdminScreenState extends State<AdminScreen> {
                     builder: (context, guruSnapshot) {
                       if (guruSnapshot.connectionState ==
                           ConnectionState.waiting) {
-                        return const Center(
-                          child: CircularProgressIndicator(),
-                        );
+                        return const Center(child: CircularProgressIndicator());
                       }
 
                       return StreamBuilder<QuerySnapshot>(
@@ -662,8 +639,7 @@ class _AdminScreenState extends State<AdminScreen> {
                             );
                           }
 
-                          if (guruSnapshot.hasError ||
-                              siswaSnapshot.hasError) {
+                          if (guruSnapshot.hasError || siswaSnapshot.hasError) {
                             return Center(
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
@@ -694,10 +670,7 @@ class _AdminScreenState extends State<AdminScreen> {
                             for (var doc in guruSnapshot.data!.docs) {
                               final data = doc.data() as Map<String, dynamic>;
                               final name = data['nama_lengkap'] ?? 'Unknown';
-                              allUsers.add({
-                                'name': name,
-                                'role': 'Teacher',
-                              });
+                              allUsers.add({'name': name, 'role': 'Teacher'});
                             }
                           }
 
@@ -706,10 +679,7 @@ class _AdminScreenState extends State<AdminScreen> {
                             for (var doc in siswaSnapshot.data!.docs) {
                               final data = doc.data() as Map<String, dynamic>;
                               final name = data['nama'] ?? 'Unknown';
-                              allUsers.add({
-                                'name': name,
-                                'role': 'Student',
-                              });
+                              allUsers.add({'name': name, 'role': 'Student'});
                             }
                           }
 
@@ -746,9 +716,9 @@ class _AdminScreenState extends State<AdminScreen> {
                               // Summary
                               Container(
                                 padding: const EdgeInsets.all(16),
-                                color: Theme.of(context)
-                                    .brightness ==
-                                    Brightness.dark
+                                color:
+                                    Theme.of(context).brightness ==
+                                        Brightness.dark
                                     ? Colors.grey[850]
                                     : Colors.grey[100],
                                 child: Row(
@@ -793,25 +763,23 @@ class _AdminScreenState extends State<AdminScreen> {
                                       const SizedBox(height: 8),
                                   itemBuilder: (context, index) {
                                     final user = allUsers[index];
-                                    final isTeacher =
-                                        user['role'] == 'Teacher';
+                                    final isTeacher = user['role'] == 'Teacher';
 
                                     return Container(
                                       padding: const EdgeInsets.all(12),
                                       decoration: BoxDecoration(
-                                        color: Theme.of(context)
-                                                    .brightness ==
+                                        color:
+                                            Theme.of(context).brightness ==
                                                 Brightness.dark
                                             ? Colors.grey[850]
                                             : Colors.white,
-                                        borderRadius:
-                                            BorderRadius.circular(8),
+                                        borderRadius: BorderRadius.circular(8),
                                         border: Border.all(
                                           color: isTeacher
                                               ? AppTheme.secondaryTeal
-                                                  .withOpacity(0.3)
+                                                    .withOpacity(0.3)
                                               : AppTheme.accentGreen
-                                                  .withOpacity(0.3),
+                                                    .withOpacity(0.3),
                                         ),
                                       ),
                                       child: Row(
@@ -819,9 +787,9 @@ class _AdminScreenState extends State<AdminScreen> {
                                           CircleAvatar(
                                             backgroundColor: isTeacher
                                                 ? AppTheme.secondaryTeal
-                                                    .withOpacity(0.2)
+                                                      .withOpacity(0.2)
                                                 : AppTheme.accentGreen
-                                                    .withOpacity(0.2),
+                                                      .withOpacity(0.2),
                                             child: Icon(
                                               isTeacher
                                                   ? Icons.school
@@ -840,26 +808,23 @@ class _AdminScreenState extends State<AdminScreen> {
                                                   .textTheme
                                                   .bodyMedium
                                                   ?.copyWith(
-                                                    fontWeight:
-                                                        FontWeight.w500,
+                                                    fontWeight: FontWeight.w500,
                                                   ),
                                               maxLines: 1,
-                                              overflow:
-                                                  TextOverflow.ellipsis,
+                                              overflow: TextOverflow.ellipsis,
                                             ),
                                           ),
                                           Container(
-                                            padding:
-                                                const EdgeInsets.symmetric(
+                                            padding: const EdgeInsets.symmetric(
                                               horizontal: 8,
                                               vertical: 4,
                                             ),
                                             decoration: BoxDecoration(
                                               color: isTeacher
                                                   ? AppTheme.secondaryTeal
-                                                      .withOpacity(0.1)
+                                                        .withOpacity(0.1)
                                                   : AppTheme.accentGreen
-                                                      .withOpacity(0.1),
+                                                        .withOpacity(0.1),
                                               borderRadius:
                                                   BorderRadius.circular(12),
                                             ),
@@ -925,58 +890,56 @@ class _AdminScreenState extends State<AdminScreen> {
   }
 
   void _navigateToGuruData() {
-    Navigator.of(
-      context,
-    ).push(MaterialPageRoute(
-      builder: (context) => BlocProvider.value(
-        value: _adminBloc,
-        child: const TeachersScreen(),
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => BlocProvider.value(
+          value: _adminBloc,
+          child: const TeachersScreen(),
+        ),
       ),
-    ));
+    );
   }
 
   void _navigateToSiswaData() {
-    Navigator.of(
-      context,
-    ).push(MaterialPageRoute(
-      builder: (context) => BlocProvider.value(
-        value: _adminBloc,
-        child: const StudentsScreen(),
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => BlocProvider.value(
+          value: _adminBloc,
+          child: const StudentsScreen(),
+        ),
       ),
-    ));
+    );
   }
 
   void _navigateToMapel() {
-    Navigator.of(
-      context,
-    ).push(MaterialPageRoute(
-      builder: (context) => BlocProvider.value(
-        value: _adminBloc,
-        child: const SubjectsScreen(),
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => BlocProvider.value(
+          value: _adminBloc,
+          child: const SubjectsScreen(),
+        ),
       ),
-    ));
+    );
   }
 
   void _navigateToKelas() {
-    Navigator.of(
-      context,
-    ).push(MaterialPageRoute(
-      builder: (context) => BlocProvider.value(
-        value: _adminBloc,
-        child: const ClassesScreen(),
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) =>
+            BlocProvider.value(value: _adminBloc, child: const ClassesScreen()),
       ),
-    ));
+    );
   }
 
   void _navigateToPengumuman() {
-    Navigator.of(
-      context,
-    ).push(MaterialPageRoute(
-      builder: (context) => BlocProvider.value(
-        value: _adminBloc,
-        child: const PengumumanScreen(),
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => BlocProvider.value(
+          value: _adminBloc,
+          child: const PengumumanScreen(),
+        ),
       ),
-    ));
+    );
   }
 
   void _navigateToJadwalMengajar() {
@@ -991,36 +954,34 @@ class _AdminScreenState extends State<AdminScreen> {
   }
 
   void _navigateToReports() {
-    Navigator.of(
-      context,
-    ).push(MaterialPageRoute(
-      builder: (context) => BlocProvider.value(
-        value: _adminBloc,
-        child: const ReportsScreen(),
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) =>
+            BlocProvider.value(value: _adminBloc, child: const ReportsScreen()),
       ),
-    ));
+    );
   }
 
   void _navigateToAnalytics() {
-    Navigator.of(
-      context,
-    ).push(MaterialPageRoute(
-      builder: (context) => BlocProvider.value(
-        value: _adminBloc,
-        child: const AnalyticsScreen(),
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => BlocProvider.value(
+          value: _adminBloc,
+          child: const AnalyticsScreen(),
+        ),
       ),
-    ));
+    );
   }
 
   void _navigateToSettings() {
-    Navigator.of(
-      context,
-    ).push(MaterialPageRoute(
-      builder: (context) => BlocProvider.value(
-        value: _adminBloc,
-        child: const SettingsScreen(),
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => BlocProvider.value(
+          value: _adminBloc,
+          child: const SettingsScreen(),
+        ),
       ),
-    ));
+    );
   }
 
   Widget _buildOfflineBanner(AdminState state) {
@@ -1057,7 +1018,7 @@ class _AdminScreenState extends State<AdminScreen> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Showing cached data. CRUD operations are disabled.',
+                    'You can view cached data. Adding/editing/deleting is disabled.',
                     style: Theme.of(
                       context,
                     ).textTheme.bodySmall?.copyWith(color: Colors.orange[700]),
@@ -1084,27 +1045,5 @@ class _AdminScreenState extends State<AdminScreen> {
   String _formatDateTime(DateTime? dateTime) {
     if (dateTime == null) return 'Never';
     return '${dateTime.day}/${dateTime.month}/${dateTime.year} ${dateTime.hour}:${dateTime.minute.toString().padLeft(2, '0')}';
-  }
-
-  void _showOfflineMessage() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Row(
-          children: [
-            Icon(Icons.wifi_off, color: Colors.white),
-            SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                'CRUD operations are disabled in offline mode. Please connect to internet.',
-              ),
-            ),
-          ],
-        ),
-        backgroundColor: Colors.red,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        duration: const Duration(seconds: 3),
-      ),
-    );
   }
 }

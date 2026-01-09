@@ -23,10 +23,12 @@ class DetailTugasKelasScreen extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<DetailTugasKelasScreen> createState() => _DetailTugasKelasScreenState();
+  ConsumerState<DetailTugasKelasScreen> createState() =>
+      _DetailTugasKelasScreenState();
 }
 
-class _DetailTugasKelasScreenState extends ConsumerState<DetailTugasKelasScreen> {
+class _DetailTugasKelasScreenState
+    extends ConsumerState<DetailTugasKelasScreen> {
   String _selectedFilter = 'Semua';
   final GoogleDriveService _driveService = GoogleDriveService();
   bool _isUploading = false;
@@ -83,6 +85,8 @@ class _DetailTugasKelasScreenState extends ConsumerState<DetailTugasKelasScreen>
       ),
       body: Column(
         children: [
+          // Offline banner
+          if (!isOnline) _buildOfflineBanner(),
           // Info Kelas Card
           Container(
             margin: const EdgeInsets.all(16),
@@ -103,11 +107,7 @@ class _DetailTugasKelasScreenState extends ConsumerState<DetailTugasKelasScreen>
                     color: widget.color.withOpacity(0.15),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Icon(
-                    Icons.class_,
-                    color: widget.color,
-                    size: 28,
-                  ),
+                  child: Icon(Icons.class_, color: widget.color, size: 28),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -127,11 +127,7 @@ class _DetailTugasKelasScreenState extends ConsumerState<DetailTugasKelasScreen>
                       const SizedBox(height: 4),
                       Row(
                         children: [
-                          Icon(
-                            Icons.person,
-                            size: 14,
-                            color: Colors.grey[600],
-                          ),
+                          Icon(Icons.person, size: 14, color: Colors.grey[600]),
                           const SizedBox(width: 4),
                           Expanded(
                             child: Text(
@@ -298,19 +294,21 @@ class _DetailTugasKelasScreenState extends ConsumerState<DetailTugasKelasScreen>
                     return LayoutBuilder(
                       builder: (context, constraints) {
                         final isDesktop = constraints.maxWidth >= 1024;
-                        final isTablet = constraints.maxWidth >= 600 && 
-                                         constraints.maxWidth < 1024;
-                        
+                        final isTablet =
+                            constraints.maxWidth >= 600 &&
+                            constraints.maxWidth < 1024;
+
                         if (isDesktop) {
                           // Desktop: 3 columns grid
                           return GridView.builder(
                             padding: const EdgeInsets.all(16),
-                            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 3,
-                              crossAxisSpacing: 12,
-                              mainAxisSpacing: 12,
-                              childAspectRatio: 2.5,
-                            ),
+                            gridDelegate:
+                                const SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: 3,
+                                  crossAxisSpacing: 12,
+                                  mainAxisSpacing: 12,
+                                  childAspectRatio: 2.5,
+                                ),
                             itemCount: tugasList.length,
                             itemBuilder: (context, index) {
                               final tugas = tugasList[index];
@@ -326,12 +324,13 @@ class _DetailTugasKelasScreenState extends ConsumerState<DetailTugasKelasScreen>
                           // Tablet: 2 columns grid
                           return GridView.builder(
                             padding: const EdgeInsets.all(16),
-                            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 2,
-                              crossAxisSpacing: 12,
-                              mainAxisSpacing: 12,
-                              childAspectRatio: 2.2,
-                            ),
+                            gridDelegate:
+                                const SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: 2,
+                                  crossAxisSpacing: 12,
+                                  mainAxisSpacing: 12,
+                                  childAspectRatio: 2.2,
+                                ),
                             itemCount: tugasList.length,
                             itemBuilder: (context, index) {
                               final tugas = tugasList[index];
@@ -405,10 +404,10 @@ class _DetailTugasKelasScreenState extends ConsumerState<DetailTugasKelasScreen>
       final tugasData = tugasDoc.data() as Map<String, dynamic>;
       final tugasId = tugasDoc.id;
 
-        // Check submission status (support numeric or string IDs)
-        final dynamic parsedSiswaId = int.tryParse(siswaId) ?? siswaId;
-        final dynamic parsedTugasId = int.tryParse(tugasId) ?? tugasId;
-        final pengumpulanQuery = await FirebaseFirestore.instance
+      // Check submission status (support numeric or string IDs)
+      final dynamic parsedSiswaId = int.tryParse(siswaId) ?? siswaId;
+      final dynamic parsedTugasId = int.tryParse(tugasId) ?? tugasId;
+      final pengumpulanQuery = await FirebaseFirestore.instance
           .collection('pengumpulan')
           .where('siswa_id', isEqualTo: parsedSiswaId)
           .where('tugas_id', isEqualTo: parsedTugasId)
@@ -497,11 +496,7 @@ class _DetailTugasKelasScreenState extends ConsumerState<DetailTugasKelasScreen>
                     color: widget.color.withOpacity(0.15),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Icon(
-                    Icons.assignment,
-                    color: widget.color,
-                    size: 24,
-                  ),
+                  child: Icon(Icons.assignment, color: widget.color, size: 24),
                 ),
                 const SizedBox(width: 12),
                 // Content
@@ -995,6 +990,19 @@ class _DetailTugasKelasScreenState extends ConsumerState<DetailTugasKelasScreen>
     String tugasId,
     String siswaId,
   ) async {
+    // Check connectivity
+    final isOnline = ref.read(isOnlineProvider);
+    if (!isOnline) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Anda harus online untuk mengupload tugas.'),
+          backgroundColor: Colors.orange,
+          duration: Duration(seconds: 3),
+        ),
+      );
+      return;
+    }
+
     try {
       debugPrint('=== PICK AND UPLOAD FILE STARTED ===');
 
@@ -1140,7 +1148,7 @@ class _DetailTugasKelasScreenState extends ConsumerState<DetailTugasKelasScreen>
       }
 
       // Check if there's existing submission and delete it
-        final existingPengumpulan = await FirebaseFirestore.instance
+      final existingPengumpulan = await FirebaseFirestore.instance
           .collection('pengumpulan')
           .where('siswa_id', isEqualTo: int.tryParse(siswaId) ?? siswaId)
           .where('tugas_id', isEqualTo: int.tryParse(tugasId) ?? tugasId)
@@ -1324,5 +1332,34 @@ class _DetailTugasKelasScreenState extends ConsumerState<DetailTugasKelasScreen>
     final month = months[date.month - 1];
 
     return '$day, ${date.day} $month ${date.year} ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+  }
+
+  Widget _buildOfflineBanner() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.orange.shade100,
+        border: Border(
+          bottom: BorderSide(color: Colors.orange.shade300, width: 1),
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.wifi_off, color: Colors.orange.shade700, size: 20),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              'Mode Offline - Fitur upload tugas tidak tersedia',
+              style: TextStyle(
+                color: Colors.orange.shade900,
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

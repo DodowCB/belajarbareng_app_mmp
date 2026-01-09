@@ -16,13 +16,20 @@ class ConnectivityService extends ChangeNotifier {
   StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
   Timer? _pingTimer;
 
-  bool _isOnline = true;
+  bool _isOnline = false; // Start as offline until first ping test completes
   bool get isOnline => _isOnline;
   bool get isOffline => !_isOnline;
 
   int _consecutiveFailures = 0;
+  int _consecutiveSuccesses = 0;
   static const int _maxFailures = 5;
+  static const int _failuresToGoOffline = 3; // Go offline after 3 failures
+  static const int _successesToGoOnline = 2; // Require 2 successes to go online
   bool _wasOfflineDueToMaxFailures = false;
+
+  // Debounce timer for status changes
+  Timer? _statusChangeDebounceTimer;
+  bool _pendingOnlineStatus = false; // Start as offline until verified
 
   /// Initialize connectivity monitoring
   Future<void> initialize() async {
@@ -43,7 +50,7 @@ class ConnectivityService extends ChangeNotifier {
   /// Start periodic ping test to verify real internet connection
   void _startPeriodicPingTest() {
     _pingTimer?.cancel();
-    _pingTimer = Timer.periodic(const Duration(seconds: 3), (timer) async {
+    _pingTimer = Timer.periodic(const Duration(seconds: 10), (timer) async {
       debugPrint(
         '🔍 Performing periodic connectivity test... (failures: $_consecutiveFailures/$_maxFailures)',
       );
@@ -140,8 +147,12 @@ class ConnectivityService extends ChangeNotifier {
         }
       }
 
-      // If standard endpoints fail, try Firebase-specific test
-      if (!hasInternet) {
+      // If standard endpoints fail and we're not web platform, try Firebase-specific test
+      // Skip Firebase test for web to avoid false positives from CORS issues
+      // Also skip if already in offline mode (consecutiveFailures >= failuresToGoOffline)
+      if (!hasInternet &&
+          !kIsWeb &&
+          _consecutiveFailures < _failuresToGoOffline) {
         debugPrint(
           '🔥 Standard endpoints failed, testing Firebase connectivity...',
         );
@@ -152,22 +163,37 @@ class ConnectivityService extends ChangeNotifier {
         if (_consecutiveFailures < _maxFailures) {
           _consecutiveFailures++;
         }
+        _consecutiveSuccesses = 0; // Reset success counter on failure
+
         debugPrint(
           '🔴 Consecutive failures: $_consecutiveFailures/$_maxFailures',
         );
 
-        if (_consecutiveFailures >= _maxFailures) {
-          debugPrint('🚨 Max failures reached! Switching to OFFLINE mode');
+        // Switch to offline after 3 consecutive failures
+        if (_consecutiveFailures >= _failuresToGoOffline) {
+          debugPrint(
+            '🚨 $_failuresToGoOffline failures reached! Switching to OFFLINE mode',
+          );
           hasInternet = false;
-          // Force notify listeners when switching to offline due to max failures
           _wasOfflineDueToMaxFailures = true;
         }
       } else {
-        // Reset failure counter on successful connection
-        if (_consecutiveFailures > 0) {
-          debugPrint('🎉 Connection restored! Resetting failure counter');
+        // Increment success counter
+        _consecutiveSuccesses++;
+
+        // Reset failure counter only after multiple successes
+        if (_consecutiveSuccesses >= _successesToGoOnline) {
+          if (_consecutiveFailures > 0) {
+            debugPrint(
+              '🎉 Connection restored! $_consecutiveSuccesses successes confirmed. Resetting failure counter',
+            );
+          }
           _consecutiveFailures = 0;
           _wasOfflineDueToMaxFailures = false;
+        } else {
+          debugPrint(
+            '✅ Ping success $_consecutiveSuccesses/$_successesToGoOnline (still verifying stability)',
+          );
         }
       }
 
@@ -192,71 +218,57 @@ class ConnectivityService extends ChangeNotifier {
 
       final firestore = FirebaseFirestore.instance;
 
-      if (kIsWeb) {
-        // For web, try cache first to avoid CORS issues
-        try {
-          await firestore
-              .collection('kelas')
-              .limit(1)
-              .get(const GetOptions(source: Source.cache))
-              .timeout(const Duration(seconds: 2));
-          debugPrint('✅ Firebase web connection successful (cache)!');
-          return true;
-        } catch (cacheError) {
-          // If cache fails, try server but be more lenient
-          try {
-            await firestore
-                .collection('kelas')
-                .limit(1)
-                .get(const GetOptions(source: Source.serverAndCache))
-                .timeout(const Duration(seconds: 3));
-            debugPrint('✅ Firebase web connection successful!');
-            return true;
-          } catch (serverError) {
-            debugPrint(
-              '⚠️ Firebase web connection issues, but assuming online for web',
-            );
-            return true; // Be lenient for web environment
-          }
-        }
-      } else {
-        // For mobile/desktop, try normal connection
-        await firestore
-            .collection('kelas')
-            .limit(1)
-            .get(const GetOptions(source: Source.serverAndCache))
-            .timeout(const Duration(seconds: 4));
-        debugPrint('✅ Firebase connection successful!');
-        return true;
-      }
+      // IMPORTANT: Always use Source.server to ensure real connectivity test
+      // Using cache or serverAndCache can return success even when offline
+      await firestore
+          .collection('kelas')
+          .limit(1)
+          .get(const GetOptions(source: Source.server))
+          .timeout(const Duration(seconds: 3));
+      debugPrint('✅ Firebase connection successful!');
+      return true;
     } catch (e) {
       debugPrint('❌ Firebase connection failed: $e');
-
-      // For web, be more lenient about connectivity issues
-      if (kIsWeb) {
-        debugPrint('⚠️ Web environment - assuming Firebase is reachable');
-        return true;
-      }
-
       return false;
     }
   }
 
-  /// Update online status and notify listeners
+  /// Update online status and notify listeners with debouncing
   void _updateOnlineStatus(bool isConnected) {
-    if (_isOnline != isConnected) {
-      _isOnline = isConnected;
+    // Cancel any pending status change
+    _statusChangeDebounceTimer?.cancel();
 
-      if (isConnected) {
-        _consecutiveFailures = 0; // Reset counter when back online
-        debugPrint('🌐 ✅ BACK ONLINE! Consecutive failures reset to 0');
-      }
+    // Store pending status
+    _pendingOnlineStatus = isConnected;
 
-      notifyListeners();
+    // OFFLINE: Apply after meeting failure threshold (handled in _performPingTest)
+    // Only apply if we've reached the failure threshold
+    if (!isConnected &&
+        _isOnline &&
+        _consecutiveFailures >= _failuresToGoOffline) {
+      _isOnline = false;
       debugPrint(
-        '🌐 Internet connectivity changed: ${_isOnline ? 'ONLINE' : 'OFFLINE'}',
+        '🌐 ❌ OFFLINE MODE ACTIVATED after $_consecutiveFailures failures',
       );
+      notifyListeners();
       debugPrint('🌐 Status updated at: ${DateTime.now()}');
+      return;
+    }
+
+    // ONLINE: Require multiple successes and debounce for stability
+    if (isConnected &&
+        !_isOnline &&
+        _consecutiveSuccesses >= _successesToGoOnline) {
+      _statusChangeDebounceTimer = Timer(const Duration(milliseconds: 1500), () {
+        if (_pendingOnlineStatus && !_isOnline) {
+          _isOnline = true;
+          debugPrint(
+            '🌐 ✅ BACK ONLINE after $_consecutiveSuccesses verified successes!',
+          );
+          notifyListeners();
+          debugPrint('🌐 Status updated at: ${DateTime.now()}');
+        }
+      });
     }
   }
 
@@ -306,6 +318,7 @@ class ConnectivityService extends ChangeNotifier {
   void dispose() {
     _connectivitySubscription?.cancel();
     _pingTimer?.cancel();
+    _statusChangeDebounceTimer?.cancel();
     super.dispose();
   }
 }

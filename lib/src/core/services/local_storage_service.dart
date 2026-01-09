@@ -191,7 +191,7 @@ class LocalStorageService {
     final sampleMapel = [
       {
         'id': 'mapel_001',
-        'nama': 'Matematika',
+        'namaMapel': 'Matematika',
         'kode': 'MAT',
         'sks': 3,
         'deskripsi': 'Matematika Dasar dan Lanjutan',
@@ -199,7 +199,7 @@ class LocalStorageService {
       },
       {
         'id': 'mapel_002',
-        'nama': 'Fisika',
+        'namaMapel': 'Fisika',
         'kode': 'FIS',
         'sks': 2,
         'deskripsi': 'Fisika Dasar dan Lanjutan',
@@ -207,7 +207,7 @@ class LocalStorageService {
       },
       {
         'id': 'mapel_003',
-        'nama': 'Kimia',
+        'namaMapel': 'Kimia',
         'kode': 'KIM',
         'sks': 2,
         'deskripsi': 'Kimia Dasar dan Lanjutan',
@@ -215,7 +215,7 @@ class LocalStorageService {
       },
       {
         'id': 'mapel_004',
-        'nama': 'Biologi',
+        'namaMapel': 'Biologi',
         'kode': 'BIO',
         'sks': 2,
         'deskripsi': 'Biologi Dasar dan Lanjutan',
@@ -271,6 +271,54 @@ class LocalStorageService {
       },
     ];
 
+    // Sample Kelas Ngajar (Teaching Schedule)
+    final sampleKelasNgajar = [
+      {
+        'id': '1',
+        'id_guru': 'guru_001',
+        'id_kelas': 'kelas_001',
+        'id_mapel': 'mapel_001',
+        'hari': 'Senin',
+        'jam': '08:00 - 09:30',
+        'tanggal': DateTime.now().toIso8601String(),
+        'createdAt': DateTime.now().toIso8601String(),
+        'updatedAt': DateTime.now().toIso8601String(),
+      },
+      {
+        'id': '2',
+        'id_guru': 'guru_001',
+        'id_kelas': 'kelas_002',
+        'id_mapel': 'mapel_002',
+        'hari': 'Selasa',
+        'jam': '10:00 - 11:30',
+        'tanggal': DateTime.now().toIso8601String(),
+        'createdAt': DateTime.now().toIso8601String(),
+        'updatedAt': DateTime.now().toIso8601String(),
+      },
+      {
+        'id': '3',
+        'id_guru': 'guru_002',
+        'id_kelas': 'kelas_001',
+        'id_mapel': 'mapel_003',
+        'hari': 'Rabu',
+        'jam': '13:00 - 14:30',
+        'tanggal': DateTime.now().toIso8601String(),
+        'createdAt': DateTime.now().toIso8601String(),
+        'updatedAt': DateTime.now().toIso8601String(),
+      },
+      {
+        'id': '4',
+        'id_guru': 'guru_002',
+        'id_kelas': 'kelas_003',
+        'id_mapel': 'mapel_004',
+        'hari': 'Kamis',
+        'jam': '08:00 - 09:30',
+        'tanggal': DateTime.now().toIso8601String(),
+        'createdAt': DateTime.now().toIso8601String(),
+        'updatedAt': DateTime.now().toIso8601String(),
+      },
+    ];
+
     // Save all sample data
     await saveSiswaData(sampleSiswa);
     await saveGuruData(sampleGuru);
@@ -278,6 +326,7 @@ class LocalStorageService {
     await saveMapelData(sampleMapel);
     await savePengumumanData(samplePengumuman);
     await saveSiswaKelasData(sampleSiswaKelas);
+    await saveKelasNgajarData(sampleKelasNgajar);
 
     // Save admin stats
     await saveAdminStats(
@@ -286,6 +335,7 @@ class LocalStorageService {
       totalKelas: sampleKelas.length,
       totalMapel: sampleMapel.length,
       totalPengumuman: samplePengumuman.length,
+      totalJadwalMengajar: sampleKelasNgajar.length,
     );
 
     debugPrint('🧪 Sample offline data created successfully!');
@@ -299,6 +349,7 @@ class LocalStorageService {
   static const String _keyKelasData = 'kelas_data';
   static const String _keySiswaKelasData = 'siswa_kelas_data';
   static const String _keyMapelData = 'mapel_data';
+  static const String _keyKelasNgajarData = 'kelas_ngajar_data';
   static const String _keyLastSync = 'last_sync';
 
   // ==================== ADMIN STATS ====================
@@ -310,6 +361,7 @@ class LocalStorageService {
     required int totalKelas,
     required int totalMapel,
     required int totalPengumuman,
+    int totalJadwalMengajar = 0,
   }) async {
     try {
       final data = {
@@ -318,6 +370,7 @@ class LocalStorageService {
         'totalKelas': totalKelas,
         'totalMapel': totalMapel,
         'totalPengumuman': totalPengumuman,
+        'totalJadwalMengajar': totalJadwalMengajar,
         'lastUpdated': DateTime.now().toIso8601String(),
       };
 
@@ -602,6 +655,46 @@ class LocalStorageService {
     }
   }
 
+  // ==================== KELAS NGAJAR (TEACHING SCHEDULE) DATA ====================
+
+  /// Save kelas ngajar (teaching schedule) list to local storage
+  Future<bool> saveKelasNgajarData(
+    List<Map<String, dynamic>> kelasNgajarList,
+  ) async {
+    try {
+      final data = {
+        'kelas_ngajar': kelasNgajarList,
+        'lastUpdated': DateTime.now().toIso8601String(),
+      };
+
+      await _setValue(_keyKelasNgajarData, jsonEncode(data));
+
+      debugPrint('💾 Kelas Ngajar data saved: ${kelasNgajarList.length} items');
+      await _updateLastSync();
+
+      return true;
+    } catch (e) {
+      debugPrint('Error saving kelas ngajar data: $e');
+      return false;
+    }
+  }
+
+  /// Get kelas ngajar (teaching schedule) list from local storage
+  Future<List<Map<String, dynamic>>?> getKelasNgajarData() async {
+    try {
+      final dataString = await _getValue(_keyKelasNgajarData);
+      if (dataString == null) return null;
+
+      final data = jsonDecode(dataString) as Map<String, dynamic>;
+      final kelasNgajarList = data['kelas_ngajar'] as List<dynamic>;
+
+      return kelasNgajarList.cast<Map<String, dynamic>>();
+    } catch (e) {
+      debugPrint('Error getting kelas ngajar data: $e');
+      return null;
+    }
+  }
+
   // ==================== UTILITY METHODS ====================
 
   /// Update last sync timestamp
@@ -648,6 +741,7 @@ class LocalStorageService {
         _keyKelasData,
         _keySiswaKelasData,
         _keyMapelData,
+        _keyKelasNgajarData,
         _keyLastSync,
       ];
 
@@ -671,6 +765,7 @@ class LocalStorageService {
       final kelas = await _getValue(_keyKelasData);
       final siswaKelas = await _getValue(_keySiswaKelasData);
       final mapel = await _getValue(_keyMapelData);
+      final kelasNgajar = await _getValue(_keyKelasNgajarData);
 
       return adminStats != null ||
           pengumuman != null ||
@@ -678,7 +773,8 @@ class LocalStorageService {
           guru != null ||
           kelas != null ||
           siswaKelas != null ||
-          mapel != null;
+          mapel != null ||
+          kelasNgajar != null;
     } catch (e) {
       debugPrint('Error checking offline data: $e');
       return false;
@@ -699,6 +795,9 @@ class LocalStorageService {
         debugPrint('   - Total Kelas: ${adminStats['totalKelas']}');
         debugPrint('   - Total Mapel: ${adminStats['totalMapel']}');
         debugPrint('   - Total Pengumuman: ${adminStats['totalPengumuman']}');
+        debugPrint(
+          '   - Total Jadwal Mengajar: ${adminStats['totalJadwalMengajar'] ?? 0}',
+        );
         debugPrint('   - Last Updated: ${adminStats['lastUpdated']}');
       } else {
         debugPrint('📊 ADMIN STATS: No data');
@@ -765,6 +864,19 @@ class LocalStorageService {
         }
       } else {
         debugPrint('📢 PENGUMUMAN DATA: No data');
+      }
+
+      // Print Kelas Ngajar (Teaching Schedule) Data
+      final kelasNgajarData = await getKelasNgajarData();
+      if (kelasNgajarData != null && kelasNgajarData.isNotEmpty) {
+        debugPrint('📅 KELAS NGAJAR DATA (${kelasNgajarData.length} records):');
+        for (final jadwal in kelasNgajarData) {
+          debugPrint(
+            '   - ${jadwal['hari']} ${jadwal['jam']} - Guru: ${jadwal['id_guru']}, Kelas: ${jadwal['id_kelas']}, Mapel: ${jadwal['id_mapel']}',
+          );
+        }
+      } else {
+        debugPrint('📅 KELAS NGAJAR DATA: No data');
       }
 
       // Print Siswa-Kelas Relations
