@@ -1152,17 +1152,25 @@ class HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 12,
+            runSpacing: 8,
             children: [
-              Icon(Icons.assignment, color: AppTheme.secondaryTeal, size: 24),
-              const SizedBox(width: 12),
-              Text(
-                'Tugas Mendatang',
-                style: Theme.of(
-                  context,
-                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.assignment, color: AppTheme.secondaryTeal, size: 24),
+                  const SizedBox(width: 12),
+                  Text(
+                    'Tugas Mendatang',
+                    style: Theme.of(
+                      context,
+                    ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                  ),
+                ],
               ),
-              const Spacer(),
               TextButton.icon(
                 onPressed: () {
                   Navigator.push(
@@ -1176,6 +1184,7 @@ class HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
                 label: const Text('Lihat Semua'),
                 style: TextButton.styleFrom(
                   foregroundColor: AppTheme.primaryPurple,
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 ),
               ),
             ],

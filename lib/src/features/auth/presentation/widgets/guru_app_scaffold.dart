@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/config/theme.dart';
 import '../../../../core/providers/theme_provider.dart';
 import '../../../../core/providers/connectivity_provider.dart';
+import '../../../../core/providers/user_provider.dart';
 import '../halamanGuru/halaman_guru_screen.dart';
 import '../halamanGuru/component/kelas_guru_screen.dart';
 import '../halamanGuru/component/kelas_list_screen.dart';
@@ -348,6 +349,12 @@ class _GuruAppScaffoldState extends ConsumerState<GuruAppScaffold> {
 
   Widget _buildExpandableProfileMenu() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    // Ambil data dari userProvider singleton
+    final user = userProvider;
+    final userName = user.namaLengkap ?? 'Guru';
+    final userEmail = user.email ?? 'email@example.com';
+    final userInitial = userName.isNotEmpty ? userName[0].toUpperCase() : 'G';
 
     return Column(
       children: [
@@ -377,9 +384,9 @@ class _GuruAppScaffoldState extends ConsumerState<GuruAppScaffold> {
                 CircleAvatar(
                   backgroundColor: AppTheme.primaryPurple,
                   radius: 20,
-                  child: const Text(
-                    'G',
-                    style: TextStyle(
+                  child: Text(
+                    userInitial,
+                    style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
                       fontSize: 18,
@@ -392,9 +399,9 @@ class _GuruAppScaffoldState extends ConsumerState<GuruAppScaffold> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Text(
-                        'Guru Matematika',
-                        style: TextStyle(
+                      Text(
+                        userName,
+                        style: const TextStyle(
                           fontWeight: FontWeight.w600,
                           fontSize: 14,
                         ),
@@ -402,7 +409,7 @@ class _GuruAppScaffoldState extends ConsumerState<GuruAppScaffold> {
                         overflow: TextOverflow.ellipsis,
                       ),
                       Text(
-                        'guru@gmail.com',
+                        userEmail,
                         style: TextStyle(
                           fontSize: 12,
                           color: isDark ? Colors.grey[400] : Colors.grey[600],
@@ -866,6 +873,13 @@ class _GuruAppScaffoldState extends ConsumerState<GuruAppScaffold> {
 
   Widget _buildDrawerProfileSection() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    // Ambil data dari userProvider singleton
+    final user = userProvider;
+    final userName = user.namaLengkap ?? 'Guru';
+    final userEmail = user.email ?? 'email@example.com';
+    final userInitial = userName.isNotEmpty ? userName[0].toUpperCase() : 'G';
+    
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       padding: const EdgeInsets.all(12),
@@ -881,9 +895,9 @@ class _GuruAppScaffoldState extends ConsumerState<GuruAppScaffold> {
           CircleAvatar(
             backgroundColor: AppTheme.primaryPurple,
             radius: 24,
-            child: const Text(
-              'G',
-              style: TextStyle(
+            child: Text(
+              userInitial,
+              style: const TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.bold,
                 fontSize: 20,
@@ -895,14 +909,14 @@ class _GuruAppScaffoldState extends ConsumerState<GuruAppScaffold> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Guru Matematika',
+                Text(
+                  userName,
                   style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
                 Text(
-                  'guru@gmail.com',
+                  userEmail,
                   style: TextStyle(
                     fontSize: 12,
                     color: isDark ? Colors.grey[400] : Colors.grey[600],

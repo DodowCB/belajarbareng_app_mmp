@@ -538,8 +538,8 @@ extension GuruSidebarWidgets on HalamanGuruScreenState {
   Widget buildExpandableProfileMenu(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    // Ambil data langsung dari userProvider yang sudah di-set saat login
-    final user = userProvider; // Global instance from user_provider.dart
+    // Ambil data langsung dari userProvider singleton yang sudah di-set saat login
+    final user = userProvider; // Global singleton instance
     final userName = user.namaLengkap ?? 'Guru';
     final userEmail = user.email ?? 'email@example.com';
 
@@ -692,8 +692,8 @@ extension GuruSidebarWidgets on HalamanGuruScreenState {
   Widget buildDrawerProfileSection(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    // Ambil data langsung dari userProvider
-    final user = userProvider; // Global instance from user_provider.dart
+    // Ambil data langsung dari userProvider singleton yang sudah di-set saat login
+    final user = userProvider; // Global singleton instance
     final userName = user.namaLengkap ?? 'Guru';
     final userEmail = user.email ?? 'email@example.com';
 

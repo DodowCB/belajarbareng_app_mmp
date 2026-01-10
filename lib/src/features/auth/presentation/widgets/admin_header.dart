@@ -26,6 +26,13 @@ class AdminHeader extends StatelessWidget implements PreferredSizeWidget {
   Widget build(BuildContext context) {
     return AppBar(
       automaticallyImplyLeading: automaticallyImplyLeading,
+      leading: automaticallyImplyLeading
+          ? IconButton(
+              icon: const Icon(Icons.arrow_back),
+              onPressed: () => Navigator.of(context).pop(),
+              tooltip: 'Back',
+            )
+          : null,
       title: Row(
         children: [
           Container(
