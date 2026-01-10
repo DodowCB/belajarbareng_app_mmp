@@ -487,7 +487,6 @@ class _AdminScreenState extends State<AdminScreen> {
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
             children: [
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -502,7 +501,7 @@ class _AdminScreenState extends State<AdminScreen> {
                                 ?.copyWith(
                                   color: isOffline ? Colors.grey : color,
                                   fontWeight: FontWeight.w600,
-                                  fontSize: screenWidth >= 1200 ? 16 : 14,
+                                  fontSize: screenWidth >= 1200 ? 15 : 13,
                                 ),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
@@ -513,43 +512,51 @@ class _AdminScreenState extends State<AdminScreen> {
                           const Icon(
                             Icons.offline_bolt,
                             color: Colors.grey,
-                            size: 16,
+                            size: 14,
                           ),
                         ],
                       ],
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 6),
                   Icon(
                     icon,
                     color: isOffline ? Colors.grey : color,
-                    size: screenWidth >= 1200 ? 28 : 24,
+                    size: screenWidth >= 1200 ? 24 : 22,
                   ),
                 ],
               ),
-              SizedBox(height: screenWidth >= 1200 ? 12 : 8),
-              Text(
-                value,
-                style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: isOffline ? Colors.grey : color,
-                  fontSize: screenWidth >= 1200 ? 36 : 28,
+              SizedBox(height: screenWidth >= 1200 ? 10 : 6),
+              Flexible(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      value,
+                      style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: isOffline ? Colors.grey : color,
+                        fontSize: screenWidth >= 1200 ? 32 : 24,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: isOffline
+                            ? Colors.orange
+                            : (isDark ? Colors.grey[400] : Colors.grey[600]),
+                        fontSize: screenWidth >= 1200 ? 13 : 11,
+                        fontWeight: isOffline ? FontWeight.w500 : FontWeight.normal,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
                 ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: 4),
-              Text(
-                subtitle,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: isOffline
-                      ? Colors.orange
-                      : (isDark ? Colors.grey[400] : Colors.grey[600]),
-                  fontSize: screenWidth >= 1200 ? 14 : 12,
-                  fontWeight: isOffline ? FontWeight.w500 : FontWeight.normal,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
               ),
             ],
           ),

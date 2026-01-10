@@ -323,7 +323,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                         const Text(
                           'Statistik Pengumpulan Tugas',
                           style: TextStyle(
-                            fontSize: 18,
+                            fontSize: 16,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -339,7 +339,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                             Colors.blue,
                           ),
                         ),
-                        const SizedBox(width: 12),
+                        const SizedBox(width: 8),
                         Expanded(
                           child: _buildStatBox(
                             'Terkumpul',
@@ -347,7 +347,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                             Colors.green,
                           ),
                         ),
-                        const SizedBox(width: 12),
+                        const SizedBox(width: 8),
                         Expanded(
                           child: _buildStatBox(
                             'Tingkat',
@@ -531,7 +531,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
 
   Widget _buildStatBox(String label, String value, Color color) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: color.withOpacity(0.1),
         borderRadius: BorderRadius.circular(12),
@@ -542,7 +542,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
           Text(
             value,
             style: TextStyle(
-              fontSize: 28,
+              fontSize: 24,
               fontWeight: FontWeight.bold,
               color: color,
             ),
@@ -551,7 +551,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
           Text(
             label,
             style: TextStyle(
-              fontSize: 12,
+              fontSize: 11,
               color: color,
               fontWeight: FontWeight.w600,
             ),
