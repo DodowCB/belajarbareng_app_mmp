@@ -41,21 +41,30 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
       Map<String, dynamic>? authenticatedUser;
       String userType = '';
 
-      // Cek hardcoded dummy credentials terlebih dahulu
       print('Checking credentials: ${event.email}'); // Debug log
       print('Checking password: ${event.password}'); // Debug log
 
-      // Admin dummy login
-      if (event.email.trim().toLowerCase() == 'admin@gmail.com' &&
-          event.password == '123') {
-        authenticatedUser = {
-          'uid': 'admin_001',
-          'email': 'admin@gmail.com',
-          'namaLengkap': 'Administrator',
-          'userType': 'admin',
-          'role': 'admin',
-        };
+      // Cek di collection 'users' untuk admin
+      final userQuerySnapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .where('email', isEqualTo: event.email.trim())
+          .where('password', isEqualTo: event.password)
+          .where('role', isEqualTo: 'admin')
+          .get();
+
+      if (userQuerySnapshot.docs.isNotEmpty) {
+        final userDoc = userQuerySnapshot.docs.first;
+        final userData = userDoc.data();
         userType = 'admin';
+        print('Admin user found: ${userData['nama']}');
+        authenticatedUser = {
+          'uid': userDoc.id,
+          'email': userData['email'],
+          'namaLengkap': userData['nama'] ?? '',
+          'userType': userType,
+          'role': userData['role'],
+          'idnull': userData['idnull'] ?? '',
+        };
       }
       // Guru dummy login
       else if (event.email.trim().toLowerCase() == 'guru@gmail.com' &&
