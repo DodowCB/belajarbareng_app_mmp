@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../../core/config/theme.dart';
+import '../../../../core/providers/app_user.dart';
 import '../profile_menu/profile_menu_widget.dart';
 import '../guru_data/teachers_screen.dart';
 import '../siswa/students_screen.dart';
@@ -229,8 +230,8 @@ class _AdminScreenState extends State<AdminScreen> {
         Padding(
           padding: const EdgeInsets.only(right: 8, left: 4),
           child: ProfileDropdownMenu(
-            userName: 'Administrator',
-            userEmail: 'Administrator@gmail.com',
+            userName: AppUser.displayName,
+            userEmail: AppUser.email ?? 'No email',
           ),
         ),
       ],
@@ -277,7 +278,7 @@ class _AdminScreenState extends State<AdminScreen> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Administrator',
+                    AppUser.displayName,
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,

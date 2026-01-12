@@ -48,13 +48,20 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
       final userQuerySnapshot = await FirebaseFirestore.instance
           .collection('users')
           .where('email', isEqualTo: event.email.trim())
-          .where('password', isEqualTo: event.password)
           .where('role', isEqualTo: 'admin')
           .get();
 
+      // Jika email ditemukan di users (admin), validasi passwordnya
       if (userQuerySnapshot.docs.isNotEmpty) {
         final userDoc = userQuerySnapshot.docs.first;
         final userData = userDoc.data();
+        final storedPassword = userData['password'] as String?;
+        
+        // Validasi password
+        if (storedPassword != event.password) {
+          throw Exception('Login gagal: Email atau password salah');
+        }
+        
         userType = 'admin';
         print('Admin user found: ${userData['nama']}');
         authenticatedUser = {
@@ -95,6 +102,18 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
         userType = 'siswa';
       } else {
         // Cek user dari kedua collection: guru dan siswa
+        // Tapi pastikan email bukan milik admin
+        final adminEmailCheck = await FirebaseFirestore.instance
+            .collection('users')
+            .where('email', isEqualTo: event.email.trim())
+            .where('role', isEqualTo: 'admin')
+            .get();
+        
+        // Jika email terdaftar sebagai admin, jangan cek di guru/siswa
+        if (adminEmailCheck.docs.isNotEmpty) {
+          throw Exception('Login gagal: Email atau password salah');
+        }
+        
         // Cek di collection 'guru' dulu
         final guruQuerySnapshot = await FirebaseFirestore.instance
             .collection('guru')

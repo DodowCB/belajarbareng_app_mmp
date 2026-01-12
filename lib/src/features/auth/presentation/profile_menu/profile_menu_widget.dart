@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/config/theme.dart';
 import '../../../../core/providers/theme_provider.dart';
+import '../../../../core/providers/app_user.dart';
 import '../login/login_screen.dart';
 import '../profile/profile_screen.dart';
+import '../admin/admin_profile_screen.dart';
 import '../settings/settings_screen.dart';
 import '../notifications/notifications_screen.dart';
 import '../help/help_support_screen.dart';
@@ -260,10 +262,18 @@ class ProfileDropdownMenu extends ConsumerWidget {
   void _handleMenuSelection(BuildContext context, String value, WidgetRef ref) {
     switch (value) {
       case 'profile':
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const ProfileScreen()),
-        );
+        // Check if user is admin and route accordingly
+        if (AppUser.userType == 'admin') {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const AdminProfileScreen()),
+          );
+        } else {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const ProfileScreen()),
+          );
+        }
         break;
       case 'settings':
         Navigator.push(

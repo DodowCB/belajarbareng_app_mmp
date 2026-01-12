@@ -7,17 +7,15 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../../../core/config/theme.dart';
 import '../../../../core/providers/app_user.dart';
-import '../widgets/guru_app_scaffold.dart';
-import '../widgets/siswa_app_scaffold.dart';
 
-class ProfileScreen extends StatefulWidget {
-  const ProfileScreen({super.key});
+class AdminProfileScreen extends StatefulWidget {
+  const AdminProfileScreen({super.key});
 
   @override
-  State<ProfileScreen> createState() => _ProfileScreenState();
+  State<AdminProfileScreen> createState() => _AdminProfileScreenState();
 }
 
-class _ProfileScreenState extends State<ProfileScreen> {
+class _AdminProfileScreenState extends State<AdminProfileScreen> {
   bool _isEditing = false;
   late TextEditingController _nameController;
   late TextEditingController _emailController;
@@ -255,278 +253,257 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final isSiswa = AppUser.isSiswa;
 
-    // Build profile body
-    final profileBody = SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        children: [
-          // Profile Header Card
-          Card(
-            elevation: 0,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
-              side: BorderSide(
-                color: isDark
-                    ? Colors.white.withOpacity(0.1)
-                    : Colors.black.withOpacity(0.1),
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('My Profile'),
+        actions: [
+          if (!_isEditing)
+            MouseRegion(
+              cursor: SystemMouseCursors.click,
+              child: IconButton(
+                icon: const Icon(Icons.edit),
+                onPressed: () => setState(() => _isEditing = true),
+                tooltip: 'Edit Profile',
               ),
             ),
-            child: Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                gradient: AppTheme.sunsetGradient,
+        ],
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          children: [
+            // Profile Header Card
+            Card(
+              elevation: 0,
+              shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(20),
+                side: BorderSide(
+                  color: isDark
+                      ? Colors.white.withOpacity(0.1)
+                      : Colors.black.withOpacity(0.1),
+                ),
               ),
-              child: Column(
-                children: [
-                  // Profile Photo
-                  Stack(
-                    children: [
-                      CircleAvatar(
-                        radius: 60,
-                        backgroundColor: Colors.white.withOpacity(0.3),
-                        backgroundImage: _getProfileImage(),
-                        child: _imageFile == null && _uploadedImageUrl == null
-                            ? const Icon(
-                                Icons.person,
-                                size: 60,
-                                color: Colors.white,
-                              )
-                            : null,
-                      ),
-                      if (_isEditing)
-                        Positioned(
-                          right: 0,
-                          bottom: 0,
-                          child: MouseRegion(
-                            cursor: SystemMouseCursors.click,
-                            child: GestureDetector(
-                              onTap: _pickImage,
-                              child: Container(
-                                padding: const EdgeInsets.all(8),
-                                decoration: const BoxDecoration(
+              child: Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  gradient: AppTheme.sunsetGradient,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Column(
+                  children: [
+                    // Profile Photo
+                    Stack(
+                      children: [
+                        CircleAvatar(
+                          radius: 60,
+                          backgroundColor: Colors.white.withOpacity(0.3),
+                          backgroundImage: _getProfileImage(),
+                          child: _imageFile == null && _uploadedImageUrl == null
+                              ? const Icon(
+                                  Icons.person,
+                                  size: 60,
                                   color: Colors.white,
-                                  shape: BoxShape.circle,
-                                ),
-                                child: const Icon(
-                                  Icons.camera_alt,
-                                  size: 20,
-                                  color: AppTheme.primaryPurple,
+                                )
+                              : null,
+                        ),
+                        if (_isEditing)
+                          Positioned(
+                            right: 0,
+                            bottom: 0,
+                            child: MouseRegion(
+                              cursor: SystemMouseCursors.click,
+                              child: GestureDetector(
+                                onTap: _pickImage,
+                                child: Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: const BoxDecoration(
+                                    color: Colors.white,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(
+                                    Icons.camera_alt,
+                                    size: 20,
+                                    color: AppTheme.primaryPurple,
+                                  ),
                                 ),
                               ),
                             ),
                           ),
-                        ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Name
-                  Text(
-                    AppUser.displayName,
-                    style: const TextStyle(
-                      fontSize: 26,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-
-                  // Email
-                  Text(
-                    AppUser.email ?? 'No email',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.white.withOpacity(0.9),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-
-                  // Role Badge
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.25),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.verified_user, size: 16, color: Colors.white),
-                        const SizedBox(width: 6),
-                        Text(
-                          AppUser.userType == 'guru' ? 'Teacher' : 'Student',
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                          ),
-                        ),
                       ],
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 16),
+
+                    // Name
+                    Text(
+                      AppUser.displayName,
+                      style: const TextStyle(
+                        fontSize: 26,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+
+                    // Email
+                    Text(
+                      AppUser.email ?? 'No email',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.white.withOpacity(0.9),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Role Badge
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.25),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.admin_panel_settings, size: 16, color: Colors.white),
+                          SizedBox(width: 6),
+                          Text(
+                            'Administrator',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
 
-          const SizedBox(height: 24),
+            const SizedBox(height: 24),
 
-          // Profile Information Card
-          Card(
-            elevation: 0,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-              side: BorderSide(
-                color: isDark
-                    ? Colors.white.withOpacity(0.1)
-                    : Colors.black.withOpacity(0.1),
+            // Profile Information Card
+            Card(
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+                side: BorderSide(
+                  color: isDark
+                      ? Colors.white.withOpacity(0.1)
+                      : Colors.black.withOpacity(0.1),
+                ),
               ),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: AppTheme.primaryPurple.withOpacity(0.15),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: const Icon(
-                          Icons.info_outline,
-                          color: AppTheme.primaryPurple,
-                          size: 24,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      const Text(
-                        'Personal Information',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-
-                  if (_isEditing) ...[
-                    _buildEditField('Full Name', _nameController, Icons.person_outline),
-                    const SizedBox(height: 16),
-                    _buildEditField('Email Address', _emailController, Icons.email_outlined),
-                    const SizedBox(height: 16),
-                    _buildEditField('Phone Number', _phoneController, Icons.phone_outlined),
-                    const SizedBox(height: 24),
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                     Row(
                       children: [
-                        Expanded(
-                          child: OutlinedButton(
-                            onPressed: () => setState(() {
-                              _isEditing = false;
-                              _imageFile = null; // Reset image selection
-                            }),
-                            style: OutlinedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 14),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                            child: const Text('Cancel'),
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: AppTheme.primaryPurple.withOpacity(0.15),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Icon(
+                            Icons.info_outline,
+                            color: AppTheme.primaryPurple,
+                            size: 24,
                           ),
                         ),
                         const SizedBox(width: 12),
-                        Expanded(
-                          child: ElevatedButton(
-                            onPressed: _saveProfile,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppTheme.primaryPurple,
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 14),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                            child: const Text('Save Changes'),
+                        const Text(
+                          'Personal Information',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
                       ],
                     ),
-                  ] else ...[
-                    _buildInfoRow('Full Name', AppUser.displayName, Icons.person_outline),
-                    _buildInfoRow('Email Address', AppUser.email ?? 'Not set', Icons.email_outlined),
-                    _buildInfoRow('Role', AppUser.userType == 'guru' ? 'Teacher' : 'Student', Icons.work_outline),
-                    if (AppUser.userType == 'guru' && AppUser.nig != null)
-                      _buildInfoRow('Teacher ID (NIG)', AppUser.nig.toString(), Icons.badge_outlined),
-                    if (AppUser.userType == 'siswa' && AppUser.nis != null)
-                      _buildInfoRow('Student ID (NIS)', AppUser.nis.toString(), Icons.badge_outlined),
-                    _buildInfoRow('Phone Number', 'Not set', Icons.phone_outlined),
-                    _buildInfoRow('Member Since', 'November 2025', Icons.calendar_today_outlined),
+                    const SizedBox(height: 24),
+
+                    if (_isEditing) ...[
+                      _buildEditField('Full Name', _nameController, Icons.person_outline),
+                      const SizedBox(height: 16),
+                      _buildEditField('Email Address', _emailController, Icons.email_outlined),
+                      const SizedBox(height: 16),
+                      _buildEditField('Phone Number', _phoneController, Icons.phone_outlined),
+                      const SizedBox(height: 24),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: () => setState(() {
+                                _isEditing = false;
+                                _imageFile = null; // Reset image selection
+                              }),
+                              style: OutlinedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(vertical: 14),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              child: const Text('Cancel'),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: _saveProfile,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppTheme.primaryPurple,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(vertical: 14),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              child: const Text('Save Changes'),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ] else ...[
+                      _buildInfoRow('Full Name', AppUser.displayName, Icons.person_outline),
+                      _buildInfoRow('Email Address', AppUser.email ?? 'Not set', Icons.email_outlined),
+                      _buildInfoRow('Role', 'Administrator', Icons.admin_panel_settings),
+                      _buildInfoRow('Phone Number', 'Not set', Icons.phone_outlined),
+                      _buildInfoRow('Member Since', 'November 2025', Icons.calendar_today_outlined),
+                    ],
                   ],
-                ],
+                ),
               ),
             ),
-          ),
 
-          const SizedBox(height: 24),
+            const SizedBox(height: 24),
 
-          // Quick Actions
-          Text(
-            'Quick Actions',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: AppTheme.primaryPurple,
+            // Quick Actions
+            Text(
+              'Quick Actions',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: AppTheme.primaryPurple,
+              ),
             ),
-          ),
-          const SizedBox(height: 12),
+            const SizedBox(height: 12),
 
-          _buildActionCard(
-            context: context,
-            icon: Icons.lock_outline,
-            title: 'Change Password',
-            subtitle: 'Update your account password',
-            color: AppTheme.primaryPurple,
-            onTap: () => _showChangePasswordDialog(context),
-          ),
-        ],
+            _buildActionCard(
+              context: context,
+              icon: Icons.lock_outline,
+              title: 'Change Password',
+              subtitle: 'Update your account password',
+              color: AppTheme.primaryPurple,
+              onTap: () => _showChangePasswordDialog(context),
+            ),
+          ],
+        ),
       ),
     );
-
-    final additionalActions = [
-      if (!_isEditing)
-        MouseRegion(
-          cursor: SystemMouseCursors.click,
-          child: IconButton(
-            icon: const Icon(Icons.edit),
-            onPressed: () => setState(() => _isEditing = true),
-            tooltip: 'Edit Profile',
-          ),
-        ),
-    ];
-
-    // Return appropriate scaffold based on user role
-    if (isSiswa) {
-      return SiswaAppScaffold(
-        title: 'My Profile',
-        icon: Icons.person,
-        currentRoute: '/profile',
-        additionalActions: additionalActions,
-        body: profileBody,
-      );
-    } else {
-      return GuruAppScaffold(
-        title: 'My Profile',
-        icon: Icons.person,
-        currentRoute: '/profile',
-        additionalActions: additionalActions,
-        body: profileBody,
-      );
-    }
   }
 
   Widget _buildEditField(String label, TextEditingController controller, IconData icon) {
@@ -798,33 +775,59 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 setState(() => isLoading = true);
 
                 try {
-                  // Get current user from FirebaseAuth
-                  final user = FirebaseAuth.instance.currentUser;
+                  // Debug logging
+                  debugPrint('=== Admin Change Password (Firestore) ===');
+                  debugPrint('AppUser.email: ${AppUser.email}');
+                  debugPrint('AppUser.id: ${AppUser.id}');
+                  debugPrint('AppUser.userType: ${AppUser.userType}');
                   
-                  // Validate user is logged in
-                  if (user == null) {
-                    throw Exception('No user logged in. Please log in again.');
+                  // Validate admin user
+                  if (AppUser.userType != 'admin') {
+                    throw Exception('This feature is only available for admin users');
                   }
-
-                  // Get email from user object or AppUser
-                  String? userEmail = user.email ?? AppUser.email;
+                  
+                  String? userId = AppUser.id;
+                  String? userEmail = AppUser.email;
+                  
+                  if (userId == null || userId.isEmpty) {
+                    throw Exception('User ID not found. Please log in again.');
+                  }
                   
                   if (userEmail == null || userEmail.isEmpty) {
                     throw Exception('User email not found. Please log in again.');
                   }
 
-                  debugPrint('Change password for user: $userEmail');
+                  debugPrint('Updating password for admin ID: $userId');
 
-                  // Re-authenticate user with current password
-                  final credential = EmailAuthProvider.credential(
-                    email: userEmail,
-                    password: currentPasswordController.text,
-                  );
+                  // Admin passwords are stored in Firestore, not Firebase Auth
+                  // Query the admin document in 'users' collection
+                  final userQuery = await FirebaseFirestore.instance
+                      .collection('users')
+                      .where('email', isEqualTo: userEmail)
+                      .where('role', isEqualTo: 'admin')
+                      .get();
 
-                  await user.reauthenticateWithCredential(credential);
+                  if (userQuery.docs.isEmpty) {
+                    throw Exception('Admin user not found in database');
+                  }
 
-                  // Update password
-                  await user.updatePassword(newPasswordController.text);
+                  final adminDoc = userQuery.docs.first;
+                  final currentPassword = adminDoc.data()['password'] as String?;
+
+                  // Verify current password
+                  if (currentPassword != currentPasswordController.text) {
+                    throw Exception('Current password is incorrect');
+                  }
+
+                  debugPrint('Current password verified, updating to new password...');
+
+                  // Update password in Firestore
+                  await adminDoc.reference.update({
+                    'password': newPasswordController.text,
+                    'updatedAt': FieldValue.serverTimestamp(),
+                  });
+
+                  debugPrint('Password updated successfully in Firestore');
 
                   // Close dialog
                   if (dialogContext.mounted) {
@@ -850,18 +853,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                     );
                   }
-                } on FirebaseAuthException catch (e) {
+                } on FirebaseException catch (e) {
                   setState(() => isLoading = false);
                   
-                  String errorMessage = 'Failed to change password';
-                  if (e.code == 'wrong-password') {
-                    errorMessage = 'Current password is incorrect';
-                  } else if (e.code == 'weak-password') {
-                    errorMessage = 'New password is too weak';
-                  } else if (e.code == 'requires-recent-login') {
-                    errorMessage = 'Please log out and log in again before changing password';
-                  }
-
+                  debugPrint('FirebaseException: ${e.code} - ${e.message}');
+                  
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
@@ -869,7 +865,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           children: [
                             const Icon(Icons.error_outline, color: Colors.white),
                             const SizedBox(width: 12),
-                            Expanded(child: Text(errorMessage)),
+                            Expanded(child: Text('Database error: ${e.message ?? e.code}')),
                           ],
                         ),
                         backgroundColor: Colors.red,
@@ -882,6 +878,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   }
                 } catch (e) {
                   setState(() => isLoading = false);
+                  
+                  debugPrint('Exception: ${e.toString()}');
                   
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -923,6 +921,4 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
     );
   }
-
-
 }

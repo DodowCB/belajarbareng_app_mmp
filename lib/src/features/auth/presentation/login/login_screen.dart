@@ -21,7 +21,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     text: "admin@gmail.com",
   );
   final _passwordController = TextEditingController(
-    text: "123",
+    text: "123456",
   );
 
   bool _isPasswordVisible = false;
