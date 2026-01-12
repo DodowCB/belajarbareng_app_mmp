@@ -16,6 +16,8 @@ import '../../features/auth/presentation/login/login_screen.dart';
 import '../../features/auth/presentation/guru_data/guru_data_bloc.dart';
 import '../../features/auth/presentation/siswa/siswa_data_bloc.dart';
 import '../../features/auth/data/repositories/auth_repository.dart';
+import '../../features/notifications/presentation/bloc/notification_bloc.dart';
+import '../../features/notifications/data/repositories/notification_repository.dart';
 
 class AppWidget extends ConsumerWidget {
   const AppWidget({super.key});
@@ -29,12 +31,15 @@ class AppWidget extends ConsumerWidget {
         BlocProvider(
           create: (context) => LoginBloc(
             authRepository: AuthRepository(),
-            userProvider: UserProvider(),
-            ref: ref,
           ),
         ),
         BlocProvider(create: (context) => GuruDataBloc()),
         BlocProvider(create: (context) => SiswaDataBloc()),
+        BlocProvider(
+          create: (context) => NotificationBloc(
+            repository: NotificationRepository(),
+          ),
+        ),
       ],
       child: MaterialApp(
         title: 'BelajarBareng',

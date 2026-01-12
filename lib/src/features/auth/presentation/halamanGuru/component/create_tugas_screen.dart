@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../../../../../core/config/theme.dart';
 import '../../../../../core/providers/user_provider.dart';
 import '../../widgets/guru_app_scaffold.dart';
+import '../../../../notifications/presentation/services/notification_service.dart';
 
 class CreateTugasScreen extends StatefulWidget {
   final Map<String, dynamic>? tugas; // For edit mode
@@ -256,6 +257,17 @@ class _CreateTugasScreenState extends State<CreateTugasScreen> {
       }
 
       await batch.commit();
+
+      // 🔔 TRIGGER NOTIFIKASI: TUGAS_BARU (hanya untuk create mode)
+      if (widget.tugas == null) {
+        final notificationService = NotificationService();
+        await notificationService.sendTugasBaru(
+          tugasId: docId,
+          namaTugas: _judulController.text.trim(),
+          deadline: _selectedDeadline!,
+          kelasId: _selectedKelasId!,
+        );
+      }
 
       setState(() => _isLoading = false);
 

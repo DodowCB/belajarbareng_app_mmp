@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../data/models/pengumuman_model.dart';
 import 'pengumuman_event.dart';
 import 'pengumuman_state.dart';
+import '../../../notifications/presentation/services/notification_service.dart';
 
 class PengumumanBloc extends Bloc<PengumumanEvent, PengumumanState> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -83,6 +84,15 @@ class PengumumanBloc extends Bloc<PengumumanEvent, PengumumanState> {
       await _firestore.collection('counters').doc('pengumuman').set({
         'count': nextId,
       }, SetOptions(merge: true));
+
+      // 🔔 TRIGGER NOTIFIKASI: PENGUMUMAN
+      final notificationService = NotificationService();
+      await notificationService.sendPengumuman(
+        pengumumanId: nextId.toString(),
+        judul: event.judul,
+        isi: event.deskripsi,
+        target: 'all', // Send to all users (siswa, guru, admin)
+      );
 
       emit(
         state.copyWith(

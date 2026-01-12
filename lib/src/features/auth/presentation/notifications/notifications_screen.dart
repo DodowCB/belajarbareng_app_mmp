@@ -1,6 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart';
 import '../../../../core/config/theme.dart';
-import '../widgets/admin_header.dart';
+import '../../../notifications/presentation/bloc/notification_bloc.dart';
+import '../../../notifications/presentation/bloc/notification_event.dart';
+import '../../../notifications/presentation/bloc/notification_state.dart';
+import '../../../notifications/data/models/notification_model.dart';
+import '../../../notifications/data/repositories/notification_repository.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -11,141 +19,184 @@ class NotificationsScreen extends StatefulWidget {
 
 class _NotificationsScreenState extends State<NotificationsScreen> {
   String _selectedTab = 'All';
-  final List<NotificationItem> _notifications = [
-    NotificationItem(
-      id: '1',
-      title: 'New Student Registered',
-      message: 'John Doe has been registered as a new student',
-      time: '5 minutes ago',
-      type: NotificationType.info,
-      isRead: false,
-      icon: Icons.person_add,
-    ),
-    NotificationItem(
-      id: '2',
-      title: 'Class Updated',
-      message: 'Class 10 A schedule has been updated',
-      time: '1 hour ago',
-      type: NotificationType.success,
-      isRead: false,
-      icon: Icons.update,
-    ),
-    NotificationItem(
-      id: '3',
-      title: 'System Maintenance',
-      message: 'System will be under maintenance on Sunday, 2:00 AM',
-      time: '2 hours ago',
-      type: NotificationType.warning,
-      isRead: false,
-      icon: Icons.construction,
-    ),
-    NotificationItem(
-      id: '4',
-      title: 'New Message',
-      message: 'You have a new message from Teacher Sarah',
-      time: '3 hours ago',
-      type: NotificationType.info,
-      isRead: true,
-      icon: Icons.message,
-    ),
-    NotificationItem(
-      id: '5',
-      title: 'Payment Received',
-      message: 'Payment received from student Jane Smith',
-      time: '5 hours ago',
-      type: NotificationType.success,
-      isRead: true,
-      icon: Icons.payment,
-    ),
-    NotificationItem(
-      id: '6',
-      title: 'Low Storage',
-      message: 'Storage is running low. Please free up some space.',
-      time: '1 day ago',
-      type: NotificationType.error,
-      isRead: true,
-      icon: Icons.storage,
-    ),
-    NotificationItem(
-      id: '7',
-      title: 'Backup Completed',
-      message: 'Your data has been successfully backed up',
-      time: '2 days ago',
-      type: NotificationType.success,
-      isRead: true,
-      icon: Icons.backup,
-    ),
-    NotificationItem(
-      id: '8',
-      title: 'Profile Updated',
-      message: 'Your profile information has been updated',
-      time: '3 days ago',
-      type: NotificationType.info,
-      isRead: true,
-      icon: Icons.person,
-    ),
-  ];
+  late NotificationBloc _notificationBloc;
+  late NotificationRepository _repository;
+  String? _userId;
+  String? _userRole;
 
-  List<NotificationItem> get _filteredNotifications {
+  @override
+  void initState() {
+    super.initState();
+    _repository = NotificationRepository();
+    _notificationBloc = NotificationBloc(repository: _repository);
+    _initializeUser();
+  }
+
+  Future<void> _initializeUser() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      setState(() {
+        _userId = user.uid;
+      });
+
+      // Get user role from Firestore
+      final role = await _getUserRole(user.uid);
+      setState(() {
+        _userRole = role;
+      });
+
+      if (_userId != null && _userRole != null) {
+        _notificationBloc.add(FetchNotifications(
+          userId: _userId!,
+          role: _userRole!,
+        ));
+
+        // Check for deadline reminders
+        _notificationBloc.add(const CheckDeadlineReminders());
+      }
+    }
+  }
+
+  Future<String?> _getUserRole(String userId) async {
+    // Try to get role from user's document
+    // This assumes you have a 'users' collection with role field
+    try {
+      final firestore = FirebaseFirestore.instance;
+      
+      final userDoc = await firestore
+          .collection('users')
+          .doc(userId)
+          .get();
+      
+      if (userDoc.exists) {
+        return userDoc.data()?['role'];
+      }
+
+      // If not found in users, check guru collection
+      final guruDoc = await firestore
+          .collection('guru')
+          .doc(userId)
+          .get();
+      if (guruDoc.exists) {
+        return 'guru';
+      }
+
+      // Check siswa collection
+      final siswaDoc = await firestore
+          .collection('siswa')
+          .doc(userId)
+          .get();
+      if (siswaDoc.exists) {
+        return 'siswa';
+      }
+
+      return 'admin'; // Default
+    } catch (e) {
+      print('Error getting user role: $e');
+      return null;
+    }
+  }
+
+  @override
+  void dispose() {
+    _notificationBloc.close();
+    super.dispose();
+  }
+
+  List<NotificationModel> _filterNotifications(
+    List<NotificationModel> notifications,
+  ) {
     switch (_selectedTab) {
       case 'Unread':
-        return _notifications.where((n) => !n.isRead).toList();
+        return notifications.where((n) => !n.isRead).toList();
       case 'Read':
-        return _notifications.where((n) => n.isRead).toList();
+        return notifications.where((n) => n.isRead).toList();
       default:
-        return _notifications;
+        return notifications;
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final unreadCount = _notifications.where((n) => !n.isRead).length;
-
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                gradient: AppTheme.sunsetGradient,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: const Icon(Icons.notifications, color: Colors.white, size: 20),
-            ),
-            const SizedBox(width: 12),
-            const Expanded(
-              child: Text(
-                'Notifications',
-                style: TextStyle(fontWeight: FontWeight.bold),
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ],
-        ),
+    return BlocProvider.value(
+      value: _notificationBloc,
+      child: Scaffold(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.of(context).pop(),
-          tooltip: 'Back',
-        ),
-        actions: [
-          Builder(builder: (ctx) {
-            final w = MediaQuery.of(ctx).size.width;
-            if (unreadCount > 0) {
-              // On narrow screens, show icon-only to avoid overflow
-              if (w < 420) {
-                return IconButton(
-                  icon: const Icon(Icons.done_all),
-                  onPressed: _markAllAsRead,
-                  tooltip: 'Mark all read',
-                );
-              }
+        appBar: _buildAppBar(),
+        body: _userId == null || _userRole == null
+            ? const Center(child: CircularProgressIndicator())
+            : StreamBuilder<List<NotificationModel>>(
+                stream: _repository.watchNotifications(_userId!, _userRole!),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
 
+                  if (snapshot.hasError) {
+                    return Center(
+                      child: Text('Error: ${snapshot.error}'),
+                    );
+                  }
+
+                  final notifications = snapshot.data ?? [];
+                  final unreadCount =
+                      notifications.where((n) => !n.isRead).length;
+
+                  return Column(
+                    children: [
+                      _buildTabBar(notifications.length, unreadCount),
+                      Expanded(
+                        child: _buildNotificationList(notifications),
+                      ),
+                    ],
+                  );
+                },
+              ),
+      ),
+    );
+  }
+
+  PreferredSizeWidget _buildAppBar() {
+    return AppBar(
+      title: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              gradient: AppTheme.sunsetGradient,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Icon(Icons.notifications, color: Colors.white, size: 20),
+          ),
+          const SizedBox(width: 12),
+          const Expanded(
+            child: Text(
+              'Notifications',
+              style: TextStyle(fontWeight: FontWeight.bold),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      elevation: 0,
+      leading: IconButton(
+        icon: const Icon(Icons.arrow_back),
+        onPressed: () => Navigator.of(context).pop(),
+        tooltip: 'Back',
+      ),
+      actions: [
+        StreamBuilder<List<NotificationModel>>(
+          stream: _userId != null && _userRole != null
+              ? _repository.watchNotifications(_userId!, _userRole!)
+              : null,
+          builder: (context, snapshot) {
+            final notifications = snapshot.data ?? [];
+            final unreadCount = notifications.where((n) => !n.isRead).length;
+
+            if (unreadCount > 0) {
               return TextButton.icon(
-                onPressed: _markAllAsRead,
+                onPressed: () => _markAllAsRead(context),
                 icon: const Icon(Icons.done_all, size: 18),
                 label: const Text('Mark all read'),
                 style: TextButton.styleFrom(
@@ -155,34 +206,20 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             }
 
             return const SizedBox.shrink();
-          }),
-          IconButton(
-            icon: const Icon(Icons.settings_outlined),
-            onPressed: _showNotificationSettings,
-            tooltip: 'Notification Settings',
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          _buildTabBar(unreadCount),
-          Expanded(
-            child: _filteredNotifications.isEmpty
-                ? _buildEmptyState()
-                : ListView.builder(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: _filteredNotifications.length,
-                    itemBuilder: (context, index) {
-                      return _buildNotificationCard(_filteredNotifications[index]);
-                    },
-                  ),
-          ),
-        ],
-      ),
+          },
+        ),
+        IconButton(
+          icon: const Icon(Icons.delete_outline),
+          onPressed: () => _showDeleteAllDialog(context),
+          tooltip: 'Delete All',
+        ),
+      ],
     );
   }
 
-  Widget _buildTabBar(int unreadCount) {
+  Widget _buildTabBar(int totalCount, int unreadCount) {
+    final readCount = totalCount - unreadCount;
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
@@ -197,11 +234,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       ),
       child: Row(
         children: [
-          _buildTab('All', _notifications.length),
-          const SizedBox(width: 12),
+          _buildTab('All', totalCount),
+          const SizedBox(width: 8),
           _buildTab('Unread', unreadCount),
-          const SizedBox(width: 12),
-          _buildTab('Read', _notifications.length - unreadCount),
+          const SizedBox(width: 8),
+          _buildTab('Read', readCount),
         ],
       ),
     );
@@ -209,199 +246,173 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
   Widget _buildTab(String label, int count) {
     final isSelected = _selectedTab == label;
+
     return Expanded(
-      child: MouseRegion(
-        cursor: SystemMouseCursors.click,
-        child: GestureDetector(
-          onTap: () => setState(() => _selectedTab = label),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            padding: const EdgeInsets.symmetric(vertical: 10),
-            decoration: BoxDecoration(
-              color: isSelected
-                  ? AppTheme.primaryPurple.withOpacity(0.15)
-                  : Colors.transparent,
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(
-                color: isSelected
-                    ? AppTheme.primaryPurple
-                    : Colors.grey.withOpacity(0.3),
-                width: isSelected ? 2 : 1,
+      child: GestureDetector(
+        onTap: () => setState(() => _selectedTab = label),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          decoration: BoxDecoration(
+            gradient: isSelected ? AppTheme.sunsetGradient : null,
+            color: isSelected ? null : Colors.transparent,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Column(
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  color: isSelected ? Colors.white : Colors.grey,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                  fontSize: 14,
+                ),
               ),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
+              if (count > 0)
                 Text(
-                  label,
+                  count.toString(),
                   style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                    color: isSelected ? AppTheme.primaryPurple : Colors.grey[600],
+                    color: isSelected ? Colors.white : AppTheme.primaryPurple,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
                   ),
                 ),
-                if (count > 0) ...[
-                  const SizedBox(width: 6),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: isSelected
-                          ? AppTheme.primaryPurple
-                          : Colors.grey.withOpacity(0.3),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      count.toString(),
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                        color: isSelected ? Colors.white : Colors.grey[600],
-                      ),
-                    ),
-                  ),
-                ],
-              ],
-            ),
+            ],
           ),
         ),
       ),
     );
   }
 
-  Widget _buildNotificationCard(NotificationItem notification) {
+  Widget _buildNotificationList(List<NotificationModel> notifications) {
+    final filteredNotifications = _filterNotifications(notifications);
+
+    if (filteredNotifications.isEmpty) {
+      return _buildEmptyState();
+    }
+
+    return RefreshIndicator(
+      onRefresh: () async {
+        if (_userId != null && _userRole != null) {
+          _notificationBloc.add(RefreshNotifications(
+            userId: _userId!,
+            role: _userRole!,
+          ));
+        }
+      },
+      child: ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: filteredNotifications.length,
+        itemBuilder: (context, index) {
+          return _buildNotificationCard(filteredNotifications[index]);
+        },
+      ),
+    );
+  }
+
+  Widget _buildNotificationCard(NotificationModel notification) {
     return Dismissible(
       key: Key(notification.id),
       background: Container(
         margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.symmetric(horizontal: 20),
         decoration: BoxDecoration(
           color: Colors.red,
           borderRadius: BorderRadius.circular(12),
         ),
         alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 20),
         child: const Icon(Icons.delete, color: Colors.white),
       ),
       direction: DismissDirection.endToStart,
       onDismissed: (direction) {
-        setState(() => _notifications.remove(notification));
-        _showSnackbar('Notification deleted');
+        _notificationBloc.add(DeleteNotification(notification.id));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Notification deleted')),
+        );
       },
-      child: MouseRegion(
-        cursor: SystemMouseCursors.click,
-        child: GestureDetector(
-          onTap: () => _markAsRead(notification),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            margin: const EdgeInsets.only(bottom: 12),
-            decoration: BoxDecoration(
-              color: notification.isRead
-                  ? Theme.of(context).cardColor
-                  : _getNotificationTypeColor(notification.type).withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: notification.isRead
-                    ? Colors.grey.withOpacity(0.2)
-                    : _getNotificationTypeColor(notification.type).withOpacity(0.3),
-                width: notification.isRead ? 1 : 2,
-              ),
-            ),
-            child: ListTile(
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              leading: Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: _getNotificationTypeColor(notification.type).withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(
-                  notification.icon,
-                  color: _getNotificationTypeColor(notification.type),
-                  size: 24,
-                ),
-              ),
-              title: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      notification.title,
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: notification.isRead ? FontWeight.w500 : FontWeight.bold,
-                      ),
-                    ),
+      child: Card(
+        margin: const EdgeInsets.only(bottom: 12),
+        elevation: notification.isRead ? 0 : 2,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: BorderSide(
+            color: notification.isRead
+                ? Colors.transparent
+                : _getPriorityColor(notification.priority).withOpacity(0.3),
+            width: 2,
+          ),
+        ),
+        child: InkWell(
+          onTap: () => _handleNotificationTap(notification),
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: _getPriorityColor(notification.priority)
+                        .withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(10),
                   ),
-                  if (!notification.isRead)
-                    Container(
-                      width: 8,
-                      height: 8,
-                      decoration: const BoxDecoration(
-                        color: AppTheme.primaryPurple,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                ],
-              ),
-              subtitle: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 4),
-                  Text(
-                    notification.message,
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Colors.grey[600],
-                    ),
+                  child: Icon(
+                    _getNotificationIcon(notification.type),
+                    color: _getPriorityColor(notification.priority),
+                    size: 24,
                   ),
-                  const SizedBox(height: 6),
-                  Row(
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(Icons.access_time, size: 12, color: Colors.grey[500]),
-                      const SizedBox(width: 4),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              notification.title,
+                              style: TextStyle(
+                                fontWeight: notification.isRead
+                                    ? FontWeight.normal
+                                    : FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ),
+                          if (!notification.isRead)
+                            Container(
+                              width: 8,
+                              height: 8,
+                              decoration: const BoxDecoration(
+                                color: AppTheme.primaryPurple,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
                       Text(
-                        notification.time,
+                        notification.message,
                         style: TextStyle(
+                          color: Colors.grey[600],
+                          fontSize: 14,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        _formatTime(notification.createdAt),
+                        style: TextStyle(
+                          color: Colors.grey[400],
                           fontSize: 12,
-                          color: Colors.grey[500],
                         ),
                       ),
                     ],
                   ),
-                ],
-              ),
-              trailing: PopupMenuButton<String>(
-                icon: const Icon(Icons.more_vert),
-                onSelected: (value) {
-                  if (value == 'mark_read') {
-                    _markAsRead(notification);
-                  } else if (value == 'delete') {
-                    setState(() => _notifications.remove(notification));
-                    _showSnackbar('Notification deleted');
-                  }
-                },
-                itemBuilder: (context) => [
-                  if (!notification.isRead)
-                    const PopupMenuItem(
-                      value: 'mark_read',
-                      child: Row(
-                        children: [
-                          Icon(Icons.check, size: 18),
-                          SizedBox(width: 8),
-                          Text('Mark as read'),
-                        ],
-                      ),
-                    ),
-                  const PopupMenuItem(
-                    value: 'delete',
-                    child: Row(
-                      children: [
-                        Icon(Icons.delete, size: 18, color: Colors.red),
-                        SizedBox(width: 8),
-                        Text('Delete', style: TextStyle(color: Colors.red)),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ),
@@ -414,142 +425,156 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.notifications_off_outlined,
-            size: 80,
-            color: Colors.grey[400],
+          Container(
+            padding: const EdgeInsets.all(32),
+            decoration: BoxDecoration(
+              gradient: AppTheme.sunsetGradient.scale(0.3),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.notifications_off_outlined,
+              size: 64,
+              color: Colors.white,
+            ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 24),
           Text(
             'No notifications',
             style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: Colors.grey[600],
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Colors.grey[700],
             ),
           ),
           const SizedBox(height: 8),
           Text(
-            'You\'re all caught up!',
+            _getEmptyStateMessage(),
             style: TextStyle(
               fontSize: 14,
               color: Colors.grey[500],
             ),
+            textAlign: TextAlign.center,
           ),
         ],
       ),
     );
   }
 
-  Color _getNotificationTypeColor(NotificationType type) {
-    switch (type) {
-      case NotificationType.success:
-        return AppTheme.accentGreen;
-      case NotificationType.warning:
-        return AppTheme.accentOrange;
-      case NotificationType.error:
-        return Colors.red;
-      case NotificationType.info:
+  String _getEmptyStateMessage() {
+    switch (_selectedTab) {
+      case 'Unread':
+        return 'You\'re all caught up!';
+      case 'Read':
+        return 'No read notifications yet';
       default:
-        return AppTheme.primaryPurple;
+        return 'You don\'t have any notifications yet';
     }
   }
 
-  void _markAsRead(NotificationItem notification) {
-    setState(() {
-      notification.isRead = true;
-    });
+  IconData _getNotificationIcon(String type) {
+    switch (type) {
+      case 'tugas_baru':
+        return Icons.assignment_outlined;
+      case 'tugas_deadline':
+        return Icons.alarm;
+      case 'tugas_submitted':
+        return Icons.check_circle_outline;
+      case 'nilai_keluar':
+        return Icons.grade;
+      case 'pengumuman':
+        return Icons.campaign;
+      default:
+        return Icons.notifications;
+    }
   }
 
-  void _markAllAsRead() {
-    setState(() {
-      for (var notification in _notifications) {
-        notification.isRead = true;
-      }
-    });
-    _showSnackbar('All notifications marked as read');
+  Color _getPriorityColor(String priority) {
+    switch (priority) {
+      case 'high':
+        return Colors.red;
+      case 'medium':
+        return Colors.orange;
+      case 'low':
+        return Colors.blue;
+      default:
+        return Colors.grey;
+    }
   }
 
-  void _showNotificationSettings() {
+  String _formatTime(DateTime dateTime) {
+    final now = DateTime.now();
+    final difference = now.difference(dateTime);
+
+    if (difference.inMinutes < 1) {
+      return 'Just now';
+    } else if (difference.inMinutes < 60) {
+      return '${difference.inMinutes} minutes ago';
+    } else if (difference.inHours < 24) {
+      return '${difference.inHours} hours ago';
+    } else if (difference.inDays < 7) {
+      return '${difference.inDays} days ago';
+    } else {
+      return DateFormat('dd MMM yyyy').format(dateTime);
+    }
+  }
+
+  void _handleNotificationTap(NotificationModel notification) {
+    // Mark as read
+    if (!notification.isRead) {
+      _notificationBloc.add(MarkAsRead(notification.id));
+    }
+
+    // Navigate to actionUrl if available
+    if (notification.actionUrl != null) {
+      Navigator.of(context).pushNamed(notification.actionUrl!);
+    }
+  }
+
+  void _markAllAsRead(BuildContext context) {
+    if (_userId != null && _userRole != null) {
+      _notificationBloc.add(MarkAllAsRead(
+        userId: _userId!,
+        role: _userRole!,
+      ));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('All notifications marked as read')),
+      );
+    }
+  }
+
+  void _showDeleteAllDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Row(
-          children: [
-            Icon(Icons.settings, color: AppTheme.primaryPurple),
-            SizedBox(width: 12),
-            Text('Notification Settings'),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            SwitchListTile(
-              title: const Text('Push Notifications'),
-              value: true,
-              onChanged: (value) {},
-              activeColor: AppTheme.primaryPurple,
-            ),
-            SwitchListTile(
-              title: const Text('Email Notifications'),
-              value: true,
-              onChanged: (value) {},
-              activeColor: AppTheme.primaryPurple,
-            ),
-            SwitchListTile(
-              title: const Text('Sound'),
-              value: true,
-              onChanged: (value) {},
-              activeColor: AppTheme.primaryPurple,
-            ),
-          ],
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete All Notifications'),
+        content: const Text(
+          'Are you sure you want to delete all notifications? This action cannot be undone.',
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              if (_userId != null && _userRole != null) {
+                _notificationBloc.add(DeleteAllNotifications(
+                  userId: _userId!,
+                  role: _userRole!,
+                ));
+                Navigator.of(ctx).pop();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('All notifications deleted'),
+                  ),
+                );
+              }
+            },
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Delete All'),
           ),
         ],
       ),
     );
   }
-
-  void _showSnackbar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: AppTheme.accentGreen,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      ),
-    );
-  }
-}
-
-enum NotificationType {
-  info,
-  success,
-  warning,
-  error,
-}
-
-class NotificationItem {
-  final String id;
-  final String title;
-  final String message;
-  final String time;
-  final NotificationType type;
-  bool isRead;
-  final IconData icon;
-
-  NotificationItem({
-    required this.id,
-    required this.title,
-    required this.message,
-    required this.time,
-    required this.type,
-    required this.isRead,
-    required this.icon,
-  });
 }

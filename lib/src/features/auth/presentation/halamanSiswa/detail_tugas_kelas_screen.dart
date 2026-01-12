@@ -7,6 +7,7 @@ import '../../../../core/config/theme.dart';
 import '../../../../core/providers/user_provider.dart';
 import '../../../../core/services/google_drive_service.dart';
 import '../../../../core/providers/connectivity_provider.dart';
+import '../../../notifications/presentation/services/notification_service.dart';
 
 class DetailTugasKelasScreen extends ConsumerStatefulWidget {
   final String kelasId;
@@ -1237,6 +1238,24 @@ class _DetailTugasKelasScreenState
         _uploadProgress = 1.0;
         _isUploading = false;
       });
+
+      // 🔔 TRIGGER NOTIFIKASI: TUGAS_SUBMITTED (hanya jika bukan replacing)
+      if (existingPengumpulan.docs.isEmpty) {
+        final notificationService = NotificationService();
+        
+        // Get siswa name
+        final siswaDoc = await FirebaseFirestore.instance
+            .collection('siswa')
+            .doc(siswaId)
+            .get();
+        final siswaName = siswaDoc.data()?['nama'] ?? 'Siswa';
+        
+        await notificationService.sendTugasSubmitted(
+          tugasId: tugasId,
+          siswaId: siswaId,
+          siswaName: siswaName,
+        );
+      }
 
       if (context.mounted) {
         Navigator.pop(context); // Close bottom sheet

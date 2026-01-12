@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../../../core/config/theme.dart';
 import '../../../../../core/providers/user_provider.dart';
 import '../../widgets/guru_app_scaffold.dart';
+import '../../../../notifications/presentation/services/notification_service.dart';
 
 class InputNilaiSiswaScreen extends StatefulWidget {
   final Map<String, dynamic> kelas;
@@ -237,6 +238,23 @@ class _InputNilaiSiswaScreenState extends State<InputNilaiSiswaScreen> {
       }
 
       await batch.commit();
+
+      // 🔔 TRIGGER NOTIFIKASI: NILAI_KELUAR untuk setiap siswa
+      final notificationService = NotificationService();
+      final mapelName = widget.kelas['namaMapel'] ?? 'Mata Pelajaran';
+      
+      for (final siswa in _siswaList) {
+        final siswaId = siswa['siswaId'];
+        final rataRata = _rataRata[siswaId] ?? 0.0;
+        
+        await notificationService.sendNilaiKeluar(
+          siswaId: siswaId,
+          mapelName: mapelName,
+          jenisNilai: 'Rata-rata',
+          nilai: rataRata,
+          mapelId: widget.kelas['mapelId'] ?? '',
+        );
+      }
 
       setState(() => _isSaving = false);
 
