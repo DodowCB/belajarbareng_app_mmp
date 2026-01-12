@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../features/notifications/triggers/notification_triggers.dart';
 
 class DataSeeder {
   static final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -16,6 +17,7 @@ class DataSeeder {
           'guru_id': null,
           'nama_guru': null,
           'pembuat': 'admin',
+          'targetAudience': 'all',
           'createdAt': FieldValue.serverTimestamp(),
           'updatedAt': FieldValue.serverTimestamp(),
         },
@@ -26,6 +28,7 @@ class DataSeeder {
           'guru_id': null,
           'nama_guru': null,
           'pembuat': 'admin',
+          'targetAudience': 'all',
           'createdAt': FieldValue.serverTimestamp(),
           'updatedAt': FieldValue.serverTimestamp(),
         },
@@ -36,6 +39,7 @@ class DataSeeder {
           'guru_id': '1',
           'nama_guru': 'Castorice',
           'pembuat': 'guru',
+          'targetAudience': 'guru',
           'createdAt': FieldValue.serverTimestamp(),
           'updatedAt': FieldValue.serverTimestamp(),
         },
@@ -46,6 +50,7 @@ class DataSeeder {
           'guru_id': null,
           'nama_guru': null,
           'pembuat': 'admin',
+          'targetAudience': 'siswa',
           'createdAt': FieldValue.serverTimestamp(),
           'updatedAt': FieldValue.serverTimestamp(),
         },
@@ -56,20 +61,36 @@ class DataSeeder {
           'guru_id': '1',
           'nama_guru': 'Castorice',
           'pembuat': 'guru',
+          'targetAudience': 'guru',
           'createdAt': FieldValue.serverTimestamp(),
           'updatedAt': FieldValue.serverTimestamp(),
         },
       ];
 
       final batch = _firestore.batch();
+      final pengumumanIds = <String>[];
 
       for (final announcement in announcements) {
         final docRef = _firestore.collection('pengumuman').doc();
         batch.set(docRef, announcement);
+        pengumumanIds.add(docRef.id);
       }
 
       await batch.commit();
       print('✅ Successfully seeded ${announcements.length} announcements');
+
+      // Trigger notifications for each pengumuman
+      print('📢 Sending notifications for seeded pengumuman...');
+      for (int i = 0; i < pengumumanIds.length; i++) {
+        final pengumumanData = announcements[i];
+        await NotificationTriggers.onPengumumanCreated(
+          pengumumanId: pengumumanIds[i],
+          title: pengumumanData['judul'] as String,
+          content: pengumumanData['deskripsi'] as String,
+          targetAudience: pengumumanData['targetAudience'] as String,
+        );
+      }
+      print('✅ Notifications sent for all seeded pengumuman');
     } catch (e) {
       print('❌ Error seeding announcements: $e');
     }
@@ -129,14 +150,29 @@ class DataSeeder {
       ];
 
       final batch = _firestore.batch();
+      final tugasIds = <String>[];
 
       for (final task in tugas) {
         final docRef = _firestore.collection('tugas').doc();
         batch.set(docRef, task);
+        tugasIds.add(docRef.id);
       }
 
       await batch.commit();
       print('✅ Successfully seeded ${tugas.length} tugas');
+
+      // Trigger notifications for each tugas
+      print('📢 Sending notifications for seeded tugas...');
+      for (int i = 0; i < tugasIds.length; i++) {
+        final tugasData = tugas[i];
+        await NotificationTriggers.onTugasCreated(
+          tugasId: tugasIds[i],
+          namaTugas: tugasData['nama'] as String,
+          kelasId: tugasData['kelas_id'] as String,
+          deadline: (tugasData['deadline'] as Timestamp).toDate(),
+        );
+      }
+      print('✅ Notifications sent for all seeded tugas');
     } catch (e) {
       print('❌ Error seeding tugas: $e');
     }

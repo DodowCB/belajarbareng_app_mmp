@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../providers/theme_provider.dart';
+import '../providers/user_provider.dart';
 import '../config/theme.dart';
 import 'splash_screen.dart';
 import '../../features/auth/presentation/dashboard/dashboard_screen.dart';
@@ -26,7 +27,11 @@ class AppWidget extends ConsumerWidget {
     return MultiBlocProvider(
       providers: [
         BlocProvider(
-          create: (context) => LoginBloc(authRepository: AuthRepository()),
+          create: (context) => LoginBloc(
+            authRepository: AuthRepository(),
+            userProvider: UserProvider(),
+            ref: ref,
+          ),
         ),
         BlocProvider(create: (context) => GuruDataBloc()),
         BlocProvider(create: (context) => SiswaDataBloc()),

@@ -72,6 +72,7 @@ dependencies:
 
   # 7. Utilities & UI
   intl: ^0.20.2 # Untuk format tanggal, angka, dll.
+  timeago: ^3.7.0 # Untuk format waktu relative (2 hours ago, etc)
   google_fonts: ^6.1.0 # UI/UX
   url_launcher: ^6.2.2 # Untuk membuka URL YouTube
 
