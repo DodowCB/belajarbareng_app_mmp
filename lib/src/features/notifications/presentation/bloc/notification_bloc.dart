@@ -18,6 +18,9 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
     on<CreateBulkNotifications>(_onCreateBulkNotifications);
     on<CheckDeadlineReminders>(_onCheckDeadlineReminders);
     on<RefreshNotifications>(_onRefreshNotifications);
+    on<TrackNotificationViewed>(_onTrackNotificationViewed);
+    on<TrackNotificationClicked>(_onTrackNotificationClicked);
+    on<TrackNotificationAction>(_onTrackNotificationAction);
   }
 
   Future<void> _onFetchNotifications(
@@ -236,6 +239,54 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
       ));
     } catch (e) {
       emit(NotificationError('Failed to refresh notifications: ${e.toString()}'));
+    }
+  }
+
+  // Analytics: Track notification viewed
+  Future<void> _onTrackNotificationViewed(
+    TrackNotificationViewed event,
+    Emitter<NotificationState> emit,
+  ) async {
+    try {
+      await _repository.createAnalytics(
+        userId: event.userId,
+        notificationId: event.notificationId,
+        action: null, // Viewed, not clicked yet
+      );
+    } catch (e) {
+      print('Error tracking notification viewed: $e');
+    }
+  }
+
+  // Analytics: Track notification clicked
+  Future<void> _onTrackNotificationClicked(
+    TrackNotificationClicked event,
+    Emitter<NotificationState> emit,
+  ) async {
+    try {
+      await _repository.createAnalytics(
+        userId: event.userId,
+        notificationId: event.notificationId,
+        action: event.action ?? 'clicked',
+      );
+    } catch (e) {
+      print('Error tracking notification clicked: $e');
+    }
+  }
+
+  // Analytics: Track notification action clicked
+  Future<void> _onTrackNotificationAction(
+    TrackNotificationAction event,
+    Emitter<NotificationState> emit,
+  ) async {
+    try {
+      await _repository.createAnalytics(
+        userId: event.userId,
+        notificationId: event.notificationId,
+        action: 'action_${event.actionId}',
+      );
+    } catch (e) {
+      print('Error tracking notification action: $e');
     }
   }
 }

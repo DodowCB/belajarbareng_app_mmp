@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../../../core/config/theme.dart';
 import '../../../../../core/providers/user_provider.dart';
+import '../../../../notifications/presentation/services/notification_service_extended.dart';
 import '../../widgets/guru_app_scaffold.dart';
 
 class CreateQuizScreen extends StatefulWidget {
@@ -23,6 +24,7 @@ class CreateQuizScreen extends StatefulWidget {
 class _CreateQuizScreenState extends State<CreateQuizScreen> {
   final formKey = GlobalKey<FormState>();
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final NotificationServiceExtended _notificationService = NotificationServiceExtended();
   final judulController = TextEditingController();
   int waktuMenit = 30;
   String? selectedKelasId;
@@ -737,6 +739,27 @@ class _CreateQuizScreenState extends State<CreateQuizScreen> {
             backgroundColor: Colors.green,
           ),
         );
+        
+        // Send notification untuk quiz baru (bukan editing)
+        if (!isEditing) {
+          try {
+            // Get guru name from user provider or firestore
+            final userProv = UserProvider();
+            final guruDoc = await _firestore.collection('guru').doc(idGuru).get();
+            final guruName = guruDoc.data()?['nama_lengkap'] ?? 'Unknown Teacher';
+            
+            await _notificationService.sendQuizBaru(
+              quizId: quizId.toString(),
+              quizJudul: judulController.text.trim(),
+              kelasId: selectedKelasId!,
+              guruName: guruName,
+            );
+            debugPrint('✅ Notification sent: Quiz created (ID: $quizId)');
+          } catch (e) {
+            debugPrint('❌ Failed to send quiz notification: $e');
+          }
+        }
+        
         Navigator.pop(context, true); // Return true to indicate success
       }
     } catch (e) {

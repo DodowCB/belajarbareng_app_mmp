@@ -8,6 +8,7 @@ import '../../../notifications/presentation/bloc/notification_event.dart';
 import '../../../notifications/presentation/bloc/notification_state.dart';
 import '../../../notifications/data/models/notification_model.dart';
 import '../../../notifications/data/repositories/notification_repository.dart';
+import 'notification_preferences_screen.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -160,6 +161,19 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         tooltip: 'Back',
       ),
       actions: [
+        // Preferences Button
+        IconButton(
+          icon: const Icon(Icons.settings),
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const NotificationPreferencesScreen(),
+              ),
+            );
+          },
+          tooltip: 'Pengaturan Notifikasi',
+        ),
         StreamBuilder<List<NotificationModel>>(
           stream: _userId != null && _userRole != null
               ? _repository.watchNotifications(_userId!, _userRole!)
@@ -493,15 +507,111 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   }
 
   void _handleNotificationTap(NotificationModel notification) {
+    // Track notification viewed/clicked
+    if (_userId != null) {
+      _notificationBloc.add(TrackNotificationViewed(
+        userId: _userId!,
+        notificationId: notification.id,
+      ));
+      _notificationBloc.add(TrackNotificationClicked(
+        userId: _userId!,
+        notificationId: notification.id,
+        action: 'opened',
+      ));
+    }
+
     // Mark as read
     if (!notification.isRead) {
       _notificationBloc.add(MarkAsRead(notification.id));
     }
 
     // Navigate to actionUrl if available
-    if (notification.actionUrl != null) {
-      Navigator.of(context).pushNamed(notification.actionUrl!);
+    if (notification.actionUrl != null && notification.actionUrl!.isNotEmpty) {
+      // Handle navigation based on action URL
+      _handleNavigation(notification.actionUrl!);
+    } else if (notification.actions != null &&
+        notification.actions!.isNotEmpty) {
+      // Show action sheet if notification has actions
+      _showActionSheet(notification);
     }
+  }
+
+  void _handleNavigation(String actionUrl) {
+    // Simple navigation - you can expand this based on your routing
+    try {
+      if (actionUrl.startsWith('/')) {
+        Navigator.of(context).pushNamed(actionUrl);
+      } else {
+        print('Invalid action URL: $actionUrl');
+      }
+    } catch (e) {
+      print('Error navigating to $actionUrl: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Cannot navigate to: $actionUrl')),
+      );
+    }
+  }
+
+  void _showActionSheet(NotificationModel notification) {
+    if (notification.actions == null || notification.actions!.isEmpty) return;
+
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return Container(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                notification.title,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 16),
+              ...notification.actions!.map((action) {
+                return ListTile(
+                  leading: const Icon(Icons.touch_app),
+                  title: Text(action['label'] ?? 'Action'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    
+                    // Track action
+                    if (_userId != null) {
+                      _notificationBloc.add(TrackNotificationAction(
+                        userId: _userId!,
+                        notificationId: notification.id,
+                        actionId: action['id'] ?? '',
+                      ));
+                    }
+
+                    // Navigate
+                    final route = action['route'];
+                    if (route != null && route.isNotEmpty) {
+                      _handleNavigation(route);
+                    }
+                  },
+                );
+              }).toList(),
+              const SizedBox(height: 8),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancel'),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   void _markAllAsRead(BuildContext context) {

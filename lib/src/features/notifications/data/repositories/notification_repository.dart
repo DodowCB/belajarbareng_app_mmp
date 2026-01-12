@@ -328,4 +328,64 @@ class NotificationRepository {
       return null;
     }
   }
+
+  // Helper: Get kelas by ID
+  Future<Map<String, dynamic>?> getKelasById(String kelasId) async {
+    try {
+      final doc = await _firestore.collection('kelas').doc(kelasId).get();
+      if (doc.exists) {
+        return {'id': doc.id, ...doc.data()!};
+      }
+      return null;
+    } catch (e) {
+      print('Error getting kelas by ID: $e');
+      return null;
+    }
+  }
+
+  // Helper: Check for duplicate notification
+  Future<bool> checkDuplicateNotification({
+    required String userId,
+    required String dedupKey,
+    int withinHours = 12,
+  }) async {
+    try {
+      final timeThreshold =
+          DateTime.now().subtract(Duration(hours: withinHours));
+
+      final snapshot = await _firestore
+          .collection('notifications')
+          .where('userId', isEqualTo: userId)
+          .where('dedupKey', isEqualTo: dedupKey)
+          .where('createdAt', isGreaterThan: Timestamp.fromDate(timeThreshold))
+          .limit(1)
+          .get();
+
+      return snapshot.docs.isNotEmpty;
+    } catch (e) {
+      print('Error checking duplicate notification: $e');
+      return false;
+    }
+  }
+
+  // Helper: Create notification analytics entry
+  Future<void> createAnalytics({
+    required String userId,
+    required String notificationId,
+    String? action,
+  }) async {
+    try {
+      await _firestore.collection('notification_analytics').add({
+        'userId': userId,
+        'notificationId': notificationId,
+        'viewedAt': FieldValue.serverTimestamp(),
+        'clickedAt': action != null ? FieldValue.serverTimestamp() : null,
+        'action': action,
+        'metadata': {},
+      });
+    } catch (e) {
+      print('Error creating analytics: $e');
+    }
+  }
 }
+

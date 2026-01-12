@@ -15,6 +15,10 @@ class NotificationModel extends NotificationEntity {
     required super.metadata,
     required super.createdAt,
     super.updatedAt,
+    super.groupKey,
+    super.groupCount,
+    super.actions,
+    super.dedupKey,
   });
 
   // Factory constructor untuk membuat NotificationModel dari Firestore
@@ -34,6 +38,10 @@ class NotificationModel extends NotificationEntity {
       metadata: Map<String, dynamic>.from(data['metadata'] ?? {}),
       createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
       updatedAt: (data['updatedAt'] as Timestamp?)?.toDate(),
+      groupKey: data['groupKey'],
+      groupCount: data['groupCount'],
+      actions: data['actions'] != null ? List<Map<String, dynamic>>.from(data['actions']) : null,
+      dedupKey: data['dedupKey'],
     );
   }
 
@@ -58,6 +66,10 @@ class NotificationModel extends NotificationEntity {
               ? (json['updatedAt'] as Timestamp).toDate()
               : DateTime.parse(json['updatedAt']))
           : null,
+      groupKey: json['groupKey'],
+      groupCount: json['groupCount'],
+      actions: json['actions'] != null ? List<Map<String, dynamic>>.from(json['actions']) : null,
+      dedupKey: json['dedupKey'],
     );
   }
 
@@ -75,6 +87,10 @@ class NotificationModel extends NotificationEntity {
       'metadata': metadata,
       'createdAt': Timestamp.fromDate(createdAt),
       'updatedAt': updatedAt != null ? Timestamp.fromDate(updatedAt!) : null,
+      'groupKey': groupKey,
+      'groupCount': groupCount,
+      'actions': actions,
+      'dedupKey': dedupKey,
     };
   }
 
@@ -93,6 +109,10 @@ class NotificationModel extends NotificationEntity {
       'metadata': metadata,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt?.toIso8601String(),
+      'groupKey': groupKey,
+      'groupCount': groupCount,
+      'actions': actions,
+      'dedupKey': dedupKey,
     };
   }
 
@@ -110,6 +130,10 @@ class NotificationModel extends NotificationEntity {
     Map<String, dynamic>? metadata,
     DateTime? createdAt,
     DateTime? updatedAt,
+    String? groupKey,
+    int? groupCount,
+    List<Map<String, dynamic>>? actions,
+    String? dedupKey,
   }) {
     return NotificationModel(
       id: id ?? this.id,
@@ -124,6 +148,10 @@ class NotificationModel extends NotificationEntity {
       metadata: metadata ?? this.metadata,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      groupKey: groupKey ?? this.groupKey,
+      groupCount: groupCount ?? this.groupCount,
+      actions: actions ?? this.actions,
+      dedupKey: dedupKey ?? this.dedupKey,
     );
   }
 }

@@ -13,6 +13,12 @@ class NotificationEntity extends Equatable {
   final Map<String, dynamic> metadata;
   final DateTime createdAt;
   final DateTime? updatedAt;
+  
+  // Phase 2 & 3 additions
+  final String? groupKey; // e.g., 'tugas_123', 'quiz_456'
+  final int? groupCount; // Number of notifications in group
+  final List<Map<String, dynamic>>? actions; // Notification actions
+  final String? dedupKey; // For deduplication
 
   const NotificationEntity({
     required this.id,
@@ -27,6 +33,10 @@ class NotificationEntity extends Equatable {
     required this.metadata,
     required this.createdAt,
     this.updatedAt,
+    this.groupKey,
+    this.groupCount,
+    this.actions,
+    this.dedupKey,
   });
 
   @override
@@ -43,5 +53,9 @@ class NotificationEntity extends Equatable {
         metadata,
         createdAt,
         updatedAt,
+        groupKey,
+        groupCount,
+        actions,
+        dedupKey,
       ];
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../../core/config/theme.dart';
 import '../widgets/admin_header.dart';
+import '../../../notifications/presentation/services/notification_service_extended.dart';
 
 class SiswaKelasScreen extends StatefulWidget {
   final String kelasId;
@@ -19,6 +20,7 @@ class SiswaKelasScreen extends StatefulWidget {
 
 class _SiswaKelasScreenState extends State<SiswaKelasScreen> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final NotificationServiceExtended _notificationService = NotificationServiceExtended();
   String _searchQuery = '';
 
   Future<Map<String, dynamic>?> _getSiswaData(String siswaId) async {
@@ -527,6 +529,7 @@ class AddSiswaDialog extends StatefulWidget {
 
 class _AddSiswaDialogState extends State<AddSiswaDialog> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final NotificationServiceExtended _notificationService = NotificationServiceExtended();
   List<Map<String, dynamic>> _availableSiswa = [];
   String? _selectedSiswaId;
   bool _isLoading = true;
@@ -665,6 +668,10 @@ class _AddSiswaDialogState extends State<AddSiswaDialog> {
     if (_selectedSiswaId == null) return;
 
     try {
+      // Get siswa data first for notification
+      final siswaDoc = await _firestore.collection('siswa').doc(_selectedSiswaId!).get();
+      final siswaName = siswaDoc.data()?['nama'] ?? 'Unknown';
+      
       // Generate next integer ID by getting all docs and finding max ID
       final querySnapshot = await _firestore.collection('siswa_kelas').get();
 
@@ -684,6 +691,18 @@ class _AddSiswaDialogState extends State<AddSiswaDialog> {
         'siswa_id': _selectedSiswaId!,
         'createdAt': FieldValue.serverTimestamp(),
       });
+      
+      // Send notification to all admins about siswa joining kelas
+      try {
+        await _notificationService.sendSiswaJoinKelas(
+          kelasId: widget.kelasId,
+          siswaId: _selectedSiswaId!,
+          siswaName: siswaName,
+        );
+        debugPrint('✅ Notification sent: Siswa joined kelas (${widget.namaKelas})');
+      } catch (e) {
+        debugPrint('❌ Failed to send siswa join kelas notification: $e');
+      }
 
       if (mounted) {
         Navigator.of(context).pop();

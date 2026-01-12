@@ -108,3 +108,49 @@ class RefreshNotifications extends NotificationEvent {
   @override
   List<Object?> get props => [userId, role];
 }
+
+// Analytics: Track notification viewed
+class TrackNotificationViewed extends NotificationEvent {
+  final String userId;
+  final String notificationId;
+
+  const TrackNotificationViewed({
+    required this.userId,
+    required this.notificationId,
+  });
+
+  @override
+  List<Object?> get props => [userId, notificationId];
+}
+
+// Analytics: Track notification clicked
+class TrackNotificationClicked extends NotificationEvent {
+  final String userId;
+  final String notificationId;
+  final String? action;
+
+  const TrackNotificationClicked({
+    required this.userId,
+    required this.notificationId,
+    this.action,
+  });
+
+  @override
+  List<Object?> get props => [userId, notificationId, action];
+}
+
+// Analytics: Track notification action clicked
+class TrackNotificationAction extends NotificationEvent {
+  final String userId;
+  final String notificationId;
+  final String actionId;
+
+  const TrackNotificationAction({
+    required this.userId,
+    required this.notificationId,
+    required this.actionId,
+  });
+
+  @override
+  List<Object?> get props => [userId, notificationId, actionId];
+}

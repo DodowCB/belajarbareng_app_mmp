@@ -3,11 +3,13 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import '../../../../core/services/excel_import_service.dart';
 import '../../../../core/services/id_generator_service.dart';
+import '../../../notifications/presentation/services/notification_service_extended.dart';
 import 'siswa_data_event.dart';
 import 'siswa_data_state.dart';
 
 class SiswaDataBloc extends Bloc<SiswaEvent, SiswaState> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final NotificationServiceExtended _notificationService = NotificationServiceExtended();
 
   SiswaDataBloc() : super(SiswaDataInitial()) {
     on<LoadSiswaData>(_onLoadSiswaData);
@@ -179,6 +181,18 @@ class SiswaDataBloc extends Bloc<SiswaEvent, SiswaState> {
       final id = await IdGeneratorService.getNextId('siswa');
       await _firestore.collection('siswa').doc(id).set(event.siswaData);
       emit(SiswaDataActionSuccess('Siswa berhasil ditambahkan'));
+      
+      // Send notification to all admins about new siswa registration
+      try {
+        await _notificationService.sendSiswaRegistered(
+          siswaId: id,
+          siswaName: event.siswaData['nama'] ?? 'Unknown',
+          siswaEmail: event.siswaData['email'] ?? 'No Email',
+        );
+        debugPrint('✅ Notification sent: Siswa registered (ID: $id)');
+      } catch (e) {
+        debugPrint('❌ Failed to send siswa registered notification: $e');
+      }
     } catch (e) {
       emit(SiswaDataError('Failed to add siswa: ${e.toString()}'));
     }

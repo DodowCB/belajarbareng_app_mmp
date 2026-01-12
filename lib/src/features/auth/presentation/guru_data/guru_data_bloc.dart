@@ -4,12 +4,14 @@ import 'package:flutter/foundation.dart';
 import '../../../../core/services/excel_import_service.dart';
 import '../../../../core/services/id_generator_service.dart';
 import '../../../../core/services/recent_activity_service.dart';
+import '../../../notifications/presentation/services/notification_service_extended.dart';
 import 'guru_data_event.dart';
 import 'guru_data_state.dart';
 
 class GuruDataBloc extends Bloc<GuruDataEvent, GuruDataState> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final RecentActivityService _recentActivityService = RecentActivityService();
+  final NotificationServiceExtended _notificationService = NotificationServiceExtended();
 
   GuruDataBloc() : super(const GuruDataInitial()) {
     on<LoadGuruData>(_onLoadGuruData);
@@ -194,6 +196,19 @@ class GuruDataBloc extends Bloc<GuruDataEvent, GuruDataState> {
       final id = await IdGeneratorService.getNextId('guru');
       await _firestore.collection('guru').doc(id).set(event.guruData);
       emit(const GuruDataActionSuccess('Guru berhasil ditambahkan'));
+      
+      // Send notification to all admins about new guru registration
+      try {
+        await _notificationService.sendGuruRegistered(
+          guruId: id,
+          guruName: event.guruData['nama_lengkap'] ?? 'Unknown',
+          guruEmail: event.guruData['email'] ?? 'No Email',
+        );
+        debugPrint('✅ Notification sent: Guru registered (ID: $id)');
+      } catch (e) {
+        debugPrint('❌ Failed to send guru registered notification: $e');
+      }
+      
       try {
         await _recentActivityService.addActivity({
           'title': 'New teacher added',
