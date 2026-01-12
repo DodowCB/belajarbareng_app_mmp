@@ -4,6 +4,8 @@ import 'package:intl/intl.dart';
 import '../../../../../core/config/theme.dart';
 import '../../../../../core/providers/user_provider.dart';
 import '../../widgets/guru_app_scaffold.dart';
+import '../../../../notifications/data/repositories/notification_repository.dart';
+import '../../../../notifications/data/models/notification_model.dart';
 
 class CreateTugasScreen extends StatefulWidget {
   final Map<String, dynamic>? tugas; // For edit mode
@@ -17,6 +19,7 @@ class CreateTugasScreen extends StatefulWidget {
 class _CreateTugasScreenState extends State<CreateTugasScreen> {
   final _formKey = GlobalKey<FormState>();
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final NotificationRepository _notificationRepo = NotificationRepository();
 
   // Form controllers
   final TextEditingController _judulController = TextEditingController();
@@ -256,7 +259,12 @@ class _CreateTugasScreenState extends State<CreateTugasScreen> {
       }
 
       await batch.commit();
+// Send notification to all students in the class (only for new tugas)
+      if (widget.tugas == null) {
+        await _sendTugasBaruNotifications(docId, siswaSnapshot);
+      }
 
+      
       setState(() => _isLoading = false);
 
       if (mounted) {
@@ -277,6 +285,46 @@ class _CreateTugasScreenState extends State<CreateTugasScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+  /// Send TUGAS_BARU notifications to all students in the class
+  Future<void> _sendTugasBaruNotifications(
+    String tugasId,
+    QuerySnapshot siswaKelasSnapshot,
+  ) async {
+    try {
+      final notifications = <Map<String, dynamic>>[];
+      final deadlineFormatted = DateFormat('dd MMMM yyyy', 'id_ID')
+          .format(_selectedDeadline!);
+
+      // Get all siswa user IDs from siswa_kelas
+      for (final doc in siswaKelasSnapshot.docs) {
+        final siswaId = doc['siswa_id']?.toString();
+        if (siswaId != null && siswaId.isNotEmpty) {
+          notifications.add({
+            'userId': siswaId,
+            'role': 'siswa',
+            'type': NotificationType.tugasBaru,
+            'title': 'Tugas Baru: ${_judulController.text.trim()}',
+            'message': 'Deadline: $deadlineFormatted',
+            'priority': NotificationPriority.high,
+            'actionUrl': '/tugas/detail/$tugasId',
+            'metadata': {
+              'taskId': tugasId,
+              'kelasId': _selectedKelasId,
+              'kelasName': _selectedKelasName,
+            },
+          });
+        }
+      }
+
+      if (notifications.isNotEmpty) {
+        await _notificationRepo.createBatchNotifications(notifications);
+        debugPrint('✅ Sent ${notifications.length} TUGAS_BARU notifications');
+      }
+    } catch (e) {
+      debugPrint('❌ Failed to send TUGAS_BARU notifications: $e');
+    }
+  }
+
         );
       }
     }

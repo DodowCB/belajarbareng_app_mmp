@@ -5,6 +5,7 @@ import 'firebase_options.dart';
 import 'src/core/app/app_widget.dart';
 import 'src/core/services/connectivity_service.dart';
 import 'src/core/services/local_storage_service.dart';
+import 'src/services/notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -33,6 +34,16 @@ void main() async {
   } catch (e) {
     debugPrint('Local storage service initialization warning (web platform may have limited support): $e');
     // Continue execution even if local storage fails on web
+  }
+
+  // Initialize notification service
+  try {
+    final notificationService = NotificationService();
+    await notificationService.initialize();
+    debugPrint('Notification service initialized successfully');
+  } catch (e) {
+    debugPrint('Notification service initialization error: $e');
+    // Continue execution even if notifications fail
   }
 
   debugPrint('All offline support services initialized');

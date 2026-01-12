@@ -7,6 +7,8 @@ import '../../../../core/config/theme.dart';
 import '../../../../core/providers/user_provider.dart';
 import '../../../../core/services/google_drive_service.dart';
 import '../../../../core/providers/connectivity_provider.dart';
+import '../../../notifications/data/repositories/notification_repository.dart';
+import '../../../notifications/data/models/notification_model.dart';
 
 class DetailTugasKelasScreen extends ConsumerStatefulWidget {
   final String kelasId;
@@ -31,6 +33,7 @@ class _DetailTugasKelasScreenState
     extends ConsumerState<DetailTugasKelasScreen> {
   String _selectedFilter = 'Semua';
   final GoogleDriveService _driveService = GoogleDriveService();
+  final NotificationRepository _notificationRepo = NotificationRepository();
   bool _isUploading = false;
   double _uploadProgress = 0.0;
   String _uploadingFileName = '';
@@ -1242,6 +1245,12 @@ class _DetailTugasKelasScreenState
         Navigator.pop(context); // Close bottom sheet
 
         final isReplacing = existingPengumpulan.docs.isNotEmpty;
+        
+        // Send notification to teacher (only for new submission)
+        if (!isReplacing) {
+          await _sendTugasSubmittedNotification(tugasId, siswaId);
+        }
+        
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
@@ -1263,6 +1272,55 @@ class _DetailTugasKelasScreenState
           context,
         ).showSnackBar(SnackBar(content: Text('Gagal upload: $e')));
       }
+    }
+  }
+
+  /// Send TUGAS_SUBMITTED notification to teacher
+  Future<void> _sendTugasSubmittedNotification(String tugasId, String siswaId) async {
+    try {
+      // Get tugas data
+      final tugasDoc = await FirebaseFirestore.instance
+          .collection('tugas')
+          .doc(tugasId)
+          .get();
+      
+      if (!tugasDoc.exists) return;
+      
+      final tugasData = tugasDoc.data()!;
+      final guruId = tugasData['id_guru']?.toString();
+      final tugasJudul = tugasData['judul'] ?? 'Tugas';
+      
+      if (guruId == null || guruId.isEmpty) return;
+
+      // Get siswa name
+      final siswaDoc = await FirebaseFirestore.instance
+          .collection('siswa')
+          .doc(siswaId)
+          .get();
+      
+      final siswaName = siswaDoc.exists 
+          ? (siswaDoc.data()?['nama'] ?? 'Siswa')
+          : 'Siswa';
+
+      // Create notification for teacher
+      await _notificationRepo.createNotification(
+        userId: guruId,
+        role: 'guru',
+        type: NotificationType.tugasSubmitted,
+        title: 'Tugas Dikumpulkan',
+        message: '$siswaName telah mengumpulkan $tugasJudul',
+        priority: NotificationPriority.medium,
+        actionUrl: '/tugas/grading/$tugasId',
+        metadata: {
+          'taskId': tugasId,
+          'siswaId': siswaId,
+          'siswaName': siswaName,
+        },
+      );
+      
+      debugPrint('✅ Sent TUGAS_SUBMITTED notification to guru: $guruId');
+    } catch (e) {
+      debugPrint('❌ Failed to send TUGAS_SUBMITTED notification: $e');
     }
   }
 

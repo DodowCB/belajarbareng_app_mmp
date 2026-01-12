@@ -13,7 +13,7 @@ import '../jadwal_mengajar/jadwal_mengajar_screen.dart';
 import 'reports_screen.dart';
 import 'analytics_screen.dart';
 import 'settings_screen.dart';
-import '../notifications/notifications_screen.dart';
+import '../notifications/notifications_screen_live.dart';
 import 'admin_bloc.dart';
 
 class AdminScreen extends StatefulWidget {
@@ -222,7 +222,7 @@ class _AdminScreenState extends State<AdminScreen> {
           onPressed: () {
             Navigator.of(context).push(
               MaterialPageRoute(
-                builder: (context) => const NotificationsScreen(),
+                builder: (context) => const NotificationsScreenLive(),
               ),
             );
           },

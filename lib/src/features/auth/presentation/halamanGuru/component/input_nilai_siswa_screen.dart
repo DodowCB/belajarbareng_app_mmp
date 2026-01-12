@@ -4,6 +4,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../../../core/config/theme.dart';
 import '../../../../../core/providers/user_provider.dart';
 import '../../widgets/guru_app_scaffold.dart';
+import '../../../../notifications/data/repositories/notification_repository.dart';
+import '../../../../notifications/data/models/notification_model.dart';
 
 class InputNilaiSiswaScreen extends StatefulWidget {
   final Map<String, dynamic> kelas;
@@ -16,6 +18,7 @@ class InputNilaiSiswaScreen extends StatefulWidget {
 
 class _InputNilaiSiswaScreenState extends State<InputNilaiSiswaScreen> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final NotificationRepository _notificationRepo = NotificationRepository();
   final Map<String, TextEditingController> _utsControllers = {};
   final Map<String, TextEditingController> _uasControllers = {};
   final Map<String, TextEditingController> _tugasControllers = {};
@@ -238,6 +241,9 @@ class _InputNilaiSiswaScreenState extends State<InputNilaiSiswaScreen> {
 
       await batch.commit();
 
+      // Send notifications to all students about their grades
+      await _sendNilaiKeluarNotifications(kelasId);
+
       setState(() => _isSaving = false);
 
       if (mounted) {
@@ -265,6 +271,41 @@ class _InputNilaiSiswaScreenState extends State<InputNilaiSiswaScreen> {
           SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
         );
       }
+    }
+  }
+
+  /// Send NILAI_KELUAR notifications to all students
+  Future<void> _sendNilaiKeluarNotifications(String kelasId) async {
+    try {
+      final notifications = <Map<String, dynamic>>[];
+      final kelasName = widget.kelas['namaKelas'] ?? 'Kelas';
+
+      for (final siswa in _siswaList) {
+        final siswaId = siswa['siswaId'];
+        final rataRata = _rataRata[siswaId] ?? 0.0;
+
+        notifications.add({
+          'userId': siswaId,
+          'role': 'siswa',
+          'type': NotificationType.nilaiKeluar,
+          'title': '📊 Nilai Baru',
+          'message': '$kelasName - Rata-rata: ${rataRata.toStringAsFixed(2)}',
+          'priority': NotificationPriority.high,
+          'actionUrl': '/nilai/detail',
+          'metadata': {
+            'kelasId': kelasId,
+            'kelasName': kelasName,
+            'rataRata': rataRata,
+          },
+        });
+      }
+
+      if (notifications.isNotEmpty) {
+        await _notificationRepo.createBatchNotifications(notifications);
+        debugPrint('✅ Sent ${notifications.length} NILAI_KELUAR notifications');
+      }
+    } catch (e) {
+      debugPrint('❌ Failed to send NILAI_KELUAR notifications: $e');
     }
   }
 

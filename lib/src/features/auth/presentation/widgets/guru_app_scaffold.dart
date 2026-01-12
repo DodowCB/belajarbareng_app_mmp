@@ -14,7 +14,7 @@ import '../halamanGuru/component/absensi_guru_screen.dart';
 import '../halamanGuru/component/quiz_guru_screen.dart';
 import '../profile/profile_screen.dart';
 import '../settings/settings_screen.dart';
-import '../notifications/notifications_screen.dart';
+import '../notifications/notifications_screen_live.dart';
 import '../help/help_support_screen.dart';
 import '../login/login_screen.dart';
 
@@ -474,7 +474,7 @@ class _GuruAppScaffoldState extends ConsumerState<GuruAppScaffold> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => const NotificationsScreen(),
+                  builder: (context) => const NotificationsScreenLive(),
                 ),
               );
             },
@@ -719,7 +719,7 @@ class _GuruAppScaffoldState extends ConsumerState<GuruAppScaffold> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => const NotificationsScreen(),
+                        builder: (context) => const NotificationsScreenLive(),
                       ),
                     );
                   },

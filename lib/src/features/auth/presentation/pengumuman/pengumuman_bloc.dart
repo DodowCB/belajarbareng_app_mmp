@@ -3,9 +3,12 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../data/models/pengumuman_model.dart';
 import 'pengumuman_event.dart';
 import 'pengumuman_state.dart';
+import '../../../notifications/data/repositories/notification_repository.dart';
+import '../../../notifications/data/models/notification_model.dart';
 
 class PengumumanBloc extends Bloc<PengumumanEvent, PengumumanState> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final NotificationRepository _notificationRepo = NotificationRepository();
 
   PengumumanBloc() : super(PengumumanState()) {
     on<LoadPengumuman>(_onLoadPengumuman);
@@ -83,6 +86,14 @@ class PengumumanBloc extends Bloc<PengumumanEvent, PengumumanState> {
       await _firestore.collection('counters').doc('pengumuman').set({
         'count': nextId,
       }, SetOptions(merge: true));
+
+      // Send notifications to target users
+      await _sendPengumumanNotifications(
+        nextId.toString(),
+        event.judul,
+        event.deskripsi,
+        event.pembuat,
+      );
 
       emit(
         state.copyWith(
@@ -176,6 +187,68 @@ class PengumumanBloc extends Bloc<PengumumanEvent, PengumumanState> {
           error: 'Error deleting pengumuman: ${e.toString()}',
         ),
       );
+    }
+  }
+
+  /// Send PENGUMUMAN notifications to target users
+  Future<void> _sendPengumumanNotifications(
+    String pengumumanId,
+    String judul,
+    String deskripsi,
+    String pembuat,
+  ) async {
+    try {
+      final notifications = <Map<String, dynamic>>[];
+
+      // Get all users based on target audience (admin, guru, siswa, all)
+      // For Phase 1, we'll send to all users
+      
+      // Get all guru
+      final guruSnapshot = await _firestore.collection('guru').get();
+      for (final doc in guruSnapshot.docs) {
+        notifications.add({
+          'userId': doc.id,
+          'role': 'guru',
+          'type': NotificationType.pengumuman,
+          'title': '📢 Pengumuman: $judul',
+          'message': deskripsi.length > 100 
+              ? '${deskripsi.substring(0, 100)}...' 
+              : deskripsi,
+          'priority': NotificationPriority.high,
+          'actionUrl': '/pengumuman/$pengumumanId',
+          'metadata': {
+            'pengumumanId': pengumumanId,
+            'pembuat': pembuat,
+          },
+        });
+      }
+
+      // Get all siswa
+      final siswaSnapshot = await _firestore.collection('siswa').get();
+      for (final doc in siswaSnapshot.docs) {
+        notifications.add({
+          'userId': doc.id,
+          'role': 'siswa',
+          'type': NotificationType.pengumuman,
+          'title': '📢 Pengumuman: $judul',
+          'message': deskripsi.length > 100 
+              ? '${deskripsi.substring(0, 100)}...' 
+              : deskripsi,
+          'priority': NotificationPriority.high,
+          'actionUrl': '/pengumuman/$pengumumanId',
+          'metadata': {
+            'pengumumanId': pengumumanId,
+            'pembuat': pembuat,
+          },
+        });
+      }
+
+      if (notifications.isNotEmpty) {
+        await _notificationRepo.createBatchNotifications(notifications);
+        print('✅ Sent ${notifications.length} PENGUMUMAN notifications');
+      }
+    } catch (e) {
+      print('❌ Failed to send PENGUMUMAN notifications: $e');
     }
   }
 

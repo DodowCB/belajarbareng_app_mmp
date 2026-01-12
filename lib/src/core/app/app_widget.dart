@@ -29,8 +29,6 @@ class AppWidget extends ConsumerWidget {
         BlocProvider(
           create: (context) => LoginBloc(
             authRepository: AuthRepository(),
-            userProvider: UserProvider(),
-            ref: ref,
           ),
         ),
         BlocProvider(create: (context) => GuruDataBloc()),

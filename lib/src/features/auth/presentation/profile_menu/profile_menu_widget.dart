@@ -284,7 +284,7 @@ class ProfileDropdownMenu extends ConsumerWidget {
       case 'notifications':
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => const NotificationsScreen()),
+          MaterialPageRoute(builder: (context) => const NotificationsScreenLive()),
         );
         break;
       case 'help':
