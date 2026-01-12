@@ -390,7 +390,7 @@ class _SiswaAppScaffoldState extends ConsumerState<SiswaAppScaffold> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => const NotificationsScreenLive(),
+                  builder: (context) => const NotificationsScreen(),
                 ),
               );
             },
@@ -642,7 +642,7 @@ class _SiswaAppScaffoldState extends ConsumerState<SiswaAppScaffold> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => const NotificationsScreenLive(),
+                        builder: (context) => const NotificationsScreen(),
                       ),
                     );
                   },

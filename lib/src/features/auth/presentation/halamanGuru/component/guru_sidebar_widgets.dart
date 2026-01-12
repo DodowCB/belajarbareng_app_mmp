@@ -304,7 +304,7 @@ extension GuruSidebarWidgets on HalamanGuruScreenState {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => const NotificationsScreenLive(),
+                        builder: (context) => const NotificationsScreen(),
                       ),
                     );
                   },
@@ -657,7 +657,7 @@ extension GuruSidebarWidgets on HalamanGuruScreenState {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => const NotificationsScreenLive(),
+                  builder: (context) => const NotificationsScreen(),
                 ),
               );
             },

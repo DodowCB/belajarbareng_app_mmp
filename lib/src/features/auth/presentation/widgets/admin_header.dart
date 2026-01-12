@@ -116,7 +116,7 @@ class AdminHeader extends StatelessWidget implements PreferredSizeWidget {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => const NotificationsScreenLive(),
+                  builder: (context) => const NotificationsScreen(),
                 ),
               );
             },
