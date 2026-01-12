@@ -249,15 +249,52 @@ class NotificationRepository {
   // Helper: Get siswa by kelas
   Future<List<Map<String, dynamic>>> getSiswaByKelas(String kelasId) async {
     try {
-      final snapshot = await _firestore
-          .collection('siswa')
+      // Step 1: Get siswa_kelas junction table records
+      final siswaKelasSnapshot = await _firestore
+          .collection('siswa_kelas')
           .where('kelas_id', isEqualTo: kelasId)
           .get();
+
+      if (siswaKelasSnapshot.docs.isEmpty) {
+        print('No siswa_kelas records found for kelas: $kelasId');
+        return [];
+      }
+
+      // Step 2: Extract siswa IDs
+      final siswaIds = siswaKelasSnapshot.docs
+          .map((doc) => doc.data()['siswa_id'] as String?)
+          .where((id) => id != null)
+          .cast<String>()
+          .toSet()
+          .toList();
+
+      if (siswaIds.isEmpty) {
+        print('No siswa IDs found in siswa_kelas for kelas: $kelasId');
+        return [];
+      }
+
+      print('Found ${siswaIds.length} siswa IDs for kelas $kelasId: $siswaIds');
+
+      // Step 3: Fetch siswa details (in batches of 10 due to Firestore 'in' limit)
+      final List<Map<String, dynamic>> siswaList = [];
       
-      return snapshot.docs.map((doc) => {
-        'id': doc.id,
-        ...doc.data(),
-      }).toList();
+      for (int i = 0; i < siswaIds.length; i += 10) {
+        final batch = siswaIds.skip(i).take(10).toList();
+        final siswaSnapshot = await _firestore
+            .collection('siswa')
+            .where(FieldPath.documentId, whereIn: batch)
+            .get();
+
+        siswaList.addAll(
+          siswaSnapshot.docs.map((doc) => {
+            'id': doc.id,
+            ...doc.data(),
+          }),
+        );
+      }
+
+      print('Fetched ${siswaList.length} siswa details');
+      return siswaList;
     } catch (e) {
       print('Error getting siswa by kelas: $e');
       return [];

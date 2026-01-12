@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/config/theme.dart';
+import '../../../../core/providers/user_provider.dart';
 import '../../../notifications/presentation/bloc/notification_bloc.dart';
 import '../../../notifications/presentation/bloc/notification_event.dart';
 import '../../../notifications/presentation/bloc/notification_state.dart';
@@ -32,68 +31,25 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     _initializeUser();
   }
 
-  Future<void> _initializeUser() async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user != null) {
-      setState(() {
-        _userId = user.uid;
-      });
+  void _initializeUser() {
+    // Get userId and role from userProvider
+    setState(() {
+      _userId = userProvider.userId;
+      _userRole = userProvider.userType; // 'guru' or 'siswa'
+    });
 
-      // Get user role from Firestore
-      final role = await _getUserRole(user.uid);
-      setState(() {
-        _userRole = role;
-      });
+    print('🔔 NotificationScreen - userId: $_userId, role: $_userRole');
 
-      if (_userId != null && _userRole != null) {
-        _notificationBloc.add(FetchNotifications(
-          userId: _userId!,
-          role: _userRole!,
-        ));
+    if (_userId != null && _userRole != null) {
+      _notificationBloc.add(FetchNotifications(
+        userId: _userId!,
+        role: _userRole!,
+      ));
 
-        // Check for deadline reminders
-        _notificationBloc.add(const CheckDeadlineReminders());
-      }
-    }
-  }
-
-  Future<String?> _getUserRole(String userId) async {
-    // Try to get role from user's document
-    // This assumes you have a 'users' collection with role field
-    try {
-      final firestore = FirebaseFirestore.instance;
-      
-      final userDoc = await firestore
-          .collection('users')
-          .doc(userId)
-          .get();
-      
-      if (userDoc.exists) {
-        return userDoc.data()?['role'];
-      }
-
-      // If not found in users, check guru collection
-      final guruDoc = await firestore
-          .collection('guru')
-          .doc(userId)
-          .get();
-      if (guruDoc.exists) {
-        return 'guru';
-      }
-
-      // Check siswa collection
-      final siswaDoc = await firestore
-          .collection('siswa')
-          .doc(userId)
-          .get();
-      if (siswaDoc.exists) {
-        return 'siswa';
-      }
-
-      return 'admin'; // Default
-    } catch (e) {
-      print('Error getting user role: $e');
-      return null;
+      // Check for deadline reminders
+      _notificationBloc.add(const CheckDeadlineReminders());
+    } else {
+      print('⚠️ User not logged in or userProvider not initialized');
     }
   }
 
@@ -124,7 +80,25 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         appBar: _buildAppBar(),
         body: _userId == null || _userRole == null
-            ? const Center(child: CircularProgressIndicator())
+            ? Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.error_outline, size: 64, color: Colors.red),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'User not logged in',
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'userId: $_userId\nrole: $_userRole',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(fontSize: 12, color: Colors.grey),
+                    ),
+                  ],
+                ),
+              )
             : StreamBuilder<List<NotificationModel>>(
                 stream: _repository.watchNotifications(_userId!, _userRole!),
                 builder: (context, snapshot) {
