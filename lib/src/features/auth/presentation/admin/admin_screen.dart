@@ -14,6 +14,7 @@ import 'reports_screen.dart';
 import 'analytics_screen.dart';
 import 'settings_screen.dart';
 import '../notifications/notifications_screen.dart';
+import '../location/guru_location_screen.dart';
 import 'admin_bloc.dart';
 
 class AdminScreen extends StatefulWidget {
@@ -439,6 +440,15 @@ class _AdminScreenState extends State<AdminScreen> {
                   icon: Icons.schedule,
                   color: AppTheme.primaryPurple.withOpacity(0.8),
                   onTap: () => _navigateToJadwalMengajar(),
+                  isOffline: !state.isOnline,
+                ),
+                _buildStatCard(
+                  title: 'Guru Locations',
+                  value: '📍',
+                  subtitle: 'Track teacher locations',
+                  icon: Icons.location_on,
+                  color: Colors.green,
+                  onTap: () => _navigateToGuruLocations(),
                   isOffline: !state.isOnline,
                 ),
                 _buildStatCard(
@@ -1062,6 +1072,12 @@ class _AdminScreenState extends State<AdminScreen> {
         ),
       ),
     );
+  }
+
+  void _navigateToGuruLocations() {
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (context) => const GuruLocationScreen()));
   }
 
   Widget _buildOfflineBanner(AdminState state) {

@@ -67,8 +67,12 @@ dependencies:
   flutter_secure_storage: ^9.0.0 # "Encrypted box" untuk token
 
   # 6. Media (Sesuai proposal)
-  image_picker: ^1.0.4
+  image_picker: ^1.0.7
   video_player: ^2.8.1
+  image: ^4.1.7
+
+  # 6.5 Location/GPS
+  geolocator: ^13.0.2 # Untuk GPS tracking guru
 
   # 7. Utilities & UI
   intl: ^0.20.2 # Untuk format tanggal, angka, dll.
@@ -107,8 +111,12 @@ dev_dependencies:
   flutter_lints: ^5.0.0
   very_good_analysis: ^5.1.0
 
+  # Testing packages
+  bloc_test: ^10.0.0
+  mockito: ^5.4.4
+
   # 2. Build Runners (Untuk Drift & Riverpod Generator)
-  build_runner: ^2.4.7
+  build_runner: ^2.4.8
   drift_dev: ^2.13.0
   riverpod_generator: ^2.3.9 # Jika Anda pakai Riverpod Generator
 

@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import '../../data/repositories/notification_repository.dart';
 import '../../domain/entities/notification_type.dart';
 import '../../data/models/notification_template.dart';
+import '../../data/models/notification_model.dart';
 
 class NotificationScheduler {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -49,11 +50,14 @@ class NotificationScheduler {
         // Get siswa in kelas
         final siswaList = await _repository.getSiswaByKelas(kelasId);
 
-        print('Sending deadline reminder for tugas "$tugasJudul" to ${siswaList.length} siswa');
+        print(
+          'Sending deadline reminder for tugas "$tugasJudul" to ${siswaList.length} siswa',
+        );
 
         // Get template
         final template = NotificationTemplate.getTemplate(
-            NotificationType.siswa_tugas_deadline_approaching);
+          NotificationType.siswa_tugas_deadline_approaching,
+        );
 
         // Send notification to each siswa
         for (var siswa in siswaList) {
@@ -64,9 +68,12 @@ class NotificationScheduler {
               .collection('notifications')
               .where('userId', isEqualTo: siswaId)
               .where('dedupKey', isEqualTo: 'tugas_deadline_$tugasId')
-              .where('createdAt',
-                  isGreaterThan:
-                      Timestamp.fromDate(now.subtract(Duration(hours: 12))))
+              .where(
+                'createdAt',
+                isGreaterThan: Timestamp.fromDate(
+                  now.subtract(Duration(hours: 12)),
+                ),
+              )
               .limit(1)
               .get();
 
@@ -82,13 +89,16 @@ class NotificationScheduler {
             'waktu': DateFormat('HH:mm').format(deadline),
           };
 
-          final title = template?.renderTitle(notificationData) ??
+          final title =
+              template?.renderTitle(notificationData) ??
               '⏰ Pengingat Deadline Tugas';
-          final message = template?.renderMessage(notificationData) ??
+          final message =
+              template?.renderMessage(notificationData) ??
               'Tugas "$tugasJudul" akan berakhir dalam $hoursLeft jam';
 
           // Create notification
-          await _repository.createNotification(
+          final notification = NotificationModel(
+            id: '', // Will be set by Firestore
             userId: siswaId,
             role: 'siswa',
             type: NotificationType.siswa_tugas_deadline_approaching.name,
@@ -103,7 +113,11 @@ class NotificationScheduler {
               'hoursLeft': hoursLeft,
             },
             dedupKey: 'tugas_deadline_$tugasId',
+            isRead: false,
+            createdAt: DateTime.now(),
           );
+
+          await _repository.createNotification(notification);
         }
       }
     } catch (e) {
@@ -139,11 +153,14 @@ class NotificationScheduler {
         // Get siswa in kelas
         final siswaList = await _repository.getSiswaByKelas(kelasId);
 
-        print('Sending deadline reminder for quiz "$quizJudul" to ${siswaList.length} siswa');
+        print(
+          'Sending deadline reminder for quiz "$quizJudul" to ${siswaList.length} siswa',
+        );
 
         // Get template
         final template = NotificationTemplate.getTemplate(
-            NotificationType.siswa_quiz_deadline_approaching);
+          NotificationType.siswa_quiz_deadline_approaching,
+        );
 
         // Send notification to each siswa
         for (var siswa in siswaList) {
@@ -154,9 +171,12 @@ class NotificationScheduler {
               .collection('notifications')
               .where('userId', isEqualTo: siswaId)
               .where('dedupKey', isEqualTo: 'quiz_deadline_$quizId')
-              .where('createdAt',
-                  isGreaterThan:
-                      Timestamp.fromDate(now.subtract(Duration(hours: 12))))
+              .where(
+                'createdAt',
+                isGreaterThan: Timestamp.fromDate(
+                  now.subtract(Duration(hours: 12)),
+                ),
+              )
               .limit(1)
               .get();
 
@@ -172,13 +192,16 @@ class NotificationScheduler {
             'waktu': DateFormat('HH:mm').format(deadline),
           };
 
-          final title = template?.renderTitle(notificationData) ??
+          final title =
+              template?.renderTitle(notificationData) ??
               '⏰ Pengingat Deadline Quiz';
-          final message = template?.renderMessage(notificationData) ??
+          final message =
+              template?.renderMessage(notificationData) ??
               'Quiz "$quizJudul" akan berakhir dalam $hoursLeft jam';
 
           // Create notification
-          await _repository.createNotification(
+          final notification = NotificationModel(
+            id: '', // Will be set by Firestore
             userId: siswaId,
             role: 'siswa',
             type: NotificationType.siswa_quiz_deadline_approaching.name,
@@ -193,7 +216,11 @@ class NotificationScheduler {
               'hoursLeft': hoursLeft,
             },
             dedupKey: 'quiz_deadline_$quizId',
+            isRead: false,
+            createdAt: DateTime.now(),
           );
+
+          await _repository.createNotification(notification);
         }
       }
     } catch (e) {

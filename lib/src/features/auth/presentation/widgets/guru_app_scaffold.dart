@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../../../core/config/theme.dart';
 import '../../../../core/providers/theme_provider.dart';
 import '../../../../core/providers/connectivity_provider.dart';
@@ -17,6 +18,7 @@ import '../settings/settings_screen.dart';
 import '../notifications/notifications_screen.dart';
 import '../help/help_support_screen.dart';
 import '../login/login_screen.dart';
+import '../../data/repositories/location_repository.dart';
 
 class GuruAppScaffold extends ConsumerStatefulWidget {
   final String title;
@@ -349,7 +351,7 @@ class _GuruAppScaffoldState extends ConsumerState<GuruAppScaffold> {
 
   Widget _buildExpandableProfileMenu() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     // Ambil data dari userProvider singleton
     final user = userProvider;
     final userName = user.namaLengkap ?? 'Guru';
@@ -873,13 +875,13 @@ class _GuruAppScaffoldState extends ConsumerState<GuruAppScaffold> {
 
   Widget _buildDrawerProfileSection() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     // Ambil data dari userProvider singleton
     final user = userProvider;
     final userName = user.namaLengkap ?? 'Guru';
     final userEmail = user.email ?? 'email@example.com';
     final userInitial = userName.isNotEmpty ? userName[0].toUpperCase() : 'G';
-    
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       padding: const EdgeInsets.all(12),
@@ -997,13 +999,65 @@ class _GuruAppScaffoldState extends ConsumerState<GuruAppScaffold> {
             child: const Text('Batal'),
           ),
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(dialogContext);
-              Navigator.pushAndRemoveUntil(
-                context,
-                MaterialPageRoute(builder: (context) => const LoginScreen()),
-                (route) => false,
+
+              // Show loading indicator
+              showDialog(
+                context: context,
+                barrierDismissible: false,
+                builder: (context) =>
+                    const Center(child: CircularProgressIndicator()),
               );
+
+              try {
+                // Set guru offline before logout
+                final currentUser = FirebaseAuth.instance.currentUser;
+                if (currentUser != null) {
+                  print('🔴 [Logout] Setting guru offline: ${currentUser.uid}');
+                  await LocationRepository().setGuruOffline(currentUser.uid);
+                  print('✅ [Logout] Guru set to offline');
+
+                  // Wait a bit to ensure Firestore update is processed
+                  await Future.delayed(const Duration(milliseconds: 500));
+                }
+
+                // Sign out from Firebase Auth
+                await FirebaseAuth.instance.signOut();
+                print('✅ [Logout] Signed out from Firebase');
+
+                // Close loading indicator
+                if (context.mounted) {
+                  Navigator.pop(context);
+                }
+
+                // Navigate to login
+                if (context.mounted) {
+                  Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const LoginScreen(),
+                    ),
+                    (route) => false,
+                  );
+                }
+              } catch (e) {
+                print('❌ [Logout] Error during logout: $e');
+                // Close loading indicator
+                if (context.mounted) {
+                  Navigator.pop(context);
+                }
+                // Still navigate to login even if error
+                if (context.mounted) {
+                  Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const LoginScreen(),
+                    ),
+                    (route) => false,
+                  );
+                }
+              }
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red,

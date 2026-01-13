@@ -2,17 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import '../../../../core/config/theme.dart';
 import '../../../../core/providers/user_provider.dart';
 import '../../../../core/providers/connectivity_provider.dart';
 import '../../data/models/pengumuman_model.dart';
+import '../../data/repositories/location_repository.dart';
 import 'blocs/blocs.dart';
 import 'component/kelas_nilai_list_screen.dart';
 import 'component/tugas_list_screen.dart';
 import 'component/materi_guru_screen.dart';
 import 'component/upload_materi_screen.dart';
+import '../location/location_permission_helper.dart';
 
 // Import extension files
 import 'component/guru_sidebar_widgets.dart';
@@ -24,10 +27,13 @@ class HalamanGuruScreen extends ConsumerStatefulWidget {
   ConsumerState<HalamanGuruScreen> createState() => HalamanGuruScreenState();
 }
 
-class HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
+class HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen>
+    with WidgetsBindingObserver {
   bool _statsLoaded = false;
+  bool _locationRequested = false;
   bool _isSidebarCollapsed = false;
   bool _isProfileMenuExpanded = false;
+  String? _currentGuruId;
 
   // Getters untuk diakses dari extension
   bool get isSidebarCollapsed => _isSidebarCollapsed;
@@ -38,6 +44,39 @@ class HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
 
   // Public wrapper untuk setState agar bisa diakses dari extension
   void updateState(VoidCallback fn) => setState(fn);
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    // Set offline when screen is disposed
+    if (_currentGuruId != null) {
+      LocationRepository().setGuruOffline(_currentGuruId!);
+    }
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+
+    // Set offline when app is paused/inactive/detached
+    if (_currentGuruId != null) {
+      if (state == AppLifecycleState.paused ||
+          state == AppLifecycleState.inactive ||
+          state == AppLifecycleState.detached) {
+        print('📱 [Lifecycle] App state: $state - Setting guru offline');
+        LocationRepository().setGuruOffline(_currentGuruId!);
+      } else if (state == AppLifecycleState.resumed) {
+        print('📱 [Lifecycle] App resumed - Guru still online');
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -66,11 +105,39 @@ class HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
             if (profileState is GuruProfileLoaded && !_statsLoaded) {
               print('✅ [BlocListener] GuruProfileLoaded detected!');
               print('📋 [BlocListener] guruId: ${profileState.guruId}');
+
+              // Store guruId for lifecycle management
+              _currentGuruId = profileState.guruId;
+
               // Load stats only once when we have the guru ID
               context.read<GuruStatsBloc>().add(
                 LoadGuruStats(profileState.guruId),
               );
               _statsLoaded = true;
+
+              // Request location permission once
+              if (!_locationRequested) {
+                _locationRequested = true;
+                // Get guru name from profile data (nama_lengkap from guru collection)
+                final guruName =
+                    profileState.guruData['nama_lengkap'] as String? ?? 'Guru';
+                print('📍 [Location] Requesting permission for: $guruName');
+                print('📍 [Location] GuruId: ${profileState.guruId}');
+
+                // Request location permission and update location
+                // Use .then() because we can't await in BlocListener
+                Future.microtask(() async {
+                  try {
+                    await LocationPermissionHelper.requestAndUpdateLocation(
+                      context: context,
+                      guruId: profileState.guruId,
+                      guruName: guruName,
+                    );
+                  } catch (e) {
+                    print('❌ [Location] Error: $e');
+                  }
+                });
+              }
             } else if (profileState is GuruProfileLoading) {
               print('⏳ [BlocListener] Loading...');
             } else if (profileState is GuruProfileError) {
@@ -1161,13 +1228,17 @@ class HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.assignment, color: AppTheme.secondaryTeal, size: 24),
+                  Icon(
+                    Icons.assignment,
+                    color: AppTheme.secondaryTeal,
+                    size: 24,
+                  ),
                   const SizedBox(width: 12),
                   Text(
                     'Tugas Mendatang',
-                    style: Theme.of(
-                      context,
-                    ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ],
               ),
@@ -1184,7 +1255,10 @@ class HalamanGuruScreenState extends ConsumerState<HalamanGuruScreen> {
                 label: const Text('Lihat Semua'),
                 style: TextButton.styleFrom(
                   foregroundColor: AppTheme.primaryPurple,
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
                 ),
               ),
             ],
