@@ -11,7 +11,8 @@ import 'guru_data_state.dart';
 class GuruDataBloc extends Bloc<GuruDataEvent, GuruDataState> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final RecentActivityService _recentActivityService = RecentActivityService();
-  final NotificationServiceExtended _notificationService = NotificationServiceExtended();
+  final NotificationServiceExtended _notificationService =
+      NotificationServiceExtended();
 
   GuruDataBloc() : super(const GuruDataInitial()) {
     on<LoadGuruData>(_onLoadGuruData);
@@ -25,23 +26,31 @@ class GuruDataBloc extends Bloc<GuruDataEvent, GuruDataState> {
   // Stream untuk real-time data
   Stream<List<Map<String, dynamic>>> getGuruStream() {
     return _firestore.collection('guru').snapshots().map((snapshot) {
-      final List<Map<String, dynamic>> guruList = snapshot.docs.map((doc) {
-        final data = doc.data();
-        return {
-          'id': doc.id,
-          'nama': data['nama_lengkap'] ?? 'Unknown',
-          'email': data['email'] ?? 'No Email',
-          'nig': data['nig']?.toString() ?? 'No NIG',
-          'mataPelajaran': data['mata_pelajaran'] ?? 'No Subject',
-          'sekolah': data['sekolah'] ?? 'No School',
-          'jenisKelamin': data['jenis_kelamin'] ?? 'Unknown',
-          'tanggalLahir': data['tanggal_lahir'] ?? 'Unknown',
-          'photoUrl': data['photo_url'] ?? '',
-          'status': data['status'] ?? 'active',
-          'isDisabled': data['status'] == 'active',
-          'createdAt': data['createdAt'],
-        };
-      }).toList();
+      final List<Map<String, dynamic>> guruList = snapshot.docs
+          .where((doc) {
+            // Filter out admin user (admin@gmail.com)
+            final data = doc.data();
+            final email = data['email']?.toString().toLowerCase() ?? '';
+            return email != 'admin@gmail.com';
+          })
+          .map((doc) {
+            final data = doc.data();
+            return {
+              'id': doc.id,
+              'nama': data['nama_lengkap'] ?? 'Unknown',
+              'email': data['email'] ?? 'No Email',
+              'nig': data['nig']?.toString() ?? 'No NIG',
+              'mataPelajaran': data['mata_pelajaran'] ?? 'No Subject',
+              'sekolah': data['sekolah'] ?? 'No School',
+              'jenisKelamin': data['jenis_kelamin'] ?? 'Unknown',
+              'tanggalLahir': data['tanggal_lahir'] ?? 'Unknown',
+              'photoUrl': data['photo_url'] ?? '',
+              'status': data['status'] ?? 'active',
+              'isDisabled': data['status'] == 'active',
+              'createdAt': data['createdAt'],
+            };
+          })
+          .toList();
 
       guruList.sort(
         (a, b) => (a['nama'] as String).compareTo(b['nama'] as String),
@@ -196,7 +205,7 @@ class GuruDataBloc extends Bloc<GuruDataEvent, GuruDataState> {
       final id = await IdGeneratorService.getNextId('guru');
       await _firestore.collection('guru').doc(id).set(event.guruData);
       emit(const GuruDataActionSuccess('Guru berhasil ditambahkan'));
-      
+
       // Send notification to all admins about new guru registration
       try {
         await _notificationService.sendGuruRegistered(
@@ -208,11 +217,12 @@ class GuruDataBloc extends Bloc<GuruDataEvent, GuruDataState> {
       } catch (e) {
         debugPrint('❌ Failed to send guru registered notification: $e');
       }
-      
+
       try {
         await _recentActivityService.addActivity({
           'title': 'New teacher added',
-          'details': event.guruData['nama_lengkap'] ?? event.guruData['email'] ?? id,
+          'details':
+              event.guruData['nama_lengkap'] ?? event.guruData['email'] ?? id,
           'icon': 'person_add',
         });
       } catch (e) {

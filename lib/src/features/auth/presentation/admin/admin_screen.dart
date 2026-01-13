@@ -314,142 +314,194 @@ class _AdminScreenState extends State<AdminScreen> {
   }
 
   Widget _buildStatsSection(AdminState state) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final screenWidth = MediaQuery.of(context).size.width;
-          final crossAxisCount = screenWidth >= 1200
-              ? 4
-              : screenWidth >= 768
-              ? 3
-              : screenWidth >= 600
-              ? 2
-              : 2;
+    return StreamBuilder<List<QuerySnapshot>>(
+      stream: Stream.periodic(const Duration(seconds: 2)).asyncMap((_) async {
+        return await Future.wait([
+          FirebaseFirestore.instance.collection('guru').get(),
+          FirebaseFirestore.instance.collection('siswa').get(),
+          FirebaseFirestore.instance.collection('mapel').get(),
+          FirebaseFirestore.instance.collection('kelas').get(),
+          FirebaseFirestore.instance.collection('pengumuman').get(),
+          FirebaseFirestore.instance.collection('kelas_ngajar').get(),
+        ]);
+      }),
+      builder: (context, snapshot) {
+        int totalTeachers = state.totalTeachers;
+        int totalStudents = state.totalStudents;
+        int totalMapels = state.totalMapels;
+        int totalClasses = state.totalClasses;
+        int totalPengumuman = state.totalPengumuman;
+        int totalJadwalMengajar = state.totalJadwalMengajar;
 
-          final statCards = [
-            _buildStatCard(
-              title: 'Total Users',
-              value: state.totalUsers.toString(),
-              subtitle: state.isOnline ? 'Registered' : 'Cached data',
-              icon: Icons.people,
-              color: AppTheme.primaryPurple,
-              onTap: () => _showAllUsersModal(),
-              isOffline: !state.isOnline,
-            ),
-            _buildStatCard(
-              title: 'Teachers',
-              value: state.totalTeachers.toString(),
-              subtitle: state.isOnline ? 'Active' : 'Cached data',
-              icon: Icons.school,
-              color: AppTheme.secondaryTeal,
-              onTap: () => _navigateToGuruData(),
-              isOffline: !state.isOnline,
-            ),
-            _buildStatCard(
-              title: 'Students',
-              value: state.totalStudents.toString(),
-              subtitle: state.isOnline ? 'Enrolled' : 'Cached data',
-              icon: Icons.groups,
-              color: AppTheme.accentGreen,
-              onTap: () => _navigateToSiswaData(),
-              isOffline: !state.isOnline,
-            ),
-            _buildStatCard(
-              title: 'Mapel',
-              value: state.totalMapels.toString(),
-              subtitle: state.isOnline ? 'Available' : 'Cached data',
-              icon: Icons.library_books,
-              color: AppTheme.accentOrange,
-              onTap: () => _navigateToMapel(),
-              isOffline: !state.isOnline,
-            ),
-            _buildStatCard(
-              title: 'Classes',
-              value: state.totalClasses.toString(),
-              subtitle: state.isOnline ? 'Available' : 'Cached data',
-              icon: Icons.class_,
-              color: AppTheme.accentPink,
-              onTap: () => _navigateToKelas(),
-              isOffline: !state.isOnline,
-            ),
-            _buildStatCard(
-              title: 'Announcements',
-              value: state.totalPengumuman.toString(),
-              subtitle: state.isOnline ? 'Posts Available' : 'Cached data',
-              icon: Icons.announcement,
-              color: Colors.orange,
-              onTap: () => _navigateToPengumuman(),
-              isOffline: !state.isOnline,
-            ),
-            _buildStatCard(
-              title: 'Teaching Schedule',
-              value: state.totalJadwalMengajar.toString(),
-              subtitle: state.isOnline ? 'Teaching Classes' : 'Cached data',
-              icon: Icons.schedule,
-              color: AppTheme.primaryPurple.withOpacity(0.8),
-              onTap: () => _navigateToJadwalMengajar(),
-              isOffline: !state.isOnline,
-            ),
-            _buildStatCard(
-              title: 'Reports',
-              value: '📊',
-              subtitle: 'View detailed reports',
-              icon: Icons.assessment,
-              color: Colors.blue,
-              onTap: () => _navigateToReports(),
-              isOffline: !state.isOnline,
-            ),
-            _buildStatCard(
-              title: 'Analytics',
-              value: '📈',
-              subtitle: 'View analytics',
-              icon: Icons.analytics,
-              color: Colors.deepPurple,
-              onTap: () => _navigateToAnalytics(),
-              isOffline: !state.isOnline,
-            ),
-            _buildStatCard(
-              title: 'Settings',
-              value: '⚙️',
-              subtitle: 'System configuration',
-              icon: Icons.settings,
-              color: Colors.blueGrey,
-              onTap: () => _navigateToSettings(),
-              isOffline: !state.isOnline,
-            ),
-          ];
+        if (snapshot.hasData) {
+          final guruSnapshot = snapshot.data![0];
+          final siswaSnapshot = snapshot.data![1];
+          final mapelSnapshot = snapshot.data![2];
+          final kelasSnapshot = snapshot.data![3];
+          final pengumumanSnapshot = snapshot.data![4];
+          final kelasNgajarSnapshot = snapshot.data![5];
 
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'System Overview',
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
+          // Filter out admin user
+          final filteredGuruDocs = guruSnapshot.docs.where((doc) {
+            final data = doc.data() as Map<String, dynamic>;
+            final email = data['email']?.toString().toLowerCase() ?? '';
+            return email != 'admin@gmail.com';
+          }).toList();
+
+          totalTeachers = filteredGuruDocs.length;
+          totalStudents = siswaSnapshot.docs.length;
+          totalMapels = mapelSnapshot.docs.length;
+          totalClasses = kelasSnapshot.docs.length;
+          totalPengumuman = pengumumanSnapshot.docs.length;
+          totalJadwalMengajar = kelasNgajarSnapshot.docs.length;
+        }
+
+        final totalUsers = totalTeachers + totalStudents;
+
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final screenWidth = MediaQuery.of(context).size.width;
+              final crossAxisCount = screenWidth >= 1200
+                  ? 4
+                  : screenWidth >= 768
+                  ? 3
+                  : screenWidth >= 600
+                  ? 2
+                  : 2;
+
+              final statCards = [
+                _buildStatCard(
+                  title: 'Total Users',
+                  value: totalUsers.toString(),
+                  subtitle: state.isOnline
+                      ? 'Registered (Live)'
+                      : 'Cached data',
+                  icon: Icons.people,
+                  color: AppTheme.primaryPurple,
+                  onTap: () => _showAllUsersModal(),
+                  isOffline: !state.isOnline,
                 ),
-              ),
-              const SizedBox(height: 16),
-              GridView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: crossAxisCount,
-                  crossAxisSpacing: 12,
-                  mainAxisSpacing: 12,
-                  childAspectRatio: screenWidth >= 1200
-                      ? 1.5
-                      : screenWidth >= 768
-                      ? 1.3
-                      : 1.2,
+                _buildStatCard(
+                  title: 'Teachers',
+                  value: totalTeachers.toString(),
+                  subtitle: state.isOnline ? 'Active (Live)' : 'Cached data',
+                  icon: Icons.school,
+                  color: AppTheme.secondaryTeal,
+                  onTap: () => _navigateToGuruData(),
+                  isOffline: !state.isOnline,
                 ),
-                itemCount: statCards.length,
-                itemBuilder: (context, index) => statCards[index],
-              ),
-            ],
-          );
-        },
-      ),
+                _buildStatCard(
+                  title: 'Students',
+                  value: totalStudents.toString(),
+                  subtitle: state.isOnline ? 'Enrolled (Live)' : 'Cached data',
+                  icon: Icons.groups,
+                  color: AppTheme.accentGreen,
+                  onTap: () => _navigateToSiswaData(),
+                  isOffline: !state.isOnline,
+                ),
+                _buildStatCard(
+                  title: 'Mapel',
+                  value: totalMapels.toString(),
+                  subtitle: state.isOnline ? 'Available (Live)' : 'Cached data',
+                  icon: Icons.library_books,
+                  color: AppTheme.accentOrange,
+                  onTap: () => _navigateToMapel(),
+                  isOffline: !state.isOnline,
+                ),
+                _buildStatCard(
+                  title: 'Classes',
+                  value: totalClasses.toString(),
+                  subtitle: state.isOnline ? 'Available (Live)' : 'Cached data',
+                  icon: Icons.class_,
+                  color: AppTheme.accentPink,
+                  onTap: () => _navigateToKelas(),
+                  isOffline: !state.isOnline,
+                ),
+                _buildStatCard(
+                  title: 'Announcements',
+                  value: totalPengumuman.toString(),
+                  subtitle: state.isOnline
+                      ? 'Posts Available (Live)'
+                      : 'Cached data',
+                  icon: Icons.announcement,
+                  color: Colors.orange,
+                  onTap: () => _navigateToPengumuman(),
+                  isOffline: !state.isOnline,
+                ),
+                _buildStatCard(
+                  title: 'Teaching Schedule',
+                  value: totalJadwalMengajar.toString(),
+                  subtitle: state.isOnline
+                      ? 'Teaching Classes (Live)'
+                      : 'Cached data',
+                  icon: Icons.schedule,
+                  color: AppTheme.primaryPurple.withOpacity(0.8),
+                  onTap: () => _navigateToJadwalMengajar(),
+                  isOffline: !state.isOnline,
+                ),
+                _buildStatCard(
+                  title: 'Reports',
+                  value: '📊',
+                  subtitle: 'View detailed reports',
+                  icon: Icons.assessment,
+                  color: Colors.blue,
+                  onTap: () => _navigateToReports(),
+                  isOffline: !state.isOnline,
+                ),
+                _buildStatCard(
+                  title: 'Analytics',
+                  value: '📈',
+                  subtitle: 'View analytics',
+                  icon: Icons.analytics,
+                  color: Colors.deepPurple,
+                  onTap: () => _navigateToAnalytics(),
+                  isOffline: !state.isOnline,
+                ),
+                _buildStatCard(
+                  title: 'Settings',
+                  value: '⚙️',
+                  subtitle: 'System configuration',
+                  icon: Icons.settings,
+                  color: Colors.blueGrey,
+                  onTap: () => _navigateToSettings(),
+                  isOffline: !state.isOnline,
+                ),
+              ];
+
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'System Overview',
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  GridView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: crossAxisCount,
+                      crossAxisSpacing: 12,
+                      mainAxisSpacing: 12,
+                      childAspectRatio: screenWidth >= 1200
+                          ? 1.5
+                          : screenWidth >= 768
+                          ? 1.3
+                          : 1.2,
+                    ),
+                    itemCount: statCards.length,
+                    itemBuilder: (context, index) => statCards[index],
+                  ),
+                ],
+              );
+            },
+          ),
+        );
+      },
     );
   }
 
@@ -535,11 +587,12 @@ class _AdminScreenState extends State<AdminScreen> {
                   children: [
                     Text(
                       value,
-                      style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: isOffline ? Colors.grey : color,
-                        fontSize: screenWidth >= 1200 ? 32 : 24,
-                      ),
+                      style: Theme.of(context).textTheme.headlineLarge
+                          ?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: isOffline ? Colors.grey : color,
+                            fontSize: screenWidth >= 1200 ? 32 : 24,
+                          ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -551,7 +604,9 @@ class _AdminScreenState extends State<AdminScreen> {
                             ? Colors.orange
                             : (isDark ? Colors.grey[400] : Colors.grey[600]),
                         fontSize: screenWidth >= 1200 ? 13 : 11,
-                        fontWeight: isOffline ? FontWeight.w500 : FontWeight.normal,
+                        fontWeight: isOffline
+                            ? FontWeight.w500
+                            : FontWeight.normal,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -673,10 +728,15 @@ class _AdminScreenState extends State<AdminScreen> {
                           // Combine all users
                           final List<Map<String, String>> allUsers = [];
 
-                          // Add teachers
+                          // Add teachers (excluding admin@gmail.com)
                           if (guruSnapshot.hasData) {
                             for (var doc in guruSnapshot.data!.docs) {
                               final data = doc.data() as Map<String, dynamic>;
+                              final email =
+                                  data['email']?.toString().toLowerCase() ?? '';
+                              // Skip admin user
+                              if (email == 'admin@gmail.com') continue;
+
                               final name = data['nama_lengkap'] ?? 'Unknown';
                               allUsers.add({'name': name, 'role': 'Teacher'});
                             }
@@ -744,7 +804,19 @@ class _AdminScreenState extends State<AdminScreen> {
                                     Flexible(
                                       child: _buildUserSummaryItem(
                                         'Teachers',
-                                        guruSnapshot.data!.docs.length
+                                        guruSnapshot.data!.docs
+                                            .where((doc) {
+                                              final data =
+                                                  doc.data()
+                                                      as Map<String, dynamic>;
+                                              final email =
+                                                  data['email']
+                                                      ?.toString()
+                                                      .toLowerCase() ??
+                                                  '';
+                                              return email != 'admin@gmail.com';
+                                            })
+                                            .length
                                             .toString(),
                                         AppTheme.secondaryTeal,
                                       ),

@@ -1,6 +1,7 @@
 import 'package:excel/excel.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
+import 'dart:io';
 
 class ExcelImportService {
   static Future<List<Map<String, dynamic>>?> importGuruFromExcel() async {
@@ -10,61 +11,76 @@ class ExcelImportService {
         type: FileType.custom,
         allowedExtensions: ['xlsx', 'xls'],
         allowMultiple: false,
+        withData: true, // Ensure data is loaded on all platforms
       );
 
-      if (result != null) {
-        final bytes = result.files.single.bytes;
-        if (bytes != null) {
-          final excel = Excel.decodeBytes(bytes);
+      if (result != null && result.files.single != null) {
+        late final List<int> bytes;
 
-          List<Map<String, dynamic>> guruList = [];
+        // Try to get bytes directly (works on web and sometimes mobile)
+        if (result.files.single.bytes != null) {
+          bytes = result.files.single.bytes!;
+        }
+        // On mobile/desktop, read from path if bytes are null
+        else if (result.files.single.path != null) {
+          final file = File(result.files.single.path!);
+          bytes = await file.readAsBytes();
+        } else {
+          debugPrint('❌ No file data available');
+          return null;
+        }
 
-          // Get the first sheet
-          String? sheetName = excel.tables.keys.first;
-          var table = excel.tables[sheetName];
+        final excel = Excel.decodeBytes(bytes);
 
-          if (table != null && table.rows.isNotEmpty) {
-            // Skip header row (index 0)
-            for (int i = 1; i < table.rows.length; i++) {
-              var row = table.rows[i];
+        List<Map<String, dynamic>> guruList = [];
 
-              // Skip empty rows
-              if (row.isEmpty || row.every((cell) => cell?.value == null)) {
-                continue;
-              }
+        // Get the first sheet
+        String? sheetName = excel.tables.keys.first;
+        var table = excel.tables[sheetName];
 
-              // Expected columns: Nama, NIG, Email, Mata Pelajaran, Jenis Kelamin, Sekolah, Password
-              String nama = row[0]?.value?.toString().trim() ?? '';
-              String nig = row[1]?.value?.toString().trim() ?? '';
-              String email = row[2]?.value?.toString().trim() ?? '';
-              String mataPelajaran = row[3]?.value?.toString().trim() ?? '';
-              String jenisKelamin = row[4]?.value?.toString().trim() ?? '';
-              String sekolah = row[5]?.value?.toString().trim() ?? '';
-              String password = row[6]?.value?.toString().trim() ?? '';
+        if (table != null && table.rows.isNotEmpty) {
+          // Skip header row (index 0)
+          for (int i = 1; i < table.rows.length; i++) {
+            var row = table.rows[i];
 
-              // Validate required fields
-              if (nama.isNotEmpty && email.isNotEmpty && password.isNotEmpty) {
-                guruList.add({
-                  'nama_lengkap': nama,
-                  'nig': nig,
-                  'email': email,
-                  'password': password,
-                  'mata_pelajaran': mataPelajaran,
-                  'jenis_kelamin': jenisKelamin,
-                  'sekolah': sekolah,
-                  'photo_url': '',
-                  'status': 'active',
-                  'createdAt': DateTime.now().toIso8601String(),
-                });
-              }
+            // Skip empty rows
+            if (row.isEmpty || row.every((cell) => cell?.value == null)) {
+              continue;
+            }
+
+            // Expected columns: Nama, NIG, Email, Mata Pelajaran, Jenis Kelamin, Sekolah, Password
+            String nama = row[0]?.value?.toString().trim() ?? '';
+            String nig = row[1]?.value?.toString().trim() ?? '';
+            String email = row[2]?.value?.toString().trim() ?? '';
+            String mataPelajaran = row[3]?.value?.toString().trim() ?? '';
+            String jenisKelamin = row[4]?.value?.toString().trim() ?? '';
+            String sekolah = row[5]?.value?.toString().trim() ?? '';
+            String password = row[6]?.value?.toString().trim() ?? '';
+
+            // Validate required fields
+            if (nama.isNotEmpty && email.isNotEmpty && password.isNotEmpty) {
+              guruList.add({
+                'nama_lengkap': nama,
+                'nig': nig,
+                'email': email,
+                'password': password,
+                'mata_pelajaran': mataPelajaran,
+                'jenis_kelamin': jenisKelamin,
+                'sekolah': sekolah,
+                'photo_url': '',
+                'status': 'active',
+                'createdAt': DateTime.now().toIso8601String(),
+              });
             }
           }
-
-          return guruList;
         }
+
+        return guruList;
+      } else {
+        debugPrint('❌ No file selected or file picker was cancelled');
       }
     } catch (e) {
-      debugPrint('Error importing guru from Excel: $e');
+      debugPrint('❌ Error importing guru from Excel: $e');
       throw Exception('Failed to import Excel file: $e');
     }
     return null;
@@ -77,59 +93,74 @@ class ExcelImportService {
         type: FileType.custom,
         allowedExtensions: ['xlsx', 'xls'],
         allowMultiple: false,
+        withData: true, // Ensure data is loaded on all platforms
       );
 
-      if (result != null) {
-        final bytes = result.files.single.bytes;
-        if (bytes != null) {
-          final excel = Excel.decodeBytes(bytes);
+      if (result != null && result.files.single != null) {
+        late final List<int> bytes;
 
-          List<Map<String, dynamic>> siswaList = [];
+        // Try to get bytes directly (works on web and sometimes mobile)
+        if (result.files.single.bytes != null) {
+          bytes = result.files.single.bytes!;
+        }
+        // On mobile/desktop, read from path if bytes are null
+        else if (result.files.single.path != null) {
+          final file = File(result.files.single.path!);
+          bytes = await file.readAsBytes();
+        } else {
+          debugPrint('❌ No file data available');
+          return null;
+        }
 
-          // Get the first sheet
-          String? sheetName = excel.tables.keys.first;
-          var table = excel.tables[sheetName];
+        final excel = Excel.decodeBytes(bytes);
 
-          if (table != null && table.rows.isNotEmpty) {
-            // Skip header row (index 0)
-            for (int i = 1; i < table.rows.length; i++) {
-              var row = table.rows[i];
+        List<Map<String, dynamic>> siswaList = [];
 
-              // Skip empty rows
-              if (row.isEmpty || row.every((cell) => cell?.value == null)) {
-                continue;
-              }
+        // Get the first sheet
+        String? sheetName = excel.tables.keys.first;
+        var table = excel.tables[sheetName];
 
-              // Expected columns: Nama, NIS, Email, Jenis Kelamin, Tanggal Lahir
-              String nama = row[0]?.value?.toString().trim() ?? '';
-              String nis = row[1]?.value?.toString().trim() ?? '';
-              String email = row[2]?.value?.toString().trim() ?? '';
-              String password = row[3]?.value?.toString().trim() ?? '';
-              String jenisKelamin = row[4]?.value?.toString().trim() ?? '';
-              String tanggalLahir = row[5]?.value?.toString().trim() ?? '';
+        if (table != null && table.rows.isNotEmpty) {
+          // Skip header row (index 0)
+          for (int i = 1; i < table.rows.length; i++) {
+            var row = table.rows[i];
 
-              // Validate required fields
-              if (nama.isNotEmpty && email.isNotEmpty) {
-                siswaList.add({
-                  'nama': nama,
-                  'nis': nis,
-                  'email': email,
-                  'password': password,
-                  'jenis_kelamin': jenisKelamin,
-                  'tanggal_lahir': tanggalLahir,
-                  'photo_url': '',
-                  'status': 'active',
-                  'createdAt': DateTime.now().toIso8601String(),
-                });
-              }
+            // Skip empty rows
+            if (row.isEmpty || row.every((cell) => cell?.value == null)) {
+              continue;
+            }
+
+            // Expected columns: Nama, NIS, Email, Jenis Kelamin, Tanggal Lahir
+            String nama = row[0]?.value?.toString().trim() ?? '';
+            String nis = row[1]?.value?.toString().trim() ?? '';
+            String email = row[2]?.value?.toString().trim() ?? '';
+            String password = row[3]?.value?.toString().trim() ?? '';
+            String jenisKelamin = row[4]?.value?.toString().trim() ?? '';
+            String tanggalLahir = row[5]?.value?.toString().trim() ?? '';
+
+            // Validate required fields
+            if (nama.isNotEmpty && email.isNotEmpty) {
+              siswaList.add({
+                'nama': nama,
+                'nis': nis,
+                'email': email,
+                'password': password,
+                'jenis_kelamin': jenisKelamin,
+                'tanggal_lahir': tanggalLahir,
+                'photo_url': '',
+                'status': 'active',
+                'createdAt': DateTime.now().toIso8601String(),
+              });
             }
           }
-
-          return siswaList;
         }
+
+        return siswaList;
+      } else {
+        debugPrint('❌ No file selected or file picker was cancelled');
       }
     } catch (e) {
-      debugPrint('Error importing siswa from Excel: $e');
+      debugPrint('❌ Error importing siswa from Excel: $e');
       throw Exception('Failed to import Excel file: $e');
     }
     return null;

@@ -963,7 +963,8 @@ class _JadwalFormDialogState extends State<JadwalFormDialog> {
   String? _selectedKelasId;
   String? _selectedMapelId;
   String? _selectedHari;
-  final _jamController = TextEditingController();
+  TimeOfDay? _startTime;
+  TimeOfDay? _endTime;
   DateTime _selectedDate = DateTime.now();
 
   // Method to get day name from DateTime
@@ -1032,12 +1033,17 @@ class _JadwalFormDialogState extends State<JadwalFormDialog> {
   // Method untuk validasi bentrok jadwal dari database
   Future<Map<String, dynamic>?> _checkScheduleConflict() async {
     if (_selectedKelasId == null ||
-        _jamController.text.isEmpty ||
+        _startTime == null ||
+        _endTime == null ||
         _selectedHari == null) {
       return null;
     }
 
     try {
+      // Get current time string
+      final currentTimeStr =
+          '${_startTime!.hour.toString().padLeft(2, '0')}:${_startTime!.minute.toString().padLeft(2, '0')}-${_endTime!.hour.toString().padLeft(2, '0')}:${_endTime!.minute.toString().padLeft(2, '0')}';
+
       // Query database untuk jadwal di kelas, hari, dan tanggal yang sama
       final querySnapshot = await _firestore
           .collection('kelas_ngajar')
@@ -1075,11 +1081,7 @@ class _JadwalFormDialogState extends State<JadwalFormDialog> {
         if (jadwalDateStr == dateStr) {
           // Cek overlap waktu
           final existingTime = data['jam'] ?? '';
-          if (_isTimeOverlapping(
-            _jamController.text,
-            existingTime,
-            _selectedDate,
-          )) {
+          if (_isTimeOverlapping(currentTimeStr, existingTime, _selectedDate)) {
             // Get teacher name
             final teacherDoc = await _firestore
                 .collection('guru')
@@ -1156,16 +1158,39 @@ class _JadwalFormDialogState extends State<JadwalFormDialog> {
       _selectedMapelId = widget.jadwal!['id_mapel']?.toString();
       // Convert Indonesian day name to English for dropdown
       _selectedHari = _convertDayToEnglish(widget.jadwal!['hari']);
-      _jamController.text = widget.jadwal!['jam'] ?? '';
+
+      // Parse existing time string (e.g., "08:00-09:30")
+      final jamStr = widget.jadwal!['jam'] ?? '';
+      if (jamStr.contains('-')) {
+        final times = jamStr.split('-');
+        if (times.length == 2) {
+          _startTime = _parseTimeString(times[0].trim());
+          _endTime = _parseTimeString(times[1].trim());
+        }
+      }
     } else {
       // Set initial day based on selected date
       _selectedHari = _getDayNameFromDate(_selectedDate);
     }
   }
 
+  TimeOfDay? _parseTimeString(String timeStr) {
+    try {
+      final parts = timeStr.split(':');
+      if (parts.length == 2) {
+        return TimeOfDay(
+          hour: int.parse(parts[0]),
+          minute: int.parse(parts[1]),
+        );
+      }
+    } catch (e) {
+      debugPrint('Error parsing time: $e');
+    }
+    return null;
+  }
+
   @override
   void dispose() {
-    _jamController.dispose();
     super.dispose();
   }
 
@@ -1302,49 +1327,221 @@ class _JadwalFormDialogState extends State<JadwalFormDialog> {
                       value == null ? 'Please select a day' : null,
                 ),
                 const SizedBox(height: 16),
-                TextFormField(
-                  controller: _jamController,
-                  decoration: const InputDecoration(
-                    labelText: 'Time (e.g., 08:00-09:30)',
-                    border: OutlineInputBorder(),
-                    helperText: 'Format: HH:MM-HH:MM',
-                  ),
-                  onChanged: (value) async {
-                    // Real-time validation for schedule conflict
-                    if (value.isNotEmpty &&
-                        value.contains('-') &&
-                        _selectedKelasId != null &&
-                        _selectedHari != null) {
-                      final conflictResult = await _checkScheduleConflict();
-                      if (conflictResult != null &&
-                          conflictResult['hasConflict'] == true &&
-                          mounted) {
-                        final teacherName =
-                            conflictResult['teacherName'] ?? 'Unknown Teacher';
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              '⚠️ Warning: Class is being taught by $teacherName!',
+
+                // Time Picker Section
+                Row(
+                  children: [
+                    // Start Time
+                    Expanded(
+                      child: InkWell(
+                        onTap: () async {
+                          final TimeOfDay? picked = await showTimePicker(
+                            context: context,
+                            initialTime: _startTime ?? TimeOfDay.now(),
+                            builder: (context, child) {
+                              return Theme(
+                                data: Theme.of(context).copyWith(
+                                  timePickerTheme: TimePickerThemeData(
+                                    backgroundColor: Theme.of(
+                                      context,
+                                    ).cardColor,
+                                    hourMinuteShape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    dayPeriodShape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                  ),
+                                ),
+                                child: child!,
+                              );
+                            },
+                          );
+
+                          if (picked != null) {
+                            setState(() {
+                              _startTime = picked;
+                            });
+
+                            // Check for schedule conflict
+                            if (_endTime != null &&
+                                _selectedKelasId != null &&
+                                _selectedHari != null) {
+                              final conflictResult =
+                                  await _checkScheduleConflict();
+                              if (conflictResult != null &&
+                                  conflictResult['hasConflict'] == true &&
+                                  mounted) {
+                                final teacherName =
+                                    conflictResult['teacherName'] ??
+                                    'Unknown Teacher';
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      '⚠️ Warning: Class is being taught by $teacherName!',
+                                    ),
+                                    backgroundColor: Colors.orange,
+                                    duration: const Duration(seconds: 3),
+                                  ),
+                                );
+                              }
+                            }
+                          }
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            border: Border.all(
+                              color: _startTime == null
+                                  ? Colors.red
+                                  : Colors.grey,
                             ),
-                            backgroundColor: Colors.orange,
-                            duration: const Duration(seconds: 3),
+                            borderRadius: BorderRadius.circular(4),
                           ),
-                        );
-                      }
-                    }
-                  },
-                  validator: (value) {
-                    if (value?.isEmpty == true) {
-                      return 'Please enter time';
-                    }
-                    // Basic time format validation
-                    final timeRegex = RegExp(r'^\d{2}:\d{2}-\d{2}:\d{2}$');
-                    if (!timeRegex.hasMatch(value!)) {
-                      return 'Format must be HH:MM-HH:MM (e.g., 08:00-09:30)';
-                    }
-                    return null;
-                  },
+                          child: Row(
+                            children: [
+                              const Icon(Icons.access_time, size: 20),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Start Time',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.grey[600],
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      _startTime?.format(context) ?? 'Select',
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    const Icon(Icons.arrow_forward, color: Colors.grey),
+                    const SizedBox(width: 16),
+
+                    // End Time
+                    Expanded(
+                      child: InkWell(
+                        onTap: () async {
+                          final TimeOfDay? picked = await showTimePicker(
+                            context: context,
+                            initialTime:
+                                _endTime ?? (_startTime ?? TimeOfDay.now()),
+                            builder: (context, child) {
+                              return Theme(
+                                data: Theme.of(context).copyWith(
+                                  timePickerTheme: TimePickerThemeData(
+                                    backgroundColor: Theme.of(
+                                      context,
+                                    ).cardColor,
+                                    hourMinuteShape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    dayPeriodShape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                  ),
+                                ),
+                                child: child!,
+                              );
+                            },
+                          );
+
+                          if (picked != null) {
+                            setState(() {
+                              _endTime = picked;
+                            });
+
+                            // Check for schedule conflict
+                            if (_startTime != null &&
+                                _selectedKelasId != null &&
+                                _selectedHari != null) {
+                              final conflictResult =
+                                  await _checkScheduleConflict();
+                              if (conflictResult != null &&
+                                  conflictResult['hasConflict'] == true &&
+                                  mounted) {
+                                final teacherName =
+                                    conflictResult['teacherName'] ??
+                                    'Unknown Teacher';
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      '⚠️ Warning: Class is being taught by $teacherName!',
+                                    ),
+                                    backgroundColor: Colors.orange,
+                                    duration: const Duration(seconds: 3),
+                                  ),
+                                );
+                              }
+                            }
+                          }
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            border: Border.all(
+                              color: _endTime == null
+                                  ? Colors.red
+                                  : Colors.grey,
+                            ),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.access_time, size: 20),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'End Time',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.grey[600],
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      _endTime?.format(context) ?? 'Select',
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
+                if (_startTime == null || _endTime == null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: Text(
+                      'Please select both start and end time',
+                      style: TextStyle(color: Colors.red[700], fontSize: 12),
+                    ),
+                  ),
                 const SizedBox(height: 16),
                 ListTile(
                   title: Text(
@@ -1397,7 +1594,9 @@ class _JadwalFormDialogState extends State<JadwalFormDialog> {
       if (_selectedGuruId == null ||
           _selectedKelasId == null ||
           _selectedMapelId == null ||
-          _selectedHari == null) {
+          _selectedHari == null ||
+          _startTime == null ||
+          _endTime == null) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Please fill all required fields'),
@@ -1433,6 +1632,10 @@ class _JadwalFormDialogState extends State<JadwalFormDialog> {
 
       final bloc = context.read<JadwalMengajarBloc>();
 
+      // Format time string
+      final jamStr =
+          '${_startTime!.hour.toString().padLeft(2, '0')}:${_startTime!.minute.toString().padLeft(2, '0')}-${_endTime!.hour.toString().padLeft(2, '0')}:${_endTime!.minute.toString().padLeft(2, '0')}';
+
       if (widget.jadwal != null) {
         bloc.add(
           UpdateJadwalMengajar(
@@ -1440,7 +1643,7 @@ class _JadwalFormDialogState extends State<JadwalFormDialog> {
             idGuru: _selectedGuruId!,
             idKelas: _selectedKelasId!,
             idMapel: _selectedMapelId!,
-            jam: _jamController.text,
+            jam: jamStr,
             // Convert back to Indonesian for database
             hari: _convertDayToIndonesian(_selectedHari),
             tanggal: _selectedDate,
@@ -1476,11 +1679,15 @@ class _JadwalFormDialogState extends State<JadwalFormDialog> {
       String nextId = (maxId + 1).toString();
 
       // Use parameters if provided (for Excel import), otherwise use form values
+      final jamStr =
+          jam ??
+          '${_startTime!.hour.toString().padLeft(2, '0')}:${_startTime!.minute.toString().padLeft(2, '0')}-${_endTime!.hour.toString().padLeft(2, '0')}:${_endTime!.minute.toString().padLeft(2, '0')}';
+
       await _firestore.collection('kelas_ngajar').doc(nextId).set({
         'id_guru': idGuru ?? _selectedGuruId!,
         'id_kelas': idKelas ?? _selectedKelasId!,
         'id_mapel': idMapel ?? _selectedMapelId!,
-        'jam': jam ?? _jamController.text,
+        'jam': jamStr,
         // Convert back to Indonesian for database
         'hari': hari ?? _convertDayToIndonesian(_selectedHari),
         'tanggal': Timestamp.fromDate(tanggal ?? _selectedDate),

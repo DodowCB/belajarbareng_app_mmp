@@ -166,7 +166,14 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
         final pengumumanSnapshot = futures[4];
         final kelasNgajarSnapshot = futures[5];
 
-        final totalTeachers = guruSnapshot.docs.length;
+        // Filter out admin user (admin@gmail.com)
+        final filteredGuruDocs = guruSnapshot.docs.where((doc) {
+          final data = doc.data() as Map<String, dynamic>;
+          final email = data['email']?.toString().toLowerCase() ?? '';
+          return email != 'admin@gmail.com';
+        }).toList();
+
+        final totalTeachers = filteredGuruDocs.length;
         final totalStudents = siswaSnapshot.docs.length;
         final totalUsers = totalTeachers + totalStudents;
         final totalMapels = mapelSnapshot.docs.length;
@@ -262,7 +269,14 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
       final pengumumanSnapshot = futures[4];
       final kelasNgajarSnapshot = futures[5];
 
-      final totalTeachers = guruSnapshot.docs.length;
+      // Filter out admin user (admin@gmail.com)
+      final filteredGuruDocs = guruSnapshot.docs.where((doc) {
+        final data = doc.data() as Map<String, dynamic>;
+        final email = data['email']?.toString().toLowerCase() ?? '';
+        return email != 'admin@gmail.com';
+      }).toList();
+
+      final totalTeachers = filteredGuruDocs.length;
       final totalStudents = siswaSnapshot.docs.length;
       final totalUsers = totalTeachers + totalStudents;
       final totalMapels = mapelSnapshot.docs.length;

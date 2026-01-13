@@ -20,7 +20,8 @@ class SiswaKelasScreen extends StatefulWidget {
 
 class _SiswaKelasScreenState extends State<SiswaKelasScreen> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final NotificationServiceExtended _notificationService = NotificationServiceExtended();
+  final NotificationServiceExtended _notificationService =
+      NotificationServiceExtended();
   String _searchQuery = '';
 
   Future<Map<String, dynamic>?> _getSiswaData(String siswaId) async {
@@ -529,10 +530,12 @@ class AddSiswaDialog extends StatefulWidget {
 
 class _AddSiswaDialogState extends State<AddSiswaDialog> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final NotificationServiceExtended _notificationService = NotificationServiceExtended();
+  final NotificationServiceExtended _notificationService =
+      NotificationServiceExtended();
   List<Map<String, dynamic>> _availableSiswa = [];
-  String? _selectedSiswaId;
+  final Set<String> _selectedSiswaIds = {};
   bool _isLoading = true;
+  String _searchQuery = '';
 
   @override
   void initState() {
@@ -589,6 +592,15 @@ class _AddSiswaDialogState extends State<AddSiswaDialog> {
 
   @override
   Widget build(BuildContext context) {
+    // Filter siswa based on search query
+    final filteredSiswa = _availableSiswa.where((siswa) {
+      if (_searchQuery.isEmpty) return true;
+      final nama = siswa['nama'].toString().toLowerCase();
+      final nis = siswa['nis'].toString().toLowerCase();
+      return nama.contains(_searchQuery.toLowerCase()) ||
+          nis.contains(_searchQuery.toLowerCase());
+    }).toList();
+
     return AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       title: Row(
@@ -604,7 +616,7 @@ class _AddSiswaDialogState extends State<AddSiswaDialog> {
           const SizedBox(width: 12),
           Expanded(
             child: Text(
-              'Add Student to ${widget.namaKelas}',
+              'Add Students to ${widget.namaKelas}',
               style: const TextStyle(fontSize: 18),
             ),
           ),
@@ -618,30 +630,149 @@ class _AddSiswaDialogState extends State<AddSiswaDialog> {
           : _availableSiswa.isEmpty
           ? const Text('No available students to add')
           : SizedBox(
-              width: 400,
+              width: 500,
+              height: 500,
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  DropdownButtonFormField<String>(
-                    value: _selectedSiswaId,
+                  // Search bar
+                  TextField(
+                    onChanged: (value) {
+                      setState(() {
+                        _searchQuery = value;
+                      });
+                    },
                     decoration: InputDecoration(
-                      labelText: 'Select Student',
+                      hintText: 'Search students by name or NIS...',
+                      prefixIcon: const Icon(Icons.search),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      prefixIcon: const Icon(Icons.person),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
                     ),
-                    items: _availableSiswa.map((siswa) {
-                      return DropdownMenuItem<String>(
-                        value: siswa['id'],
-                        child: Text('${siswa['nama']} (${siswa['nis']})'),
-                      );
-                    }).toList(),
-                    onChanged: (value) {
-                      setState(() {
-                        _selectedSiswaId = value;
-                      });
-                    },
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Selected count
+                  if (_selectedSiswaIds.isNotEmpty)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppTheme.accentGreen.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.check_circle,
+                            color: AppTheme.accentGreen,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            '${_selectedSiswaIds.length} student(s) selected',
+                            style: const TextStyle(
+                              color: AppTheme.accentGreen,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const Spacer(),
+                          TextButton(
+                            onPressed: () {
+                              setState(() {
+                                _selectedSiswaIds.clear();
+                              });
+                            },
+                            child: const Text('Clear All'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  const SizedBox(height: 12),
+
+                  // Student list with checkboxes
+                  Expanded(
+                    child: filteredSiswa.isEmpty
+                        ? Center(
+                            child: Text(
+                              'No students found',
+                              style: TextStyle(
+                                color: Colors.grey[600],
+                                fontSize: 14,
+                              ),
+                            ),
+                          )
+                        : ListView.builder(
+                            shrinkWrap: true,
+                            itemCount: filteredSiswa.length,
+                            itemBuilder: (context, index) {
+                              final siswa = filteredSiswa[index];
+                              final siswaId = siswa['id'] as String;
+                              final isSelected = _selectedSiswaIds.contains(
+                                siswaId,
+                              );
+
+                              return Card(
+                                margin: const EdgeInsets.only(bottom: 8),
+                                elevation: isSelected ? 2 : 0,
+                                color: isSelected
+                                    ? AppTheme.accentGreen.withOpacity(0.1)
+                                    : null,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  side: BorderSide(
+                                    color: isSelected
+                                        ? AppTheme.accentGreen
+                                        : Colors.grey.withOpacity(0.2),
+                                    width: isSelected ? 2 : 1,
+                                  ),
+                                ),
+                                child: CheckboxListTile(
+                                  value: isSelected,
+                                  onChanged: (bool? value) {
+                                    setState(() {
+                                      if (value == true) {
+                                        _selectedSiswaIds.add(siswaId);
+                                      } else {
+                                        _selectedSiswaIds.remove(siswaId);
+                                      }
+                                    });
+                                  },
+                                  title: Text(
+                                    siswa['nama'],
+                                    style: TextStyle(
+                                      fontWeight: isSelected
+                                          ? FontWeight.w600
+                                          : FontWeight.normal,
+                                    ),
+                                  ),
+                                  subtitle: Text('NIS: ${siswa['nis']}'),
+                                  secondary: CircleAvatar(
+                                    backgroundColor: isSelected
+                                        ? AppTheme.accentGreen
+                                        : AppTheme.secondaryTeal.withOpacity(
+                                            0.2,
+                                          ),
+                                    child: Icon(
+                                      Icons.person,
+                                      color: isSelected
+                                          ? Colors.white
+                                          : AppTheme.secondaryTeal,
+                                    ),
+                                  ),
+                                  activeColor: AppTheme.accentGreen,
+                                  controlAffinity:
+                                      ListTileControlAffinity.leading,
+                                ),
+                              );
+                            },
+                          ),
                   ),
                 ],
               ),
@@ -652,29 +783,38 @@ class _AddSiswaDialogState extends State<AddSiswaDialog> {
           child: const Text('Cancel'),
         ),
         ElevatedButton(
-          onPressed: _selectedSiswaId == null ? null : _addSiswaToKelas,
+          onPressed: _selectedSiswaIds.isEmpty ? null : _addSiswaToKelas,
           style: ElevatedButton.styleFrom(
             backgroundColor: AppTheme.accentGreen,
             foregroundColor: Colors.white,
             disabledBackgroundColor: Colors.grey,
           ),
-          child: const Text('Add'),
+          child: Text(
+            _selectedSiswaIds.isEmpty
+                ? 'Add'
+                : 'Add ${_selectedSiswaIds.length} Student(s)',
+          ),
         ),
       ],
     );
   }
 
   Future<void> _addSiswaToKelas() async {
-    if (_selectedSiswaId == null) return;
+    if (_selectedSiswaIds.isEmpty) return;
 
     try {
-      // Get siswa data first for notification
-      final siswaDoc = await _firestore.collection('siswa').doc(_selectedSiswaId!).get();
-      final siswaName = siswaDoc.data()?['nama'] ?? 'Unknown';
-      
-      // Generate next integer ID by getting all docs and finding max ID
-      final querySnapshot = await _firestore.collection('siswa_kelas').get();
+      // Show loading dialog
+      if (mounted) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) =>
+              const Center(child: CircularProgressIndicator()),
+        );
+      }
 
+      // Get existing siswa_kelas docs to find max ID
+      final querySnapshot = await _firestore.collection('siswa_kelas').get();
       int maxId = 0;
       for (var doc in querySnapshot.docs) {
         final id = int.tryParse(doc.id) ?? 0;
@@ -683,38 +823,60 @@ class _AddSiswaDialogState extends State<AddSiswaDialog> {
         }
       }
 
-      String nextId = (maxId + 1).toString();
+      // Add each selected siswa to the class
+      int currentId = maxId;
+      for (String siswaId in _selectedSiswaIds) {
+        currentId++;
+        String nextId = currentId.toString();
 
-      // Add to siswa_kelas collection with integer ID
-      await _firestore.collection('siswa_kelas').doc(nextId).set({
-        'kelas_id': widget.kelasId,
-        'siswa_id': _selectedSiswaId!,
-        'createdAt': FieldValue.serverTimestamp(),
-      });
-      
-      // Send notification to all admins about siswa joining kelas
-      try {
-        await _notificationService.sendSiswaJoinKelas(
-          kelasId: widget.kelasId,
-          siswaId: _selectedSiswaId!,
-          siswaName: siswaName,
-        );
-        debugPrint('✅ Notification sent: Siswa joined kelas (${widget.namaKelas})');
-      } catch (e) {
-        debugPrint('❌ Failed to send siswa join kelas notification: $e');
+        await _firestore.collection('siswa_kelas').doc(nextId).set({
+          'kelas_id': widget.kelasId,
+          'siswa_id': siswaId,
+          'createdAt': FieldValue.serverTimestamp(),
+        });
+
+        // Get siswa data for notification
+        try {
+          final siswaDoc = await _firestore
+              .collection('siswa')
+              .doc(siswaId)
+              .get();
+          final siswaName = siswaDoc.data()?['nama'] ?? 'Unknown';
+
+          // Send notification
+          await _notificationService.sendSiswaJoinKelas(
+            kelasId: widget.kelasId,
+            siswaId: siswaId,
+            siswaName: siswaName,
+          );
+          debugPrint(
+            '✅ Notification sent: $siswaName joined kelas (${widget.namaKelas})',
+          );
+        } catch (e) {
+          debugPrint('❌ Failed to send notification for siswa $siswaId: $e');
+        }
       }
 
       if (mounted) {
+        // Close loading dialog
         Navigator.of(context).pop();
+        // Close add dialog
+        Navigator.of(context).pop();
+
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Student added to class successfully'),
+          SnackBar(
+            content: Text(
+              '${_selectedSiswaIds.length} student(s) added to class successfully',
+            ),
             backgroundColor: Colors.green,
           ),
         );
       }
     } catch (e) {
       if (mounted) {
+        // Close loading dialog
+        Navigator.of(context).pop();
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error: ${e.toString()}'),
