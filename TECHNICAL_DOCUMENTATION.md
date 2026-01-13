@@ -1,12 +1,284 @@
 # 📚 Technical Documentation - BelajarBareng App
 
-> Dokumentasi lengkap fitur, API, dan implementasi teknis
+> Jawaban ringkas untuk pertanyaan teknis project
 
 ---
 
-## 📱 1. Halaman & Navigation
+---
 
-### ✅ Total: **15+ Halaman** dengan navigasi penuh
+## ❓ Pertanyaan & Jawaban
+
+### **1. Apakah terdapat 5 halaman dan navigation yang digunakan?**
+
+**Jawaban:** Ya, ada **15+ halaman** dengan navigation.
+
+**Halaman Admin:**
+- `admin_screen.dart` - Dashboard
+- `teachers_screen.dart` - Management guru
+- `students_screen.dart` - Management siswa
+- `subjects_screen.dart` - Management mapel
+- `classes_screen.dart` - Management kelas
+- `pengumuman_screen.dart` - Management pengumuman
+- `jadwal_mengajar_screen.dart` - Jadwal mengajar
+- `guru_location_screen.dart` - Tracking lokasi guru
+- `reports_screen.dart` - Laporan
+- `analytics_screen.dart` - Analitik
+- `settings_screen.dart` - Pengaturan
+- `notifications_screen.dart` - Notifikasi
+
+**Halaman Guru:**
+- `halaman_guru_screen.dart` - Dashboard guru
+- `create_material_screen.dart` - Upload materi dengan YouTube
+
+**Halaman Siswa:**
+- `halaman_siswa_screen.dart` - Dashboard siswa
+
+**Navigation:** Menggunakan `Navigator.push()` dengan `MaterialPageRoute`
+
+---
+
+### **2. Apa aja API yang digunakan?**
+
+**Jawaban:**
+
+**External APIs:**
+1. **YouTube Data API v3** - Search video edukatif
+   - Terletak: `lib/src/api/youtube/youtube_api_service.dart`
+   - Digunakan di: `create_material_screen.dart`
+
+2. **Geolocator API** (GPS/Location) - Track lokasi guru
+   - Terletak: `lib/src/core/services/location_service.dart`
+   - Digunakan di: `halaman_guru_screen.dart`, `guru_location_screen.dart`
+
+3. **URL Launcher** - Open YouTube & Google Maps
+   - Digunakan di: `create_material_screen.dart`, `guru_location_screen.dart`
+
+4. **Excel Import API** - Import data dari Excel
+   - Terletak: `lib/src/core/services/excel_import_service.dart`
+   - Digunakan di: `teachers_screen.dart`, `students_screen.dart`
+
+**Firebase Services:**
+- **Firebase Authentication** - Login/Logout
+- **Cloud Firestore** - Database NoSQL real-time
+
+---
+
+### **3. Apakah menggunakan Firebase atau Firestore?**
+
+**Jawaban:** Menggunakan **KEDUANYA**
+
+- **Firebase Authentication** untuk login/logout
+  - Terletak di semua screen yang menggunakan `FirebaseAuth.instance`
+  
+- **Cloud Firestore** untuk database
+  - Collections: `guru`, `siswa`, `mapel`, `kelas`, `pengumuman`, `kelas_ngajar`, `guru_locations`
+  - Digunakan di semua screen management (CRUD operations)
+
+---
+
+### **4. Apakah menggunakan SQLite?**
+
+**Jawaban:** **TIDAK**. 
+
+Project ini menggunakan **Cloud Firestore** (NoSQL cloud database) dan **SharedPreferences** untuk local caching, bukan SQLite.
+
+---
+
+### **5. Apakah menggunakan BLoC?**
+
+**Jawaban:** **YA**, menggunakan BLoC pattern.
+
+**BLoC yang ada:**
+- `AdminBloc` - Terletak: `lib/src/features/auth/presentation/admin/admin_bloc.dart`
+  - Digunakan di: `admin_screen.dart`, `teachers_screen.dart`, `students_screen.dart`, dll.
+
+- `GuruProfileBloc` - Terletak: `lib/src/features/auth/presentation/halamanGuru/blocs/guru_profile/guru_profile_bloc.dart`
+  - Digunakan di: `halaman_guru_screen.dart`
+
+- `PengumumanBloc` - Terletak: `lib/src/features/auth/presentation/pengumuman/pengumuman_bloc.dart`
+  - Digunakan di: `pengumuman_screen.dart`
+
+**Package:** `flutter_bloc: ^8.1.3`
+
+---
+
+### **6. Apakah menggunakan sensor seperti location?**
+
+**Jawaban:** **YA**, menggunakan GPS/Location sensor.
+
+**Location Service:**
+- Terletak: `lib/src/core/services/location_service.dart`
+- Digunakan di:
+  - `halaman_guru_screen.dart` - Request permission & update lokasi
+  - `guru_location_screen.dart` - Display lokasi real-time
+  - `guru_app_scaffold.dart` - Set offline saat logout
+
+**Repository:**
+- Terletak: `lib/src/features/auth/data/repositories/location_repository.dart`
+
+**Permission Helper:**
+- Terletak: `lib/src/features/auth/presentation/location/location_permission_helper.dart`
+
+**Package:** `geolocator: ^13.0.2`
+
+**Fitur:**
+- Request location permission dengan dialog
+- Track koordinat GPS real-time
+- Update ke Firestore collection `guru_locations`
+- Auto-offline saat logout
+- Open Google Maps
+- Copy coordinates
+
+---
+
+### **7. Apakah terdapat Gemini API?**
+
+**Jawaban:** **TIDAK**. 
+
+Project ini tidak menggunakan AI API seperti Gemini, ChatGPT, atau sejenisnya.
+
+---
+
+### **8. Apakah terdapat automated testing?**
+
+**Jawaban:** **YA**, ada **71 unit tests** (semua PASSED).
+
+**Test Files:**
+1. `test/core/services/camera_service_test.dart` - 16 tests
+2. `test/core/utils/validators_test.dart` - 28 tests (email, NIP, NIS, phone validation)
+3. `test/core/services/excel_import_service_test.dart` - 27 tests
+4. `test/features/auth/presentation/admin/admin_bloc_test.dart` - BLoC state tests
+
+**Package:** `flutter_test`, `bloc_test`, `mockito`
+
+**Run:** `flutter test` → Output: `00:02 +71: All tests passed!`
+
+---
+
+### **9. Fitur-fitur apa aja yang digunakan atau dibuat?**
+
+**Jawaban:**
+
+**Core Features:**
+1. Multi-role authentication (Admin, Guru, Siswa)
+2. CRUD Management (Guru, Siswa, Mapel, Kelas, Pengumuman, Jadwal)
+3. Excel import/export guru & siswa
+4. YouTube video search untuk materi pembelajaran
+5. GPS location tracking guru real-time
+6. Notifications system
+7. Offline mode dengan caching
+8. Dark mode support
+9. Responsive design (Mobile, Tablet, Desktop)
+10. Real-time data updates dengan Firestore streams
+11. Google Maps integration
+12. Search & filter functionality
+
+**UI Features:**
+- Skeleton loading screens
+- Progress indicators
+- Success/error snackbars
+- Profile dropdown menu
+- Time picker GUI
+- Multiple selection dengan checkbox
+
+---
+
+### **10. Daftar page yang menggunakan API**
+
+**Jawaban:**
+
+**YouTube Data API v3:**
+- `create_material_screen.dart` - Search & add video ke materi
+
+**Geolocator API (GPS):**
+- `halaman_guru_screen.dart` - Request permission, update lokasi
+- `guru_location_screen.dart` - Display lokasi, open Google Maps
+- `guru_app_scaffold.dart` - Set offline on logout
+
+**URL Launcher:**
+- `create_material_screen.dart` - Open YouTube video
+- `guru_location_screen.dart` - Open Google Maps
+
+**Excel Import:**
+- `teachers_screen.dart` - Import guru dari Excel
+- `students_screen.dart` - Import siswa dari Excel
+
+**Cloud Firestore (semua collections):**
+- `admin_screen.dart` - Read all collections
+- `teachers_screen.dart` - CRUD `guru`
+- `students_screen.dart` - CRUD `siswa`
+- `subjects_screen.dart` - CRUD `mapel`
+- `classes_screen.dart` - CRUD `kelas`
+- `pengumuman_screen.dart` - CRUD `pengumuman`
+- `jadwal_mengajar_screen.dart` - CRUD `kelas_ngajar`
+- `guru_location_screen.dart` - Read `guru_locations` (real-time stream)
+- `notifications_screen.dart` - Read `notifications`
+
+---
+
+### **11. Jelaskan authentication dan authorization yang digunakan**
+
+**Jawaban:**
+
+**Authentication:**
+- Menggunakan **Firebase Authentication** dengan email/password
+- Login flow: `FirebaseAuth.instance.signInWithEmailAndPassword()`
+- Session management: Firebase Auth tokens (auto-refresh)
+- Logout: `FirebaseAuth.instance.signOut()` + set guru offline
+
+**Authorization (Role-Based Access Control):**
+
+**Role Detection:**
+- Admin: Email = `admin@gmail.com`
+- Guru: Check di Firestore collection `guru`
+- Siswa: Check di Firestore collection `siswa`
+
+**Access Control:**
+- **Admin**: Full access semua fitur (CRUD, reports, tracking, settings)
+- **Guru**: Upload materi, view jadwal, update location GPS
+- **Siswa**: View materi, submit tugas, take quiz
+
+**Implementation:**
+- Client-side: Conditional rendering berdasarkan `AppUser.role`
+- Server-side: Firestore Security Rules
+  - Admin dapat write semua collections
+  - Guru dapat update lokasi sendiri (`guru_locations/{userId}`)
+  - Siswa read-only untuk materi
+
+**Security:**
+- Password hashing (Firebase automatic)
+- HTTPS encryption (semua Firebase requests)
+- Session tokens dengan auto-refresh
+- Input validation (email, NIP, NIS format)
+- Permission dialogs untuk GPS access
+
+**Files terkait:**
+
+---
+
+## 📊 Summary Table
+
+| Feature | Status | Details |
+|---------|--------|---------|
+| **Pages & Navigation** | ✅ **15+ pages** | Admin (12), Guru (3+), Siswa |
+| **YouTube API** | ✅ **v3** | Search videos di `create_material_screen.dart` |
+| **Location/GPS API** | ✅ **Geolocator** | Track di `halaman_guru_screen.dart`, `guru_location_screen.dart` |
+| **URL Launcher** | ✅ **Yes** | Open YouTube & Google Maps |
+| **Excel Import** | ✅ **Yes** | Import di `teachers_screen.dart`, `students_screen.dart` |
+| **Firebase Auth** | ✅ **Yes** | Email/Password authentication |
+| **Cloud Firestore** | ✅ **Yes** | Real-time NoSQL database (9 collections) |
+| **SQLite** | ❌ **No** | Menggunakan Firestore |
+| **BLoC Pattern** | ✅ **Yes** | AdminBloc, GuruProfileBloc, PengumumanBloc |
+| **AI/Gemini API** | ❌ **No** | Not implemented |
+| **Unit Testing** | ✅ **71 tests** | All PASSED |
+| **Offline Support** | ✅ **Yes** | SharedPreferences caching |
+| **Real-time Updates** | ✅ **Yes** | Firestore streams |
+| **Dark Mode** | ✅ **Yes** | Theme switching |
+| **Responsive Design** | ✅ **Yes** | Mobile, Tablet, Desktop |
+
+---
+
+**Last Updated:** January 13, 2026
 
 #### **Admin Pages (12 halaman)**
 | No | Page | Path | Deskripsi |
