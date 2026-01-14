@@ -46,8 +46,8 @@ class _TugasSiswaScreenState extends State<TugasSiswaScreen> {
       icon: Icons.assignment,
       currentRoute: '/tugas-siswa',
       body: siswaId == null
-        ? const Center(child: Text('User ID tidak ditemukan'))
-        : StreamBuilder<QuerySnapshot>(
+          ? const Center(child: Text('User ID tidak ditemukan'))
+          : StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
                   .collection('siswa_kelas')
                   .where('siswa_id', isEqualTo: siswaId)
@@ -269,7 +269,11 @@ class _TugasSiswaScreenState extends State<TugasSiswaScreen> {
                           const SizedBox(height: 4),
                           Row(
                             children: [
-                              Icon(Icons.person, size: 12, color: Colors.grey[600]),
+                              Icon(
+                                Icons.person,
+                                size: 12,
+                                color: Colors.grey[600],
+                              ),
                               const SizedBox(width: 4),
                               Flexible(
                                 child: Text(

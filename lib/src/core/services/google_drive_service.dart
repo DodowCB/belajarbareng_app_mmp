@@ -24,10 +24,10 @@ class GoogleDriveService {
   Future<void> initialize() async {
     final options = GoogleDriveOptions.instance;
 
+    // serverClientId TIDAK didukung di Web
+    // Hanya gunakan untuk platform mobile (Android/iOS)
     _googleSignIn = GoogleSignIn(
-      // WORKAROUND: Pakai serverClientId untuk Android
-      // Karena Android OAuth Client belum tersedia di google-services.json
-      serverClientId: options.webClientId,
+      serverClientId: kIsWeb ? null : options.webClientId,
       scopes: options.scopes,
     );
 

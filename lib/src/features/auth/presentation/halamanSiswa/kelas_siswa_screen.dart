@@ -47,8 +47,8 @@ class KelasSiswaScreen extends StatelessWidget {
       icon: Icons.class_,
       currentRoute: '/kelas-siswa',
       body: siswaId == null
-        ? const Center(child: Text('User ID tidak ditemukan'))
-        : StreamBuilder<QuerySnapshot>(
+          ? const Center(child: Text('User ID tidak ditemukan'))
+          : StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
                   .collection('siswa_kelas')
                   .where('siswa_id', isEqualTo: siswaId)

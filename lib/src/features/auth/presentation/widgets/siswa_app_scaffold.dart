@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/config/theme.dart';
 import '../../../../core/providers/theme_provider.dart';
 import '../../../../core/providers/connectivity_provider.dart';
-import '../halamanSiswa/blocs/blocs.dart';
+import '../../../../core/providers/user_provider.dart';
 import '../halamanSiswa/halaman_siswa_screen.dart';
 import '../halamanSiswa/tugas_siswa_screen.dart';
 import '../halamanSiswa/quiz_kelas_siswa_screen.dart';
 import '../halamanSiswa/kelas_siswa_screen.dart';
 import '../halamanSiswa/kalender_siswa_screen.dart';
+import '../halamanSiswa/absensi_siswa_screen.dart';
+import '../halamanSiswa/pengumuman_screen.dart';
 import '../profile/profile_screen.dart';
 import '../settings/settings_screen.dart';
 import '../notifications/notifications_screen.dart';
@@ -231,6 +232,36 @@ class _SiswaAppScaffoldState extends ConsumerState<SiswaAppScaffold> {
                         context,
                         MaterialPageRoute(
                           builder: (context) => const KalenderSiswaScreen(),
+                        ),
+                      );
+                    }
+                  },
+                ),
+                _buildSidebarItem(
+                  icon: Icons.event_available,
+                  title: 'Absensi',
+                  isActive: widget.currentRoute == '/absensi-siswa',
+                  onTap: () {
+                    if (widget.currentRoute != '/absensi-siswa') {
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const AbsensiSiswaScreen(),
+                        ),
+                      );
+                    }
+                  },
+                ),
+                _buildSidebarItem(
+                  icon: Icons.campaign,
+                  title: 'Pengumuman',
+                  isActive: widget.currentRoute == '/pengumuman-siswa',
+                  onTap: () {
+                    if (widget.currentRoute != '/pengumuman-siswa') {
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const PengumumanScreen(),
                         ),
                       );
                     }
@@ -509,70 +540,62 @@ class _SiswaAppScaffoldState extends ConsumerState<SiswaAppScaffold> {
   Widget _buildSidebarProfileSection(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return BlocBuilder<SiswaProfileBloc, SiswaProfileState>(
-      builder: (context, state) {
-        String userName = 'Siswa';
-        String userEmail = 'email@example.com';
+    // Gunakan userProvider langsung tanpa BlocBuilder
+    final userName = userProvider.namaLengkap ?? 'Siswa';
+    final userEmail = userProvider.email ?? 'email@example.com';
 
-        if (state is SiswaProfileLoaded) {
-          userName = state.siswaData['nama_lengkap'] ?? 'Siswa';
-          userEmail = state.siswaData['email'] ?? 'email@example.com';
-        }
-
-        return Container(
-          margin: const EdgeInsets.all(12),
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: isDark ? Colors.grey[850] : Colors.grey[100],
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: isDark ? Colors.grey[800]! : Colors.grey[300]!,
+    return Container(
+      margin: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: isDark ? Colors.grey[850] : Colors.grey[100],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isDark ? Colors.grey[800]! : Colors.grey[300]!,
+        ),
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            backgroundColor: AppTheme.primaryPurple,
+            radius: 20,
+            child: Text(
+              userName[0].toUpperCase(),
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
-          child: Row(
-            children: [
-              CircleAvatar(
-                backgroundColor: AppTheme.primaryPurple,
-                radius: 20,
-                child: Text(
-                  userName[0].toUpperCase(),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  userName,
                   style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      userName,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    Text(
-                      userEmail,
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: isDark ? Colors.grey[400] : Colors.grey[600],
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
+                Text(
+                  userEmail,
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: isDark ? Colors.grey[400] : Colors.grey[600],
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        );
-      },
+        ],
+      ),
     );
   }
 
@@ -737,6 +760,38 @@ class _SiswaAppScaffoldState extends ConsumerState<SiswaAppScaffold> {
                         context,
                         MaterialPageRoute(
                           builder: (context) => const KalenderSiswaScreen(),
+                        ),
+                      );
+                    }
+                  },
+                ),
+                _buildDrawerItem(
+                  icon: Icons.event_available,
+                  title: 'Absensi',
+                  isActive: widget.currentRoute == '/absensi-siswa',
+                  onTap: () {
+                    Navigator.pop(context);
+                    if (widget.currentRoute != '/absensi-siswa') {
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const AbsensiSiswaScreen(),
+                        ),
+                      );
+                    }
+                  },
+                ),
+                _buildDrawerItem(
+                  icon: Icons.campaign,
+                  title: 'Pengumuman',
+                  isActive: widget.currentRoute == '/pengumuman-siswa',
+                  onTap: () {
+                    Navigator.pop(context);
+                    if (widget.currentRoute != '/pengumuman-siswa') {
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const PengumumanScreen(),
                         ),
                       );
                     }

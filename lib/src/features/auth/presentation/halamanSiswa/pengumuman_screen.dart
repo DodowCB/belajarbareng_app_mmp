@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../../core/config/theme.dart';
-import '../../../../core/providers/connectivity_provider.dart';
+import '../widgets/siswa_app_scaffold.dart';
 
 class PengumumanScreen extends ConsumerWidget {
   const PengumumanScreen({super.key});
@@ -10,46 +10,11 @@ class PengumumanScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final isOnline = ref.watch(isOnlineProvider);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Pengumuman'),
-        elevation: 0,
-        actions: [
-          Container(
-            margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: isOnline ? Colors.green[50] : Colors.red[50],
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: isOnline ? Colors.green : Colors.red,
-                width: 1,
-              ),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  isOnline ? Icons.wifi : Icons.wifi_off,
-                  color: isOnline ? Colors.green : Colors.red,
-                  size: 16,
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  isOnline ? 'Online' : 'Offline',
-                  style: TextStyle(
-                    color: isOnline ? Colors.green[700] : Colors.red[700],
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
+    return SiswaAppScaffold(
+      title: 'Pengumuman',
+      icon: Icons.campaign,
+      currentRoute: '/pengumuman-siswa',
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
             .collection('pengumuman')

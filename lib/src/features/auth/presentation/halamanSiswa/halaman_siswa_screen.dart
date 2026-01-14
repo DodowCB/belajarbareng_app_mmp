@@ -51,116 +51,123 @@ class _HalamanSiswaScreenState extends ConsumerState<HalamanSiswaScreen> {
         ),
         BlocProvider<SiswaStatsBloc>(create: (context) => SiswaStatsBloc()),
       ],
-      child: Scaffold(
-        body: BlocListener<SiswaProfileBloc, SiswaProfileState>(
-          listener: (context, profileState) {
-            if (profileState is SiswaProfileLoaded && !_statsLoaded) {
-              context.read<SiswaStatsBloc>().add(
-                LoadSiswaStats(profileState.siswaId),
-              );
-              _statsLoaded = true;
-            }
-          },
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final isDesktop = constraints.maxWidth >= 1024;
-              final isTablet = constraints.maxWidth >= 768;
+      child: Builder(
+        builder: (context) {
+          return BlocListener<SiswaProfileBloc, SiswaProfileState>(
+            listener: (context, profileState) {
+              if (profileState is SiswaProfileLoaded && !_statsLoaded) {
+                context.read<SiswaStatsBloc>().add(
+                  LoadSiswaStats(profileState.siswaId),
+                );
+                _statsLoaded = true;
+              }
+            },
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final isDesktop = constraints.maxWidth >= 1024;
+                final isTablet = constraints.maxWidth >= 768;
 
-              if (!isDesktop) {
-                return Scaffold(
-                  appBar: AppBar(
-                    leading: Builder(
-                      builder: (context) => IconButton(
-                        icon: const Icon(Icons.menu),
-                        onPressed: () => Scaffold.of(context).openDrawer(),
-                        tooltip: 'Menu',
+                if (!isDesktop) {
+                  return Scaffold(
+                    appBar: AppBar(
+                      leading: Builder(
+                        builder: (context) => IconButton(
+                          icon: const Icon(Icons.menu),
+                          onPressed: () => Scaffold.of(context).openDrawer(),
+                          tooltip: 'Menu',
+                        ),
                       ),
-                    ),
-                    title: const Text('Dashboard Siswa'),
-                    actions: [
-                      // Online/Offline Status Indicator
-                      Consumer(
-                        builder: (context, ref, _) {
-                          final isOnline = ref.watch(isOnlineProvider);
-                          return Container(
-                            margin: const EdgeInsets.only(
-                              right: 8,
-                              top: 12,
-                              bottom: 12,
-                            ),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: isOnline
-                                  ? Colors.green.withOpacity(0.1)
-                                  : Colors.red.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: isOnline ? Colors.green : Colors.red,
-                                width: 1,
+                      title: const Text('Dashboard Siswa'),
+                      actions: [
+                        // Online/Offline Status Indicator
+                        Consumer(
+                          builder: (context, ref, _) {
+                            final isOnline = ref.watch(isOnlineProvider);
+                            return Container(
+                              margin: const EdgeInsets.only(
+                                right: 8,
+                                top: 12,
+                                bottom: 12,
                               ),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  isOnline ? Icons.wifi : Icons.wifi_off,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: isOnline
+                                    ? Colors.green.withOpacity(0.1)
+                                    : Colors.red.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
                                   color: isOnline ? Colors.green : Colors.red,
-                                  size: 16,
+                                  width: 1,
                                 ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  isOnline ? 'Online' : 'Offline',
-                                  style: TextStyle(
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    isOnline ? Icons.wifi : Icons.wifi_off,
                                     color: isOnline ? Colors.green : Colors.red,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w500,
+                                    size: 16,
                                   ),
-                                ),
-                              ],
-                            ),
-                          );
-                        },
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.notifications_outlined),
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const NotificationsScreen(),
-                            ),
-                          );
-                        },
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    isOnline ? 'Online' : 'Offline',
+                                    style: TextStyle(
+                                      color: isOnline
+                                          ? Colors.green
+                                          : Colors.red,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.notifications_outlined),
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    const NotificationsScreen(),
+                              ),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                    drawer: _buildDrawer(context),
+                    body: _buildMainContent(
+                      context,
+                      isDesktop: false,
+                      isTablet: isTablet,
+                    ),
+                  );
+                }
+
+                return Scaffold(
+                  body: Row(
+                    children: [
+                      _buildSidebar(context),
+                      Expanded(
+                        child: _buildMainContent(
+                          context,
+                          isDesktop: true,
+                          isTablet: isTablet,
+                        ),
                       ),
                     ],
                   ),
-                  drawer: _buildDrawer(context),
-                  body: _buildMainContent(
-                    context,
-                    isDesktop: false,
-                    isTablet: isTablet,
-                  ),
                 );
-              }
-
-              return Row(
-                children: [
-                  _buildSidebar(context),
-                  Expanded(
-                    child: _buildMainContent(
-                      context,
-                      isDesktop: true,
-                      isTablet: isTablet,
-                    ),
-                  ),
-                ],
-              );
-            },
-          ),
-        ),
+              },
+            ),
+          );
+        },
       ),
     );
   }
@@ -228,12 +235,12 @@ class _HalamanSiswaScreenState extends ConsumerState<HalamanSiswaScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Student Portal',
+                                'BelajarBareng',
                                 style: Theme.of(context).textTheme.titleMedium
                                     ?.copyWith(fontWeight: FontWeight.bold),
                               ),
                               Text(
-                                'Sekolah Menengah',
+                                'Platform Siswa',
                                 style: Theme.of(context).textTheme.bodySmall
                                     ?.copyWith(
                                       color: isDark
@@ -273,22 +280,10 @@ class _HalamanSiswaScreenState extends ConsumerState<HalamanSiswaScreen> {
                   onTap: () {},
                 ),
                 _buildSidebarItem(
-                  icon: Icons.calendar_today,
-                  title: 'Jadwal Kelas',
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const KalenderSiswaScreen(),
-                      ),
-                    );
-                  },
-                ),
-                _buildSidebarItem(
                   icon: Icons.assignment,
-                  title: 'Tugas Saya',
+                  title: 'Tugas',
                   onTap: () {
-                    Navigator.push(
+                    Navigator.pushReplacement(
                       context,
                       MaterialPageRoute(
                         builder: (context) => const TugasSiswaScreen(),
@@ -297,22 +292,10 @@ class _HalamanSiswaScreenState extends ConsumerState<HalamanSiswaScreen> {
                   },
                 ),
                 _buildSidebarItem(
-                  icon: Icons.book,
-                  title: 'Materi Kelas',
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const KelasSiswaScreen(),
-                      ),
-                    );
-                  },
-                ),
-                _buildSidebarItem(
                   icon: Icons.quiz,
                   title: 'Quiz',
                   onTap: () {
-                    Navigator.push(
+                    Navigator.pushReplacement(
                       context,
                       MaterialPageRoute(
                         builder: (context) => const QuizKelasSiswaScreen(),
@@ -321,10 +304,34 @@ class _HalamanSiswaScreenState extends ConsumerState<HalamanSiswaScreen> {
                   },
                 ),
                 _buildSidebarItem(
+                  icon: Icons.class_,
+                  title: 'Kelas',
+                  onTap: () {
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const KelasSiswaScreen(),
+                      ),
+                    );
+                  },
+                ),
+                _buildSidebarItem(
+                  icon: Icons.calendar_today,
+                  title: 'Kalender',
+                  onTap: () {
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const KalenderSiswaScreen(),
+                      ),
+                    );
+                  },
+                ),
+                _buildSidebarItem(
                   icon: Icons.event_available,
                   title: 'Absensi',
                   onTap: () {
-                    Navigator.push(
+                    Navigator.pushReplacement(
                       context,
                       MaterialPageRoute(
                         builder: (context) => const AbsensiSiswaScreen(),
@@ -336,7 +343,7 @@ class _HalamanSiswaScreenState extends ConsumerState<HalamanSiswaScreen> {
                   icon: Icons.campaign,
                   title: 'Pengumuman',
                   onTap: () {
-                    Navigator.push(
+                    Navigator.pushReplacement(
                       context,
                       MaterialPageRoute(
                         builder: (context) => const PengumumanScreen(),
@@ -789,70 +796,62 @@ class _HalamanSiswaScreenState extends ConsumerState<HalamanSiswaScreen> {
   Widget _buildSidebarProfileSection(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return BlocBuilder<SiswaProfileBloc, SiswaProfileState>(
-      builder: (context, state) {
-        String userName = 'Siswa';
-        String userEmail = 'email@example.com';
+    // Gunakan userProvider langsung tanpa BlocBuilder untuk menghindari error
+    final userName = userProvider.namaLengkap ?? 'Siswa';
+    final userEmail = userProvider.email ?? 'email@example.com';
 
-        if (state is SiswaProfileLoaded) {
-          userName = state.siswaData['nama_lengkap'] ?? 'Siswa';
-          userEmail = state.siswaData['email'] ?? 'email@example.com';
-        }
-
-        return Container(
-          margin: const EdgeInsets.all(12),
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: isDark ? Colors.grey[850] : Colors.grey[100],
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: isDark ? Colors.grey[800]! : Colors.grey[300]!,
+    return Container(
+      margin: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: isDark ? Colors.grey[850] : Colors.grey[100],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isDark ? Colors.grey[800]! : Colors.grey[300]!,
+        ),
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            backgroundColor: AppTheme.primaryPurple,
+            radius: 20,
+            child: Text(
+              userName[0].toUpperCase(),
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
-          child: Row(
-            children: [
-              CircleAvatar(
-                backgroundColor: AppTheme.primaryPurple,
-                radius: 20,
-                child: Text(
-                  userName[0].toUpperCase(),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  userName,
                   style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      userName,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    Text(
-                      userEmail,
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: isDark ? Colors.grey[400] : Colors.grey[600],
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
+                Text(
+                  userEmail,
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: isDark ? Colors.grey[400] : Colors.grey[600],
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        );
-      },
+        ],
+      ),
     );
   }
 
@@ -882,11 +881,11 @@ class _HalamanSiswaScreenState extends ConsumerState<HalamanSiswaScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildWelcomeSection(isDesktop: isDesktop),
+                  _buildWelcomeSection(context, isDesktop: isDesktop),
                   SizedBox(height: isDesktop ? 32 : 24),
                   _buildStatsCards(isDesktop: isDesktop, isTablet: isTablet),
                   SizedBox(height: isDesktop ? 32 : 24),
-                  _buildJadwalHariIni(isDesktop: isDesktop),
+                  _buildJadwalHariIni(context, isDesktop: isDesktop),
                   SizedBox(height: isDesktop ? 32 : 24),
                   SiswaWidgets.buildTugasTertunda(
                     context: context,
@@ -898,7 +897,7 @@ class _HalamanSiswaScreenState extends ConsumerState<HalamanSiswaScreen> {
                     isDesktop: isDesktop,
                   ),
                   SizedBox(height: isDesktop ? 32 : 24),
-                  _buildPengumumanTerbaru(isDesktop: isDesktop),
+                  _buildPengumumanTerbaru(context, isDesktop: isDesktop),
                   const SizedBox(height: 24),
                 ],
               ),
@@ -973,7 +972,7 @@ class _HalamanSiswaScreenState extends ConsumerState<HalamanSiswaScreen> {
     );
   }
 
-  Widget _buildWelcomeSection({required bool isDesktop}) {
+  Widget _buildWelcomeSection(BuildContext context, {required bool isDesktop}) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return BlocBuilder<SiswaProfileBloc, SiswaProfileState>(
@@ -1722,7 +1721,7 @@ class _HalamanSiswaScreenState extends ConsumerState<HalamanSiswaScreen> {
     );
   }
 
-  Widget _buildJadwalHariIni({required bool isDesktop}) {
+  Widget _buildJadwalHariIni(BuildContext context, {required bool isDesktop}) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final siswaId = userProvider.userId ?? '';
 
@@ -2013,7 +2012,10 @@ class _HalamanSiswaScreenState extends ConsumerState<HalamanSiswaScreen> {
     );
   }
 
-  Widget _buildPengumumanTerbaru({required bool isDesktop}) {
+  Widget _buildPengumumanTerbaru(
+    BuildContext context, {
+    required bool isDesktop,
+  }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Column(

@@ -46,8 +46,8 @@ class KalenderSiswaScreen extends StatelessWidget {
       icon: Icons.calendar_today,
       currentRoute: '/kalender-siswa',
       body: siswaId == null
-        ? const Center(child: Text('User ID tidak ditemukan'))
-        : StreamBuilder<QuerySnapshot>(
+          ? const Center(child: Text('User ID tidak ditemukan'))
+          : StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
                   .collection('siswa_kelas')
                   .where('siswa_id', isEqualTo: siswaId)
