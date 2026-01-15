@@ -220,43 +220,62 @@ class MateriGuruDialogs {
             checkSignIn(setState);
           }
 
-          return AlertDialog(
+          return Dialog(
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
             ),
-            title: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    gradient: AppTheme.sunsetGradient,
-                    borderRadius: BorderRadius.circular(8),
+            child: Container(
+              constraints: BoxConstraints(
+                maxWidth: 600,
+                maxHeight: MediaQuery.of(context).size.height * 0.85,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Title
+                  Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            gradient: AppTheme.sunsetGradient,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Icon(
+                            materiData == null ? Icons.upload_file : Icons.edit,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Text(
+                          title,
+                          style: Theme.of(context).textTheme.titleLarge,
+                        ),
+                      ],
+                    ),
                   ),
-                  child: Icon(
-                    materiData == null ? Icons.upload_file : Icons.edit,
-                    color: Colors.white,
-                    size: 20,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Text(title),
-              ],
-            ),
-            content: SingleChildScrollView(
-              child: isCheckingSignIn
-                  ? const Center(
-                      child: Padding(
-                        padding: EdgeInsets.all(40.0),
-                        child: CircularProgressIndicator(),
-                      ),
-                    )
-                  : !isSignedIn
-                  ? _buildSignInRequired(ctx, driveService, setState, (
-                      newValue,
-                    ) {
-                      isSignedIn = newValue;
-                    })
-                  : Form(
+                  const Divider(height: 1),
+                  // Content
+                  Flexible(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.all(20),
+                      child: isCheckingSignIn
+                          ? const Center(
+                              child: Padding(
+                                padding: EdgeInsets.all(40.0),
+                                child: CircularProgressIndicator(),
+                              ),
+                            )
+                          : !isSignedIn
+                          ? _buildSignInRequired(ctx, driveService, setState, (
+                              newValue,
+                            ) {
+                              isSignedIn = newValue;
+                            })
+                          : Form(
                       key: formKey,
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
@@ -522,57 +541,70 @@ class MateriGuruDialogs {
                         ],
                       ),
                     ),
-            ),
-            actions: !isSignedIn
-                ? []
-                : [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: const Text('Batal'),
                     ),
-                    ElevatedButton(
-                      onPressed: () {
-                        if (formKey.currentState!.validate()) {
-                          // Validasi file jika bukan YouTube mode
-                          if (!isYoutubeMode && selectedFileBytes == null) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text(
-                                  'Silakan pilih file terlebih dahulu',
-                                ),
-                                backgroundColor: Colors.red,
-                              ),
-                            );
-                            return;
-                          }
+                  ),
+                  // Actions
+                  if (isSignedIn) ...[
+                    const Divider(height: 1),
+                    Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context),
+                            child: const Text('Batal'),
+                          ),
+                          const SizedBox(width: 8),
+                          ElevatedButton(
+                            onPressed: () {
+                              if (formKey.currentState!.validate()) {
+                                // Validasi file jika bukan YouTube mode
+                                if (!isYoutubeMode && selectedFileBytes == null) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                        'Silakan pilih file terlebih dahulu',
+                                      ),
+                                      backgroundColor: Colors.red,
+                                    ),
+                                  );
+                                  return;
+                                }
 
-                          final data = {
-                            'id': materiData?['id'],
-                            'judul': judulController.text,
-                            'deskripsi': deskripsiController.text,
-                            'id_kelas': selectedKelasId,
-                            'id_mapel': selectedMapelId,
-                            'isYoutubeMode': isYoutubeMode,
-                            'youtubeUrl': isYoutubeMode
-                                ? youtubeUrlController.text
-                                : null,
-                            'fileName': selectedFileName,
-                            'fileBytes': selectedFileBytes,
-                          };
-                          onSave(data);
-                          Navigator.pop(context);
-                        }
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.primaryPurple,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
+                                final data = {
+                                  'id': materiData?['id'],
+                                  'judul': judulController.text,
+                                  'deskripsi': deskripsiController.text,
+                                  'id_kelas': selectedKelasId,
+                                  'id_mapel': selectedMapelId,
+                                  'isYoutubeMode': isYoutubeMode,
+                                  'youtubeUrl': isYoutubeMode
+                                      ? youtubeUrlController.text
+                                      : null,
+                                  'fileName': selectedFileName,
+                                  'fileBytes': selectedFileBytes,
+                                };
+                                onSave(data);
+                                Navigator.pop(context);
+                              }
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppTheme.primaryPurple,
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                            child: Text(materiData == null ? 'Upload' : 'Simpan'),
+                          ),
+                        ],
                       ),
-                      child: Text(materiData == null ? 'Upload' : 'Simpan'),
                     ),
                   ],
+                ],
+              ),
+            ),
           );
         },
       ),
