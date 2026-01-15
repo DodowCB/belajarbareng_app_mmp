@@ -106,8 +106,6 @@ class SiswaStatsBloc extends Bloc<SiswaStatsEvent, SiswaStatsState> {
       }
 
       // Get tugas yang sudah dikumpulkan (count pengumpulan by siswa_id)
-      print('DEBUG: Querying pengumpulan with siswa_id: ${event.siswaId}');
-
       final pengumpulanSnapshot = await firestore
           .collection('pengumpulan')
           .where('siswa_id', isEqualTo: event.siswaId)
@@ -115,46 +113,32 @@ class SiswaStatsBloc extends Bloc<SiswaStatsEvent, SiswaStatsState> {
 
       final tugasSelesai = pengumpulanSnapshot.docs.length;
 
-      print('DEBUG TUGAS SELESAI:');
-      print('- siswa_id: ${event.siswaId}');
-      print('- pengumpulan docs: ${pengumpulanSnapshot.docs.length}');
-      print('- tugasSelesai: $tugasSelesai');
-      if (pengumpulanSnapshot.docs.isNotEmpty) {
-        print('- Sample data: ${pengumpulanSnapshot.docs.first.data()}');
-      } else {
-        print('- No documents found in pengumpulan collection');
-        print(
-          '- Query: collection(pengumpulan).where(siswa_id == ${event.siswaId})',
-        );
-
-        // Get total quiz from all kelas
-        int totalQuiz = 0;
-        if (kelasIds.isNotEmpty) {
-          final quizSnapshot = await firestore
-              .collection('quiz')
-              .where('id_kelas', whereIn: kelasIds)
-              .get();
-          totalQuiz = quizSnapshot.docs.length;
-        }
-
-        // Get quiz selesai (dummy for now - needs quiz_answers collection)
-        final quizSelesai = 0; // TODO: implement when quiz feature is ready
-
-        // Calculate rata-rata nilai (dummy for now)
-        final rataRataNilai =
-            0.0; // TODO: implement when grading system is ready
-
-        emit(
-          SiswaStatsLoaded(
-            totalTugas: totalTugas,
-            tugasSelesai: tugasSelesai,
-            totalQuiz: totalQuiz,
-            quizSelesai: quizSelesai,
-            totalKelas: totalKelas,
-            rataRataNilai: rataRataNilai,
-          ),
-        );
+      // Get total quiz from all kelas
+      int totalQuiz = 0;
+      if (kelasIds.isNotEmpty) {
+        final quizSnapshot = await firestore
+            .collection('quiz')
+            .where('id_kelas', whereIn: kelasIds)
+            .get();
+        totalQuiz = quizSnapshot.docs.length;
       }
+
+      // Get quiz selesai (dummy for now - needs quiz_answers collection)
+      final quizSelesai = 0; // TODO: implement when quiz feature is ready
+
+      // Calculate rata-rata nilai (dummy for now)
+      final rataRataNilai = 0.0; // TODO: implement when grading system is ready
+
+      emit(
+        SiswaStatsLoaded(
+          totalTugas: totalTugas,
+          tugasSelesai: tugasSelesai,
+          totalQuiz: totalQuiz,
+          quizSelesai: quizSelesai,
+          totalKelas: totalKelas,
+          rataRataNilai: rataRataNilai,
+        ),
+      );
     } catch (e) {
       emit(SiswaStatsError('Gagal memuat statistik: ${e.toString()}'));
     }

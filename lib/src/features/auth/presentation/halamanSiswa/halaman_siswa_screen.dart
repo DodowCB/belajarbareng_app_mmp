@@ -1781,14 +1781,16 @@ class _HalamanSiswaScreenState extends ConsumerState<HalamanSiswaScreen> {
               );
             }
 
-            // Ambil kelas_id dari siswa_kelas
-            final kelasId = siswaKelasSnapshot.data!.docs.first.get('kelas_id');
+            // Ambil SEMUA kelas_id dari siswa_kelas
+            final kelasIdList = siswaKelasSnapshot.data!.docs
+                .map((doc) => doc.get('kelas_id') as String)
+                .toList();
 
-            // Query kelas_ngajar berdasarkan id_kelas
+            // Query kelas_ngajar untuk SEMUA kelas yang diikuti siswa
             return StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
                   .collection('kelas_ngajar')
-                  .where('id_kelas', isEqualTo: kelasId)
+                  .where('id_kelas', whereIn: kelasIdList)
                   .snapshots(),
               builder: (context, kelasNgajarSnapshot) {
                 if (kelasNgajarSnapshot.connectionState ==
@@ -1820,27 +1822,44 @@ class _HalamanSiswaScreenState extends ConsumerState<HalamanSiswaScreen> {
 
                 final kelasNgajarList = kelasNgajarSnapshot.data!.docs;
 
-                // Fetch kelas details untuk nomor_kelas
-                return FutureBuilder<DocumentSnapshot>(
-                  future: FirebaseFirestore.instance
-                      .collection('kelas')
-                      .doc(kelasId)
-                      .get(),
-                  builder: (context, kelasSnapshot) {
-                    String nomorKelas = '';
-                    if (kelasSnapshot.hasData && kelasSnapshot.data!.exists) {
-                      final kelasData =
-                          kelasSnapshot.data!.data() as Map<String, dynamic>?;
-                      nomorKelas = kelasData?['nomor_kelas'] ?? '';
-                    }
+                return ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: kelasNgajarList.length,
+                  itemBuilder: (context, index) {
+                    final kelasNgajarDoc = kelasNgajarList[index];
+                    final kelasNgajarData =
+                        kelasNgajarDoc.data() as Map<String, dynamic>;
+                    final mapelId = kelasNgajarData['id_mapel'] ?? '';
+                    final guruId = kelasNgajarData['id_guru'] ?? '';
+                    final jam = kelasNgajarData['jam'] ?? '';
+                    final kelasIdJadwal = kelasNgajarData['id_kelas'] ?? '';
 
-                    return Column(
-                      children: kelasNgajarList.map((kelasNgajarDoc) {
-                        final kelasNgajarData =
-                            kelasNgajarDoc.data() as Map<String, dynamic>;
-                        final mapelId = kelasNgajarData['id_mapel'] ?? '';
-                        final guruId = kelasNgajarData['id_guru'] ?? '';
-                        final jam = kelasNgajarData['jam'] ?? '';
+                    // Generate random color for each subject
+                    final colors = [
+                      AppTheme.primaryPurple,
+                      AppTheme.secondaryTeal,
+                      AppTheme.accentGreen,
+                      AppTheme.accentOrange,
+                      const Color(0xFF4CAF50),
+                    ];
+                    final colorIndex = index % colors.length;
+
+                    // Fetch kelas details untuk nomor_kelas
+                    return FutureBuilder<DocumentSnapshot>(
+                      future: FirebaseFirestore.instance
+                          .collection('kelas')
+                          .doc(kelasIdJadwal)
+                          .get(),
+                      builder: (context, kelasSnapshot) {
+                        String nomorKelas = '';
+                        if (kelasSnapshot.hasData &&
+                            kelasSnapshot.data!.exists) {
+                          final kelasData =
+                              kelasSnapshot.data!.data()
+                                  as Map<String, dynamic>?;
+                          nomorKelas = kelasData?['nomor_kelas'] ?? '';
+                        }
 
                         // Fetch mapel details
                         return FutureBuilder<DocumentSnapshot>(
@@ -1880,18 +1899,6 @@ class _HalamanSiswaScreenState extends ConsumerState<HalamanSiswaScreen> {
                                       guruData?['nama_lengkap'] ?? 'Guru';
                                 }
 
-                                // Generate random color for each subject
-                                final colors = [
-                                  AppTheme.primaryPurple,
-                                  AppTheme.secondaryTeal,
-                                  AppTheme.accentGreen,
-                                  AppTheme.accentOrange,
-                                  const Color(0xFF4CAF50),
-                                ];
-                                final colorIndex =
-                                    kelasNgajarList.indexOf(kelasNgajarDoc) %
-                                    colors.length;
-
                                 return _buildJadwalCard(
                                   jam: jam,
                                   mataPelajaran: namaMapel,
@@ -1904,7 +1911,7 @@ class _HalamanSiswaScreenState extends ConsumerState<HalamanSiswaScreen> {
                             );
                           },
                         );
-                      }).toList(),
+                      },
                     );
                   },
                 );
