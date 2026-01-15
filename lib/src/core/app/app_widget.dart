@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../providers/theme_provider.dart';
 import '../providers/user_provider.dart';
 import '../config/theme.dart';
+import '../config/app_router.dart';
 import 'splash_screen.dart';
 import '../../features/auth/presentation/dashboard/dashboard_screen.dart';
 import '../../features/auth/presentation/profile/profile_screen.dart';
@@ -48,15 +49,8 @@ class AppWidget extends ConsumerWidget {
         themeMode: themeMode,
         home: const SplashScreen(),
         debugShowCheckedModeBanner: false,
-        routes: {
-          '/login': (context) => const LoginScreen(),
-          '/dashboard': (context) => const HalamanSiswaScreen(),
-          '/profile': (context) => const ProfileScreen(),
-          '/create-material': (context) => const CreateMaterialScreen(),
-          '/admin': (context) => const AdminScreen(),
-          '/halaman-guru': (context) => const HalamanGuruScreen(),
-          '/halaman-siswa': (context) => const HalamanSiswaScreen(),
-        },
+        onGenerateRoute: AppRouter.onGenerateRoute,
+        onUnknownRoute: AppRouter.onUnknownRoute,
       ),
     );
   }

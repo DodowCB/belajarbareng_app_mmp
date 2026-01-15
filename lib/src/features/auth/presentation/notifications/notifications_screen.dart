@@ -5,7 +5,6 @@ import '../../../../core/config/theme.dart';
 import '../../../../core/providers/user_provider.dart';
 import '../../../notifications/presentation/bloc/notification_bloc.dart';
 import '../../../notifications/presentation/bloc/notification_event.dart';
-import '../../../notifications/presentation/bloc/notification_state.dart';
 import '../../../notifications/data/models/notification_model.dart';
 import '../../../notifications/data/repositories/notification_repository.dart';
 import 'notification_preferences_screen.dart';
@@ -134,6 +133,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
       title: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
           Container(
             padding: const EdgeInsets.all(8),
@@ -144,7 +144,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             child: const Icon(Icons.notifications, color: Colors.white, size: 20),
           ),
           const SizedBox(width: 12),
-          const Expanded(
+          const Flexible(
             child: Text(
               'Notifications',
               style: TextStyle(fontWeight: FontWeight.bold),
@@ -183,13 +183,28 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             final unreadCount = notifications.where((n) => !n.isRead).length;
 
             if (unreadCount > 0) {
-              return TextButton.icon(
-                onPressed: () => _markAllAsRead(context),
-                icon: const Icon(Icons.done_all, size: 18),
-                label: const Text('Mark all read'),
-                style: TextButton.styleFrom(
-                  foregroundColor: AppTheme.primaryPurple,
-                ),
+              return LayoutBuilder(
+                builder: (context, constraints) {
+                  // Pada layar kecil, tampilkan hanya icon
+                  if (MediaQuery.of(context).size.width < 400) {
+                    return IconButton(
+                      onPressed: () => _markAllAsRead(context),
+                      icon: const Icon(Icons.done_all, size: 20),
+                      tooltip: 'Mark all read',
+                      color: AppTheme.primaryPurple,
+                    );
+                  }
+                  // Pada layar besar, tampilkan text button
+                  return TextButton.icon(
+                    onPressed: () => _markAllAsRead(context),
+                    icon: const Icon(Icons.done_all, size: 18),
+                    label: const Text('Mark all'),
+                    style: TextButton.styleFrom(
+                      foregroundColor: AppTheme.primaryPurple,
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                    ),
+                  );
+                },
               );
             }
 
@@ -537,18 +552,69 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   }
 
   void _handleNavigation(String actionUrl) {
-    // Simple navigation - you can expand this based on your routing
+    // Role-based navigation with error handling
     try {
-      if (actionUrl.startsWith('/')) {
-        Navigator.of(context).pushNamed(actionUrl);
-      } else {
-        print('Invalid action URL: $actionUrl');
+      if (!actionUrl.startsWith('/')) {
+        print('⚠️ Invalid action URL: $actionUrl (must start with /)');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Invalid navigation URL: $actionUrl')),
+        );
+        return;
       }
+
+      // Validate route based on user role
+      final userRole = _userRole ?? userProvider.userType;
+      final isValidRoute = _isRouteValidForRole(actionUrl, userRole);
+
+      if (!isValidRoute) {
+        print('⚠️ Route $actionUrl not valid for role: $userRole');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('You do not have access to this page'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        return;
+      }
+
+      print('🔀 Navigating to: $actionUrl (role: $userRole)');
+      Navigator.of(context).pushNamed(actionUrl);
     } catch (e) {
-      print('Error navigating to $actionUrl: $e');
+      print('❌ Error navigating to $actionUrl: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Cannot navigate to: $actionUrl')),
+        SnackBar(
+          content: Text('Navigation error: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
       );
+    }
+  }
+
+  bool _isRouteValidForRole(String route, String? userRole) {
+    if (userRole == null) return false;
+
+    // Parse route
+    final uri = Uri.parse(route);
+    final segments = uri.pathSegments;
+    
+    if (segments.isEmpty) return true;
+
+    final firstSegment = segments[0];
+
+    // Check role-based access
+    switch (firstSegment) {
+      case 'admin':
+        return userRole == 'admin';
+      case 'guru':
+        return userRole == 'guru';
+      case 'siswa':
+        return userRole == 'siswa';
+      case 'notifications':
+      case 'profile':
+      case 'settings':
+        return true; // Accessible by all roles
+      default:
+        return true; // Allow other routes
     }
   }
 

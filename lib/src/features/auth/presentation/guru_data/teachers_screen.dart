@@ -8,7 +8,9 @@ import 'guru_data_event.dart';
 import 'guru_data_state.dart';
 
 class TeachersScreen extends StatefulWidget {
-  const TeachersScreen({super.key});
+  final String? highlightId;
+  
+  const TeachersScreen({super.key, this.highlightId});
 
   @override
   State<TeachersScreen> createState() => _TeachersScreenState();
@@ -18,6 +20,8 @@ class _TeachersScreenState extends State<TeachersScreen> {
   late GuruDataBloc _guruDataBloc;
   String _searchQuery = '';
   final ConnectivityService _connectivityService = ConnectivityService();
+  
+  String? get _highlightId => widget.highlightId;
 
   @override
   void initState() {
@@ -28,6 +32,24 @@ class _TeachersScreenState extends State<TeachersScreen> {
     _connectivityService.addListener(() {
       if (mounted) setState(() {});
     });
+
+    // Show notification if highlighting a specific teacher
+    if (_highlightId != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Showing teacher registration: $_highlightId'),
+            backgroundColor: AppTheme.primaryPurple,
+            duration: const Duration(seconds: 3),
+            action: SnackBarAction(
+              label: 'OK',
+              textColor: Colors.white,
+              onPressed: () {},
+            ),
+          ),
+        );
+      });
+    }
   }
 
   bool get _isOffline => !_connectivityService.isOnline;
@@ -326,23 +348,50 @@ class _TeachersScreenState extends State<TeachersScreen> {
   Widget _buildTeacherCard(Map<String, dynamic> teacher) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isDisabled = teacher['isDisabled'] ?? false;
+    final teacherId = teacher['id']?.toString();
+    final isHighlighted = _highlightId != null && teacherId == _highlightId;
 
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       child: Card(
-        elevation: 2,
+        elevation: isHighlighted ? 8 : 2,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
           side: BorderSide(
-            color: isDark ? Colors.grey[800]! : Colors.grey[200]!,
-            width: 1,
+            color: isHighlighted 
+                ? AppTheme.primaryPurple 
+                : isDark ? Colors.grey[800]! : Colors.grey[200]!,
+            width: isHighlighted ? 3 : 1,
           ),
         ),
+        color: isHighlighted 
+            ? AppTheme.primaryPurple.withOpacity(0.1)
+            : null,
         child: InkWell(
           onTap: () => _showTeacherDetail(teacher),
           borderRadius: BorderRadius.circular(12),
           child: Stack(
             children: [
+              if (isHighlighted)
+                Positioned(
+                  top: 8,
+                  right: 8,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: AppTheme.primaryPurple,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Text(
+                      'NEW',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
               Padding(
                 padding: const EdgeInsets.all(20),
                 child: Column(
