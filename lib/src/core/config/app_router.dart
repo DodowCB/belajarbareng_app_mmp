@@ -120,6 +120,21 @@ class AppRouter {
       return _handleQuizRoutes(pathSegments, settings);
     }
 
+    // Handle tugas routes (accessible by guru and siswa)
+    if (pathSegments.isNotEmpty && pathSegments[0] == 'tugas') {
+      return _handleTugasRoutes(pathSegments, settings);
+    }
+
+    // Handle nilai routes (accessible by guru and siswa)
+    if (pathSegments.isNotEmpty && pathSegments[0] == 'nilai') {
+      return _handleNilaiRoutes(pathSegments, settings);
+    }
+
+    // Handle materi routes (accessible by guru and siswa)
+    if (pathSegments.isNotEmpty && pathSegments[0] == 'materi') {
+      return _handleMateriRoutes(pathSegments, settings);
+    }
+
     // Route not found - return null untuk trigger onUnknownRoute
     return null;
   }
@@ -515,5 +530,96 @@ class AppRouter {
         child: const PengumumanScreen(),
       ),
     );
+  }
+
+  /// Handle Tugas routes (accessible by guru and siswa)
+  static Route<dynamic>? _handleTugasRoutes(
+    List<String> pathSegments,
+    RouteSettings settings,
+  ) {
+    final userRole = userProvider.userType;
+
+    // Check role access
+    if (userRole != 'guru' && userRole != 'siswa') {
+      debugPrint('❌ Access denied to /tugas/ for role: $userRole');
+      return MaterialPageRoute(builder: (_) => _getHomeScreen());
+    }
+
+    // /tugas/detail/:id - View tugas detail
+    if (pathSegments.length >= 3 && pathSegments[1] == 'detail') {
+      final tugasId = pathSegments[2];
+      debugPrint('📚 Navigating to Tugas detail: $tugasId (role: $userRole)');
+      
+      // Navigate to home dashboard where user can see their tugas list
+      // DetailTugasKelasScreen requires kelasId, namaKelas, etc which we don't have from notification
+      debugPrint('   ℹ️ Redirecting to dashboard - user can find tugas in their class list');
+      return MaterialPageRoute(builder: (_) => _getHomeScreen());
+    }
+
+    // /tugas/grading/:id - Guru grading tugas
+    if (pathSegments.length >= 3 && pathSegments[1] == 'grading') {
+      final tugasId = pathSegments[2];
+      debugPrint('✅ Navigating to Tugas grading: $tugasId (role: $userRole)');
+      
+      // Navigate to home dashboard where guru can see submitted tugas
+      debugPrint('   ℹ️ Redirecting to dashboard - guru can find submitted tugas there');
+      return MaterialPageRoute(builder: (_) => _getHomeScreen());
+    }
+
+    // Default: navigate to home
+    return MaterialPageRoute(builder: (_) => _getHomeScreen());
+  }
+
+  /// Handle Nilai routes (accessible by guru and siswa)
+  static Route<dynamic>? _handleNilaiRoutes(
+    List<String> pathSegments,
+    RouteSettings settings,
+  ) {
+    final userRole = userProvider.userType;
+
+    // Check role access
+    if (userRole != 'guru' && userRole != 'siswa') {
+      debugPrint('❌ Access denied to /nilai/ for role: $userRole');
+      return MaterialPageRoute(builder: (_) => _getHomeScreen());
+    }
+
+    // /nilai/detail - View nilai
+    if (pathSegments.length >= 2 && pathSegments[1] == 'detail') {
+      debugPrint('📊 Navigating to Nilai detail (role: $userRole)');
+      
+      // Navigate to home screen (nilai is shown in dashboard)
+      return MaterialPageRoute(builder: (_) => _getHomeScreen());
+    }
+
+    // Default: navigate to home
+    return MaterialPageRoute(builder: (_) => _getHomeScreen());
+  }
+
+  /// Handle Materi routes (accessible by guru and siswa)
+  static Route<dynamic>? _handleMateriRoutes(
+    List<String> pathSegments,
+    RouteSettings settings,
+  ) {
+    final userRole = userProvider.userType;
+
+    // Check role access
+    if (userRole != 'guru' && userRole != 'siswa') {
+      debugPrint('❌ Access denied to /materi/ for role: $userRole');
+      return MaterialPageRoute(builder: (_) => _getHomeScreen());
+    }
+
+    // /materi/detail/:id - View materi detail
+    if (pathSegments.length >= 3 && pathSegments[1] == 'detail') {
+      final materiId = pathSegments[2];
+      debugPrint('📖 Navigating to Materi detail: $materiId (role: $userRole)');
+      
+      // Navigate to home dashboard where user can see their materi list
+      // DetailMateriKelasScreen requires namaMapel, namaGuru, kelasId, etc which we don't have from notification
+      debugPrint('   ℹ️ Redirecting to dashboard - user can find materi in their class list');
+      return MaterialPageRoute(builder: (_) => _getHomeScreen());
+    }
+
+    // Default: navigate to home
+    return MaterialPageRoute(builder: (_) => _getHomeScreen());
   }
 }

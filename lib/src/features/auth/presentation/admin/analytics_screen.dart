@@ -20,10 +20,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: const AdminHeader(
-        title: 'Analytics',
-        icon: Icons.analytics,
-      ),
+      appBar: const AdminHeader(title: 'Analytics', icon: Icons.analytics),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -72,30 +69,30 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
 
         final hadir = absensiDocs
             .where((doc) {
-          final data = doc.data() as Map<String, dynamic>?;
-          return data != null && data['status'] == 'hadir';
-        })
+              final data = doc.data() as Map<String, dynamic>?;
+              return data != null && data['status'] == 'hadir';
+            })
             .length
             .toDouble();
         final sakit = absensiDocs
             .where((doc) {
-          final data = doc.data() as Map<String, dynamic>?;
-          return data != null && data['status'] == 'sakit';
-        })
+              final data = doc.data() as Map<String, dynamic>?;
+              return data != null && data['status'] == 'sakit';
+            })
             .length
             .toDouble();
         final izin = absensiDocs
             .where((doc) {
-          final data = doc.data() as Map<String, dynamic>?;
-          return data != null && data['status'] == 'izin';
-        })
+              final data = doc.data() as Map<String, dynamic>?;
+              return data != null && data['status'] == 'izin';
+            })
             .length
             .toDouble();
         final alpha = absensiDocs
             .where((doc) {
-          final data = doc.data() as Map<String, dynamic>?;
-          return data != null && data['status'] == 'alpha';
-        })
+              final data = doc.data() as Map<String, dynamic>?;
+              return data != null && data['status'] == 'alpa';
+            })
             .length
             .toDouble();
 
@@ -111,9 +108,15 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
               padding: const EdgeInsets.all(20),
               child: Column(
                 children: [
-                  const Text('Statistik Kehadiran', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  const Text(
+                    'Statistik Kehadiran',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
                   const SizedBox(height: 10),
-                  Text('Ada ${absensiDocs.length} dokumen, tapi status kosong.', style: TextStyle(color: Colors.grey[600])),
+                  Text(
+                    'Ada ${absensiDocs.length} dokumen, tapi status kosong.',
+                    style: TextStyle(color: Colors.grey[600]),
+                  ),
                 ],
               ),
             ),
@@ -165,20 +168,41 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                       child: PieChart(
                         PieChartData(
                           pieTouchData: PieTouchData(
-                            touchCallback: (FlTouchEvent event, pieTouchResponse) {},
+                            touchCallback:
+                                (FlTouchEvent event, pieTouchResponse) {},
                           ),
                           borderData: FlBorderData(show: false),
                           sectionsSpace: 3,
                           centerSpaceRadius: 50,
                           sections: [
                             if (hadir > 0)
-                              _buildPieSection(hadir, totalStatus, AppTheme.accentGreen, Icons.check_circle),
+                              _buildPieSection(
+                                hadir,
+                                totalStatus,
+                                AppTheme.accentGreen,
+                                Icons.check_circle,
+                              ),
                             if (sakit > 0)
-                              _buildPieSection(sakit, totalStatus, AppTheme.accentOrange, Icons.medical_services),
+                              _buildPieSection(
+                                sakit,
+                                totalStatus,
+                                AppTheme.accentOrange,
+                                Icons.medical_services,
+                              ),
                             if (izin > 0)
-                              _buildPieSection(izin, totalStatus, AppTheme.primaryPurple, Icons.info_outline),
+                              _buildPieSection(
+                                izin,
+                                totalStatus,
+                                AppTheme.primaryPurple,
+                                Icons.info_outline,
+                              ),
                             if (alpha > 0)
-                              _buildPieSection(alpha, totalStatus, Colors.red.shade400, Icons.cancel),
+                              _buildPieSection(
+                                alpha,
+                                totalStatus,
+                                Colors.red.shade400,
+                                Icons.cancel,
+                              ),
                           ],
                         ),
                       ),
@@ -196,24 +220,44 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                           ),
                         ),
                         const SizedBox(height: 16),
-                        _buildEnhancedLegendItem('Hadir', Colors.green, hadir.toInt(), totalStatus, Icons.check_circle),
+                        _buildEnhancedLegendItem(
+                          'Hadir',
+                          Colors.green,
+                          hadir.toInt(),
+                          totalStatus,
+                          Icons.check_circle,
+                        ),
                         const SizedBox(height: 12),
-                        _buildEnhancedLegendItem('Sakit', Colors.orange, sakit.toInt(), totalStatus, Icons.medical_services),
+                        _buildEnhancedLegendItem(
+                          'Sakit',
+                          Colors.orange,
+                          sakit.toInt(),
+                          totalStatus,
+                          Icons.medical_services,
+                        ),
                         const SizedBox(height: 12),
-                        _buildEnhancedLegendItem('Izin', Colors.purple, izin.toInt(), totalStatus, Icons.info_outline),
+                        _buildEnhancedLegendItem(
+                          'Izin',
+                          Colors.purple,
+                          izin.toInt(),
+                          totalStatus,
+                          Icons.info_outline,
+                        ),
                         const SizedBox(height: 12),
-                        _buildEnhancedLegendItem('Alpha', Colors.red, alpha.toInt(), totalStatus, Icons.cancel),
+                        _buildEnhancedLegendItem(
+                          'Alpha',
+                          Colors.red,
+                          alpha.toInt(),
+                          totalStatus,
+                          Icons.cancel,
+                        ),
                       ],
                     );
 
                     // 3. Return the layout based on constraints
                     if (isNarrow) {
                       return Column(
-                        children: [
-                          pie,
-                          const SizedBox(height: 24),
-                          legend,
-                        ],
+                        children: [pie, const SizedBox(height: 24), legend],
                       );
                     } else {
                       return Row(
@@ -236,7 +280,12 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
   }
 
   // Helper to reduce code duplication in Pie Chart sections
-  PieChartSectionData _buildPieSection(double value, double total, Color color, IconData icon) {
+  PieChartSectionData _buildPieSection(
+    double value,
+    double total,
+    Color color,
+    IconData icon,
+  ) {
     return PieChartSectionData(
       value: value,
       title: '${((value / total) * 100).toStringAsFixed(1)}%',
@@ -255,7 +304,11 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
           color: Colors.white,
           shape: BoxShape.circle,
           boxShadow: [
-            BoxShadow(color: color.withOpacity(0.3), blurRadius: 4, spreadRadius: 2),
+            BoxShadow(
+              color: color.withOpacity(0.3),
+              blurRadius: 4,
+              spreadRadius: 2,
+            ),
           ],
         ),
         child: Icon(icon, color: color, size: 16),

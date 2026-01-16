@@ -604,17 +604,37 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     // Check role-based access
     switch (firstSegment) {
       case 'admin':
+        // Only admins can access /admin/* routes
         return userRole == 'admin';
+      
       case 'guru':
+        // Only guru can access /guru/* routes
         return userRole == 'guru';
+      
       case 'siswa':
+        // Only siswa can access /siswa/* routes
         return userRole == 'siswa';
+      
+      // Common routes accessible by all roles
       case 'notifications':
       case 'profile':
       case 'settings':
-        return true; // Accessible by all roles
+        return true;
+      
+      // Educational content routes - accessible by guru and siswa
+      case 'tugas':
+      case 'quiz':
+      case 'materi':
+      case 'nilai':
+      case 'kelas':
+      case 'pengumuman':
+      case 'qna':
+        // Guru and Siswa can access educational content
+        return userRole == 'guru' || userRole == 'siswa';
+      
       default:
-        return true; // Allow other routes
+        // By default, allow other routes (will fail gracefully if route doesn't exist)
+        return true;
     }
   }
 
