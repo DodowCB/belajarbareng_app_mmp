@@ -48,3 +48,10 @@ app.*.map.json
 client_secret*.json
 **/client_secret*.json
 google_drive_options.dart
+
+# Android Keystore (SENSITIVE - DO NOT COMMIT)
+*.jks
+*.keystore
+**/key.properties
+key.properties
+upload-keystore.jks

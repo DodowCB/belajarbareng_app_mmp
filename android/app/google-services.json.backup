@@ -59,22 +59,6 @@
       },
       "oauth_client": [
         {
-          "client_id": "1018894742415-d6rdv3v4k33qrbf27l5koptu33jn3jfd.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "com.example.firebase",
-            "certificate_hash": "5ca8d9dca3ce1b5fb5a9e83bc3e50b7a47669bed"
-          }
-        },
-        {
-          "client_id": "1018894742415-rcbil7bpf7u6qdv4f8u7qpsib83oqjpv.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "com.example.firebase",
-            "certificate_hash": "a833a3e073615e05a600ceedb5ec17dfdd75c940"
-          }
-        },
-        {
           "client_id": "1018894742415-rh6e6t6tb7sqoiu1fg49r6hmpkhoedbn.apps.googleusercontent.com",
           "client_type": 3
         }
@@ -110,14 +94,6 @@
         }
       },
       "oauth_client": [
-        {
-          "client_id": "1018894742415-ej03v7dutja5nk1ial99138p9b9olj9e.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "com.example.firebasetutorial",
-            "certificate_hash": "a833a3e073615e05a600ceedb5ec17dfdd75c940"
-          }
-        },
         {
           "client_id": "1018894742415-ohtgr4krg9koqe2to2ijnmpnsj9m3krr.apps.googleusercontent.com",
           "client_type": 1,

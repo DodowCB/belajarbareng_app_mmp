@@ -22,23 +22,30 @@ class GoogleDriveService {
 
   /// Initialize Google Sign In dengan Drive scopes
   Future<void> initialize() async {
-    final options = GoogleDriveOptions.instance;
-
-    // serverClientId TIDAK didukung di Web
-    // Hanya gunakan untuk platform mobile (Android/iOS)
-    _googleSignIn = GoogleSignIn(
-      serverClientId: kIsWeb ? null : options.webClientId,
-      scopes: options.scopes,
-    );
-
-    // Coba restore previous sign in
     try {
-      _currentUser = await _googleSignIn?.signInSilently();
-      if (_currentUser != null) {
-        await _updateAuthHeaders();
+      final options = GoogleDriveOptions.instance;
+
+      // JANGAN gunakan serverClientId untuk Android!
+      // Ini menyebabkan API Exception 8 dan 10
+      // Google Sign In akan otomatis menggunakan OAuth client dari google-services.json
+      _googleSignIn = GoogleSignIn(scopes: options.scopes);
+
+      // Coba restore previous sign in
+      try {
+        _currentUser = await _googleSignIn?.signInSilently();
+        if (_currentUser != null) {
+          await _updateAuthHeaders();
+          print('✓ Google Drive: Silent sign-in successful');
+        } else {
+          print('ℹ Google Drive: No previous sign-in found');
+        }
+      } catch (e) {
+        print('⚠ Google Drive: Silent sign-in failed: $e');
+        // Silent sign-in failure is acceptable, user can sign in manually
       }
     } catch (e) {
-      print('Error restoring sign in: $e');
+      print('❌ Google Drive: Initialization error: $e');
+      rethrow;
     }
   }
 
@@ -46,16 +53,37 @@ class GoogleDriveService {
   Future<GoogleSignInAccount?> signIn() async {
     try {
       if (_googleSignIn == null) {
+        print('ℹ Initializing Google Drive service...');
         await initialize();
       }
 
+      print('🔐 Starting Google Sign In...');
       _currentUser = await _googleSignIn?.signIn();
+
       if (_currentUser != null) {
         await _updateAuthHeaders();
+        print('✓ Google Drive sign in successful: ${_currentUser!.email}');
+      } else {
+        print('⚠ Google Drive sign in cancelled by user');
       }
+
       return _currentUser;
-    } catch (e) {
-      print('Error signing in: $e');
+    } on Exception catch (e) {
+      print('❌ Google Drive sign in error: $e');
+
+      // Detailed error handling
+      if (e.toString().contains('SIGN_IN_FAILED')) {
+        print('💡 Possible causes:');
+        print(
+          '   1. SHA-1/SHA-256 certificate not registered in Firebase Console',
+        );
+        print('   2. OAuth Client ID not configured correctly');
+        print('   3. Google Play Services not updated on device');
+        print('   4. Internet connection issue');
+      } else if (e.toString().contains('network')) {
+        print('💡 Check internet connection');
+      }
+
       rethrow;
     }
   }
