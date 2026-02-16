@@ -49,13 +49,24 @@ class SiswaWidgets {
               );
             }
 
-            final kelasId = siswaKelasSnapshot.data!.docs.first.get('kelas_id');
+            // Ambil SEMUA kelas_id dari siswa_kelas
+            final kelasIdList = siswaKelasSnapshot.data!.docs
+                .map((doc) => doc.get('kelas_id') as String?)
+                .where((id) => id != null && id.isNotEmpty)
+                .toList();
 
-            // Query kelas_ngajar untuk mendapatkan semua mapel di kelas ini
+            if (kelasIdList.isEmpty) {
+              return _buildEmptyState(
+                'Data kelas tidak valid',
+                isDark,
+              );
+            }
+
+            // Query kelas_ngajar untuk SEMUA kelas yang diikuti siswa
             return StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
                   .collection('kelas_ngajar')
-                  .where('id_kelas', isEqualTo: kelasId)
+                  .where('id_kelas', whereIn: kelasIdList)
                   .snapshots(),
               builder: (context, kelasNgajarSnapshot) {
                 if (kelasNgajarSnapshot.connectionState ==

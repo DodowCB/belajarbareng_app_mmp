@@ -124,7 +124,7 @@ class AbsensiSiswaScreen extends ConsumerWidget {
                 return StreamBuilder<QuerySnapshot>(
                   stream: FirebaseFirestore.instance
                       .collection('kelas_ngajar')
-                      .where(FieldPath.documentId, whereIn: kelasIds)
+                      .where('id_kelas', whereIn: kelasIds)
                       .snapshots(),
                   builder: (context, kelasNgajarSnapshot) {
                     if (kelasNgajarSnapshot.connectionState ==
