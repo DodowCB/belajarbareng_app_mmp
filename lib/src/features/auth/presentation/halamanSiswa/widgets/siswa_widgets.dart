@@ -56,10 +56,7 @@ class SiswaWidgets {
                 .toList();
 
             if (kelasIdList.isEmpty) {
-              return _buildEmptyState(
-                'Data kelas tidak valid',
-                isDark,
-              );
+              return _buildEmptyState('Data kelas tidak valid', isDark);
             }
 
             // Query kelas_ngajar untuk SEMUA kelas yang diikuti siswa
