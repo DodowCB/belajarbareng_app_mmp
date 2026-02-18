@@ -112,7 +112,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                     'Statistik Kehadiran',
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 16),
                   Text(
                     'Ada ${absensiDocs.length} dokumen, tapi status kosong.',
                     style: TextStyle(color: Colors.grey[600]),
@@ -156,7 +156,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 60),
                 // Fixed LayoutBuilder block
                 LayoutBuilder(
                   builder: (context, constraints) {

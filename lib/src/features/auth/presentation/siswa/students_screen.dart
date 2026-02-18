@@ -104,14 +104,7 @@ class _StudentsScreenState extends State<StudentsScreen> {
           icon: Icons.groups,
           additionalActions: [
             // Connection status indicator
-            Padding(
-              padding: const EdgeInsets.only(right: 8),
-              child: Icon(
-                _isOffline ? Icons.wifi_off : Icons.wifi,
-                color: _isOffline ? Colors.orange : Colors.green,
-                size: 24,
-              ),
-            ),
+
             MouseRegion(
               cursor: SystemMouseCursors.click,
               child: IconButton(

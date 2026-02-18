@@ -661,6 +661,32 @@ class _HalamanSiswaScreenState extends ConsumerState<HalamanSiswaScreen> {
                     );
                   },
                 ),
+                _buildDrawerItem(
+                  icon: Icons.event_available,
+                  title: 'Absensi',
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const AbsensiSiswaScreen(),
+                      ),
+                    );
+                  },
+                ),
+                _buildDrawerItem(
+                  icon: Icons.campaign,
+                  title: 'Pengumuman',
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const PengumumanScreen(),
+                      ),
+                    );
+                  },
+                ),
                 const Divider(),
                 _buildDrawerItem(
                   icon: Icons.person,

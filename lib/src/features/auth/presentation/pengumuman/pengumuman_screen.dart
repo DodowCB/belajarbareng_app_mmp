@@ -70,13 +70,7 @@ class _PengumumanScreenState extends State<PengumumanScreen> {
             title: 'Announcements Management',
             icon: Icons.announcement,
             additionalActions: [
-              IconButton(
-                icon: const Icon(Icons.refresh),
-                onPressed: () {
-                  context.read<PengumumanBloc>().add(RefreshPengumuman());
-                },
-                tooltip: 'Refresh',
-              ),
+
               IconButton(
                 icon: const Icon(Icons.add_circle_outline),
                 onPressed: () {

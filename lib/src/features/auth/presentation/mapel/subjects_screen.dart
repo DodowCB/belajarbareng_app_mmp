@@ -119,51 +119,7 @@ class _SubjectsScreenState extends State<SubjectsScreen> {
         title: 'Subjects Management',
         icon: Icons.library_books,
         additionalActions: [
-          MouseRegion(
-            cursor: SystemMouseCursors.click,
-            child: IconButton(
-              icon: const Icon(Icons.cleaning_services),
-              onPressed: () {
-                showDialog(
-                  context: context,
-                  builder: (context) => AlertDialog(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    title: const Row(
-                      children: [
-                        Icon(Icons.cleaning_services, color: Colors.orange),
-                        SizedBox(width: 12),
-                        Text('Cleanup Field ID'),
-                      ],
-                    ),
-                    content: const Text(
-                      'Remove "id" field from all existing subject data?\n\n'
-                      'This will clean up duplicate fields and only use Document ID.',
-                    ),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(context),
-                        child: const Text('Cancel'),
-                      ),
-                      ElevatedButton(
-                        onPressed: () {
-                          Navigator.pop(context);
-                          _cleanupIdField();
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.orange,
-                          foregroundColor: Colors.white,
-                        ),
-                        child: const Text('Cleanup'),
-                      ),
-                    ],
-                  ),
-                );
-              },
-              tooltip: 'Cleanup Field ID',
-            ),
-          ),
+
           MouseRegion(
             cursor: SystemMouseCursors.click,
             child: IconButton(

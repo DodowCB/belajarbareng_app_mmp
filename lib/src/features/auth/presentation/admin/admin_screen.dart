@@ -171,52 +171,7 @@ class _AdminScreenState extends State<AdminScreen> {
             );
           },
         ),
-        // Manual Sync Button
-        BlocBuilder<AdminBloc, AdminState>(
-          builder: (context, state) {
-            return IconButton(
-              icon: state.isLoading
-                  ? SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          Theme.of(context).iconTheme.color ?? Colors.white,
-                        ),
-                      ),
-                    )
-                  : const Icon(Icons.sync),
-              tooltip: state.isLoading
-                  ? 'Syncing...'
-                  : 'Sync data from Firebase',
-              onPressed: state.isLoading
-                  ? null
-                  : () {
-                      context.read<AdminBloc>().add(TriggerManualSync());
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: const Row(
-                            children: [
-                              Icon(Icons.sync, color: Colors.white),
-                              SizedBox(width: 12),
-                              Expanded(
-                                child: Text('Syncing data from Firebase...'),
-                              ),
-                            ],
-                          ),
-                          backgroundColor: AppTheme.primaryPurple,
-                          behavior: SnackBarBehavior.floating,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          duration: const Duration(seconds: 2),
-                        ),
-                      );
-                    },
-            );
-          },
-        ),
+
         IconButton(
           icon: const Icon(Icons.notifications_outlined),
           tooltip: 'Notifications',
@@ -632,319 +587,407 @@ class _AdminScreenState extends State<AdminScreen> {
   }
 
   void _showAllUsersModal() {
+    final searchController = TextEditingController();
+    String searchQuery = '';
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return Dialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Container(
-            width: MediaQuery.of(context).size.width * 0.9,
-            constraints: const BoxConstraints(maxWidth: 600, maxHeight: 700),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Header
-                Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    gradient: AppTheme.sunsetGradient,
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(16),
-                      topRight: Radius.circular(16),
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: const Icon(
-                          Icons.people,
-                          color: Colors.white,
-                          size: 24,
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return Dialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Container(
+                width: MediaQuery.of(context).size.width * 0.9,
+                constraints: const BoxConstraints(maxWidth: 600, maxHeight: 700),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Header
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        gradient: AppTheme.sunsetGradient,
+                        borderRadius: const BorderRadius.only(
+                          topLeft: Radius.circular(16),
+                          topRight: Radius.circular(16),
                         ),
                       ),
-                      const SizedBox(width: 12),
-                      const Expanded(
-                        child: Text(
-                          'All Users',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(
+                              Icons.people,
+                              color: Colors.white,
+                              size: 24,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          const Expanded(
+                            child: Text(
+                              'All Users',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          IconButton(
+                            onPressed: () => Navigator.pop(context),
+                            icon: const Icon(Icons.close, color: Colors.white),
+                            tooltip: 'Close',
+                          ),
+                        ],
+                      ),
+                    ),
+                    // Search Bar
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                      child: TextField(
+                        controller: searchController,
+                        onChanged: (value) {
+                          setDialogState(() {
+                            searchQuery = value;
+                          });
+                        },
+                        decoration: InputDecoration(
+                          hintText: 'Search users by name...',
+                          prefixIcon: const Icon(Icons.search, size: 20),
+                          suffixIcon: searchQuery.isNotEmpty
+                              ? IconButton(
+                                  icon: const Icon(Icons.clear, size: 18),
+                                  onPressed: () {
+                                    searchController.clear();
+                                    setDialogState(() {
+                                      searchQuery = '';
+                                    });
+                                  },
+                                )
+                              : null,
+                          filled: true,
+                          fillColor: Theme.of(context).brightness == Brightness.dark
+                              ? Colors.grey[850]
+                              : Colors.grey[100],
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(
+                              color: Colors.grey.withOpacity(0.2),
+                            ),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(
+                              color: AppTheme.primaryPurple,
+                              width: 1.5,
+                            ),
                           ),
                         ),
                       ),
-                      IconButton(
-                        onPressed: () => Navigator.pop(context),
-                        icon: const Icon(Icons.close, color: Colors.white),
-                        tooltip: 'Close',
-                      ),
-                    ],
-                  ),
-                ),
-                // Content
-                Expanded(
-                  child: StreamBuilder<QuerySnapshot>(
-                    stream: FirebaseFirestore.instance
-                        .collection('guru')
-                        .snapshots(),
-                    builder: (context, guruSnapshot) {
-                      if (guruSnapshot.connectionState ==
-                          ConnectionState.waiting) {
-                        return const Center(child: CircularProgressIndicator());
-                      }
-
-                      return StreamBuilder<QuerySnapshot>(
+                    ),
+                    // Content
+                    Expanded(
+                      child: StreamBuilder<QuerySnapshot>(
                         stream: FirebaseFirestore.instance
-                            .collection('siswa')
+                            .collection('guru')
                             .snapshots(),
-                        builder: (context, siswaSnapshot) {
-                          if (siswaSnapshot.connectionState ==
+                        builder: (context, guruSnapshot) {
+                          if (guruSnapshot.connectionState ==
                               ConnectionState.waiting) {
-                            return const Center(
-                              child: CircularProgressIndicator(),
-                            );
+                            return const Center(child: CircularProgressIndicator());
                           }
 
-                          if (guruSnapshot.hasError || siswaSnapshot.hasError) {
-                            return Center(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  const Icon(
-                                    Icons.error_outline,
-                                    size: 64,
-                                    color: Colors.red,
-                                  ),
-                                  const SizedBox(height: 16),
-                                  Text(
-                                    'Error loading users',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      color: Colors.grey[600],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            );
-                          }
+                          return StreamBuilder<QuerySnapshot>(
+                            stream: FirebaseFirestore.instance
+                                .collection('siswa')
+                                .snapshots(),
+                            builder: (context, siswaSnapshot) {
+                              if (siswaSnapshot.connectionState ==
+                                  ConnectionState.waiting) {
+                                return const Center(
+                                  child: CircularProgressIndicator(),
+                                );
+                              }
 
-                          // Combine all users
-                          final List<Map<String, String>> allUsers = [];
-
-                          // Add teachers (excluding admin@gmail.com)
-                          if (guruSnapshot.hasData) {
-                            for (var doc in guruSnapshot.data!.docs) {
-                              final data = doc.data() as Map<String, dynamic>;
-                              final email =
-                                  data['email']?.toString().toLowerCase() ?? '';
-                              // Skip admin user
-                              if (email == 'admin@gmail.com') continue;
-
-                              final name = data['nama_lengkap'] ?? 'Unknown';
-                              allUsers.add({'name': name, 'role': 'Teacher'});
-                            }
-                          }
-
-                          // Add students
-                          if (siswaSnapshot.hasData) {
-                            for (var doc in siswaSnapshot.data!.docs) {
-                              final data = doc.data() as Map<String, dynamic>;
-                              final name = data['nama'] ?? 'Unknown';
-                              allUsers.add({'name': name, 'role': 'Student'});
-                            }
-                          }
-
-                          // Sort by name
-                          allUsers.sort(
-                            (a, b) => a['name']!.compareTo(b['name']!),
-                          );
-
-                          if (allUsers.isEmpty) {
-                            return Center(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    Icons.people_outline,
-                                    size: 64,
-                                    color: Colors.grey[400],
-                                  ),
-                                  const SizedBox(height: 16),
-                                  Text(
-                                    'No users found',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      color: Colors.grey[600],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            );
-                          }
-
-                          return Column(
-                            children: [
-                              // Summary
-                              Container(
-                                padding: const EdgeInsets.all(16),
-                                color:
-                                    Theme.of(context).brightness ==
-                                        Brightness.dark
-                                    ? Colors.grey[850]
-                                    : Colors.grey[100],
-                                child: Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceEvenly,
-                                  children: [
-                                    Flexible(
-                                      child: _buildUserSummaryItem(
-                                        'Total',
-                                        allUsers.length.toString(),
-                                        AppTheme.primaryPurple,
+                              if (guruSnapshot.hasError || siswaSnapshot.hasError) {
+                                return Center(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      const Icon(
+                                        Icons.error_outline,
+                                        size: 64,
+                                        color: Colors.red,
                                       ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Flexible(
-                                      child: _buildUserSummaryItem(
-                                        'Teachers',
-                                        guruSnapshot.data!.docs
-                                            .where((doc) {
-                                              final data =
-                                                  doc.data()
-                                                      as Map<String, dynamic>;
-                                              final email =
-                                                  data['email']
-                                                      ?.toString()
-                                                      .toLowerCase() ??
-                                                  '';
-                                              return email != 'admin@gmail.com';
-                                            })
-                                            .length
-                                            .toString(),
-                                        AppTheme.secondaryTeal,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Flexible(
-                                      child: _buildUserSummaryItem(
-                                        'Students',
-                                        siswaSnapshot.data!.docs.length
-                                            .toString(),
-                                        AppTheme.accentGreen,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const Divider(height: 1),
-                              // User list
-                              Expanded(
-                                child: ListView.separated(
-                                  padding: const EdgeInsets.all(16),
-                                  itemCount: allUsers.length,
-                                  separatorBuilder: (context, index) =>
-                                      const SizedBox(height: 8),
-                                  itemBuilder: (context, index) {
-                                    final user = allUsers[index];
-                                    final isTeacher = user['role'] == 'Teacher';
-
-                                    return Container(
-                                      padding: const EdgeInsets.all(12),
-                                      decoration: BoxDecoration(
-                                        color:
-                                            Theme.of(context).brightness ==
-                                                Brightness.dark
-                                            ? Colors.grey[850]
-                                            : Colors.white,
-                                        borderRadius: BorderRadius.circular(8),
-                                        border: Border.all(
-                                          color: isTeacher
-                                              ? AppTheme.secondaryTeal
-                                                    .withOpacity(0.3)
-                                              : AppTheme.accentGreen
-                                                    .withOpacity(0.3),
+                                      const SizedBox(height: 16),
+                                      Text(
+                                        'Error loading users',
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          color: Colors.grey[600],
                                         ),
                                       ),
-                                      child: Row(
-                                        children: [
-                                          CircleAvatar(
-                                            backgroundColor: isTeacher
-                                                ? AppTheme.secondaryTeal
-                                                      .withOpacity(0.2)
-                                                : AppTheme.accentGreen
-                                                      .withOpacity(0.2),
-                                            child: Icon(
-                                              isTeacher
-                                                  ? Icons.school
-                                                  : Icons.person,
-                                              color: isTeacher
-                                                  ? AppTheme.secondaryTeal
-                                                  : AppTheme.accentGreen,
-                                              size: 20,
-                                            ),
-                                          ),
-                                          const SizedBox(width: 12),
-                                          Expanded(
-                                            child: Text(
-                                              '${user['name']} - ${user['role']}',
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .bodyMedium
-                                                  ?.copyWith(
-                                                    fontWeight: FontWeight.w500,
-                                                  ),
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                          ),
-                                          Container(
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 8,
-                                              vertical: 4,
-                                            ),
-                                            decoration: BoxDecoration(
-                                              color: isTeacher
-                                                  ? AppTheme.secondaryTeal
-                                                        .withOpacity(0.1)
-                                                  : AppTheme.accentGreen
-                                                        .withOpacity(0.1),
-                                              borderRadius:
-                                                  BorderRadius.circular(12),
-                                            ),
-                                            child: Text(
-                                              user['role']!,
-                                              style: TextStyle(
-                                                fontSize: 11,
-                                                fontWeight: FontWeight.w600,
-                                                color: isTeacher
-                                                    ? AppTheme.secondaryTeal
-                                                    : AppTheme.accentGreen,
-                                              ),
-                                            ),
-                                          ),
-                                        ],
+                                    ],
+                                  ),
+                                );
+                              }
+
+                              // Combine all users
+                              final List<Map<String, String>> allUsers = [];
+
+                              // Add teachers (excluding admin@gmail.com)
+                              if (guruSnapshot.hasData) {
+                                for (var doc in guruSnapshot.data!.docs) {
+                                  final data = doc.data() as Map<String, dynamic>;
+                                  final email =
+                                      data['email']?.toString().toLowerCase() ?? '';
+                                  // Skip admin user
+                                  if (email == 'admin@gmail.com') continue;
+
+                                  final name = data['nama_lengkap'] ?? 'Unknown';
+                                  allUsers.add({'name': name, 'role': 'Teacher'});
+                                }
+                              }
+
+                              // Add students
+                              if (siswaSnapshot.hasData) {
+                                for (var doc in siswaSnapshot.data!.docs) {
+                                  final data = doc.data() as Map<String, dynamic>;
+                                  final name = data['nama'] ?? 'Unknown';
+                                  allUsers.add({'name': name, 'role': 'Student'});
+                                }
+                              }
+
+                              // Sort by name
+                              allUsers.sort(
+                                (a, b) => a['name']!.compareTo(b['name']!),
+                              );
+
+                              // Filter by search query
+                              final filteredUsers = searchQuery.isEmpty
+                                  ? allUsers
+                                  : allUsers
+                                      .where((user) => user['name']!
+                                          .toLowerCase()
+                                          .contains(searchQuery.toLowerCase()))
+                                      .toList();
+
+                              if (allUsers.isEmpty) {
+                                return Center(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.people_outline,
+                                        size: 64,
+                                        color: Colors.grey[400],
                                       ),
-                                    );
-                                  },
-                                ),
-                              ),
-                            ],
+                                      const SizedBox(height: 16),
+                                      Text(
+                                        'No users found',
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          color: Colors.grey[600],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              }
+
+                              return Column(
+                                children: [
+                                  // Summary
+                                  Container(
+                                    padding: const EdgeInsets.all(16),
+                                    color:
+                                        Theme.of(context).brightness ==
+                                            Brightness.dark
+                                        ? Colors.grey[850]
+                                        : Colors.grey[100],
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceEvenly,
+                                      children: [
+                                        Flexible(
+                                          child: _buildUserSummaryItem(
+                                            'Total',
+                                            allUsers.length.toString(),
+                                            AppTheme.primaryPurple,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Flexible(
+                                          child: _buildUserSummaryItem(
+                                            'Teachers',
+                                            guruSnapshot.data!.docs
+                                                .where((doc) {
+                                                  final data =
+                                                      doc.data()
+                                                          as Map<String, dynamic>;
+                                                  final email =
+                                                      data['email']
+                                                          ?.toString()
+                                                          .toLowerCase() ??
+                                                      '';
+                                                  return email != 'admin@gmail.com';
+                                                })
+                                                .length
+                                                .toString(),
+                                            AppTheme.secondaryTeal,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Flexible(
+                                          child: _buildUserSummaryItem(
+                                            'Students',
+                                            siswaSnapshot.data!.docs.length
+                                                .toString(),
+                                            AppTheme.accentGreen,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const Divider(height: 1),
+                                  // User list
+                                  Expanded(
+                                    child: filteredUsers.isEmpty
+                                        ? Center(
+                                            child: Column(
+                                              mainAxisAlignment: MainAxisAlignment.center,
+                                              children: [
+                                                Icon(
+                                                  Icons.search_off,
+                                                  size: 48,
+                                                  color: Colors.grey[400],
+                                                ),
+                                                const SizedBox(height: 12),
+                                                Text(
+                                                  'No users match "$searchQuery"',
+                                                  style: TextStyle(
+                                                    fontSize: 14,
+                                                    color: Colors.grey[600],
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          )
+                                        : ListView.separated(
+                                            padding: const EdgeInsets.all(16),
+                                            itemCount: filteredUsers.length,
+                                            separatorBuilder: (context, index) =>
+                                                const SizedBox(height: 8),
+                                            itemBuilder: (context, index) {
+                                              final user = filteredUsers[index];
+                                              final isTeacher = user['role'] == 'Teacher';
+
+                                              return Container(
+                                                padding: const EdgeInsets.all(12),
+                                                decoration: BoxDecoration(
+                                                  color:
+                                                      Theme.of(context).brightness ==
+                                                          Brightness.dark
+                                                      ? Colors.grey[850]
+                                                      : Colors.white,
+                                                  borderRadius: BorderRadius.circular(8),
+                                                  border: Border.all(
+                                                    color: isTeacher
+                                                        ? AppTheme.secondaryTeal
+                                                              .withOpacity(0.3)
+                                                        : AppTheme.accentGreen
+                                                              .withOpacity(0.3),
+                                                  ),
+                                                ),
+                                                child: Row(
+                                                  children: [
+                                                    CircleAvatar(
+                                                      backgroundColor: isTeacher
+                                                          ? AppTheme.secondaryTeal
+                                                                .withOpacity(0.2)
+                                                          : AppTheme.accentGreen
+                                                                .withOpacity(0.2),
+                                                      child: Icon(
+                                                        isTeacher
+                                                            ? Icons.school
+                                                            : Icons.person,
+                                                        color: isTeacher
+                                                            ? AppTheme.secondaryTeal
+                                                            : AppTheme.accentGreen,
+                                                        size: 20,
+                                                      ),
+                                                    ),
+                                                    const SizedBox(width: 12),
+                                                    Expanded(
+                                                      child: Text(
+                                                        '${user['name']} - ${user['role']}',
+                                                        style: Theme.of(context)
+                                                            .textTheme
+                                                            .bodyMedium
+                                                            ?.copyWith(
+                                                              fontWeight: FontWeight.w500,
+                                                            ),
+                                                        maxLines: 1,
+                                                        overflow: TextOverflow.ellipsis,
+                                                      ),
+                                                    ),
+                                                    Container(
+                                                      padding: const EdgeInsets.symmetric(
+                                                        horizontal: 8,
+                                                        vertical: 4,
+                                                      ),
+                                                      decoration: BoxDecoration(
+                                                        color: isTeacher
+                                                            ? AppTheme.secondaryTeal
+                                                                  .withOpacity(0.1)
+                                                            : AppTheme.accentGreen
+                                                                  .withOpacity(0.1),
+                                                        borderRadius:
+                                                            BorderRadius.circular(12),
+                                                      ),
+                                                      child: Text(
+                                                        user['role']!,
+                                                        style: TextStyle(
+                                                          fontSize: 11,
+                                                          fontWeight: FontWeight.w600,
+                                                          color: isTeacher
+                                                              ? AppTheme.secondaryTeal
+                                                              : AppTheme.accentGreen,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              );
+                                            },
+                                          ),
+                                  ),
+                                ],
+                              );
+                            },
                           );
                         },
-                      );
-                    },
-                  ),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          ),
+              ),
+            );
+          },
         );
       },
     );
@@ -1075,9 +1118,14 @@ class _AdminScreenState extends State<AdminScreen> {
   }
 
   void _navigateToGuruLocations() {
-    Navigator.of(
-      context,
-    ).push(MaterialPageRoute(builder: (context) => const GuruLocationScreen()));
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => BlocProvider(
+          create: (_) => AdminBloc()..add(LoadAdminData()),
+          child: const GuruLocationScreen(),
+        ),
+      ),
+    );
   }
 
   Widget _buildOfflineBanner(AdminState state) {

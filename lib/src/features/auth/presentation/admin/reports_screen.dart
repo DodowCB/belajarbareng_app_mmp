@@ -807,94 +807,179 @@ class _ReportsScreenState extends State<ReportsScreen>
           ),
         ],
       ),
-      child: Row(
-        children: [
-          Icon(Icons.sort, color: AppTheme.primaryPurple, size: 20),
-          const SizedBox(width: 8),
-          const Text(
-            'Urutkan:',
-            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
-          ),
-          const SizedBox(width: 12),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final isSmallScreen = constraints.maxWidth < 400;
 
-          // Sort by dropdown
-          Expanded(
-            flex: 2,
-            child: DropdownButtonFormField<String>(
-              value: _sortBy,
-              decoration: InputDecoration(
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
-                ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                filled: true,
-                fillColor: isDark ? Colors.grey[850] : Colors.grey[100],
-                isDense: true,
-              ),
-              items: const [
-                DropdownMenuItem(value: 'id', child: Text('ID Siswa')),
-                DropdownMenuItem(value: 'nama', child: Text('Nama')),
-                DropdownMenuItem(value: 'kelas', child: Text('Kelas')),
-              ],
-              onChanged: (value) {
-                if (value != null) {
-                  setState(() {
-                    _sortBy = value;
-                  });
-                }
-              },
-            ),
-          ),
-
-          const SizedBox(width: 12),
-
-          // Sort direction button
-          Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: () {
-                setState(() {
-                  _sortAscending = !_sortAscending;
-                });
-              },
-              borderRadius: BorderRadius.circular(10),
-              child: Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: AppTheme.primaryPurple.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(
-                    color: AppTheme.primaryPurple.withOpacity(0.3),
-                  ),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
+          if (isSmallScreen) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
                   children: [
-                    Icon(
-                      _sortAscending
-                          ? Icons.arrow_upward
-                          : Icons.arrow_downward,
-                      color: AppTheme.primaryPurple,
-                      size: 18,
+                    Icon(Icons.sort, color: AppTheme.primaryPurple, size: 20),
+                    const SizedBox(width: 8),
+                    const Text(
+                      'Urutkan:',
+                      style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
                     ),
-                    const SizedBox(width: 6),
-                    Text(
-                      _sortAscending ? 'A-Z' : 'Z-A',
-                      style: TextStyle(
-                        color: AppTheme.primaryPurple,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 13,
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      flex: 2,
+                      child: DropdownButtonFormField<String>(
+                        value: _sortBy,
+                        isExpanded: true,
+                        decoration: InputDecoration(
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          filled: true,
+                          fillColor: isDark ? Colors.grey[850] : Colors.grey[100],
+                          isDense: true,
+                        ),
+                        items: const [
+                          DropdownMenuItem(value: 'id', child: Text('ID Siswa')),
+                          DropdownMenuItem(value: 'nama', child: Text('Nama')),
+                          DropdownMenuItem(value: 'kelas', child: Text('Kelas')),
+                        ],
+                        onChanged: (value) {
+                          if (value != null) {
+                            setState(() {
+                              _sortBy = value;
+                            });
+                          }
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: () {
+                          setState(() {
+                            _sortAscending = !_sortAscending;
+                          });
+                        },
+                        borderRadius: BorderRadius.circular(10),
+                        child: Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: AppTheme.primaryPurple.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: AppTheme.primaryPurple.withOpacity(0.3),
+                            ),
+                          ),
+                          child: Icon(
+                            _sortAscending
+                                ? Icons.arrow_upward
+                                : Icons.arrow_downward,
+                            color: AppTheme.primaryPurple,
+                            size: 20,
+                          ),
+                        ),
                       ),
                     ),
                   ],
                 ),
+              ],
+            );
+          }
+
+          return Row(
+            children: [
+              Icon(Icons.sort, color: AppTheme.primaryPurple, size: 20),
+              const SizedBox(width: 8),
+              const Text(
+                'Urutkan:',
+                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
               ),
-            ),
-          ),
-        ],
+              const SizedBox(width: 12),
+              Expanded(
+                flex: 2,
+                child: DropdownButtonFormField<String>(
+                  value: _sortBy,
+                  isExpanded: true,
+                  decoration: InputDecoration(
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    filled: true,
+                    fillColor: isDark ? Colors.grey[850] : Colors.grey[100],
+                    isDense: true,
+                  ),
+                  items: const [
+                    DropdownMenuItem(value: 'id', child: Text('ID Siswa')),
+                    DropdownMenuItem(value: 'nama', child: Text('Nama')),
+                    DropdownMenuItem(value: 'kelas', child: Text('Kelas')),
+                  ],
+                  onChanged: (value) {
+                    if (value != null) {
+                      setState(() {
+                        _sortBy = value;
+                      });
+                    }
+                  },
+                ),
+              ),
+              const SizedBox(width: 12),
+              Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: () {
+                    setState(() {
+                      _sortAscending = !_sortAscending;
+                    });
+                  },
+                  borderRadius: BorderRadius.circular(10),
+                  child: Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: AppTheme.primaryPurple.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: AppTheme.primaryPurple.withOpacity(0.3),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          _sortAscending
+                              ? Icons.arrow_upward
+                              : Icons.arrow_downward,
+                          color: AppTheme.primaryPurple,
+                          size: 18,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          _sortAscending ? 'A-Z' : 'Z-A',
+                          style: TextStyle(
+                            color: AppTheme.primaryPurple,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -954,82 +1039,164 @@ class _ReportsScreenState extends State<ReportsScreen>
           const SizedBox(height: 12),
 
           // Filter dropdowns
-          Row(
-            children: [
-              // Siswa filter
-              Expanded(
-                child: DropdownButtonFormField<String>(
-                  value: _filterSiswaId,
-                  decoration: InputDecoration(
-                    labelText: 'Filter Siswa',
-                    prefixIcon: const Icon(Icons.person),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    filled: true,
-                    fillColor: isDark ? Colors.grey[850] : Colors.grey[100],
-                  ),
-                  items: [
-                    const DropdownMenuItem<String>(
-                      value: null,
-                      child: Text('Semua Siswa'),
-                    ),
-                    ..._siswaCache.entries.map((entry) {
-                      return DropdownMenuItem<String>(
-                        value: entry.key,
-                        child: Text(
-                          '${entry.key} - ${entry.value['nama'] ?? 'Unknown'}',
-                          overflow: TextOverflow.ellipsis,
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final isSmallScreen = constraints.maxWidth < 500;
+              
+              if (isSmallScreen) {
+                return Column(
+                  children: [
+                    DropdownButtonFormField<String>(
+                      value: _filterSiswaId,
+                      isExpanded: true,
+                      decoration: InputDecoration(
+                        labelText: 'Filter Siswa',
+                        prefixIcon: const Icon(Icons.person),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                      );
-                    }).toList(),
-                  ],
-                  onChanged: (value) {
-                    setState(() {
-                      _filterSiswaId = value;
-                    });
-                  },
-                ),
-              ),
-
-              const SizedBox(width: 12),
-
-              // Kelas filter
-              Expanded(
-                child: DropdownButtonFormField<String>(
-                  value: _filterKelasId,
-                  decoration: InputDecoration(
-                    labelText: 'Filter Kelas',
-                    prefixIcon: const Icon(Icons.class_),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    filled: true,
-                    fillColor: isDark ? Colors.grey[850] : Colors.grey[100],
-                  ),
-                  items: [
-                    const DropdownMenuItem<String>(
-                      value: null,
-                      child: Text('Semua Kelas'),
-                    ),
-                    ..._kelasCache.entries.map((entry) {
-                      return DropdownMenuItem<String>(
-                        value: entry.key,
-                        child: Text(
-                          entry.value['nama_kelas'] ?? 'ID: ${entry.key}',
-                          overflow: TextOverflow.ellipsis,
+                        filled: true,
+                        fillColor: isDark ? Colors.grey[850] : Colors.grey[100],
+                      ),
+                      items: [
+                        const DropdownMenuItem<String>(
+                          value: null,
+                          child: Text('Semua Siswa'),
                         ),
-                      );
-                    }).toList(),
+                        ..._siswaCache.entries.map((entry) {
+                          return DropdownMenuItem<String>(
+                            value: entry.key,
+                            child: Text(
+                              '${entry.key} - ${entry.value['nama'] ?? 'Unknown'}',
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          );
+                        }).toList(),
+                      ],
+                      onChanged: (value) {
+                        setState(() {
+                          _filterSiswaId = value;
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<String>(
+                      value: _filterKelasId,
+                      isExpanded: true,
+                      decoration: InputDecoration(
+                        labelText: 'Filter Kelas',
+                        prefixIcon: const Icon(Icons.class_),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        filled: true,
+                        fillColor: isDark ? Colors.grey[850] : Colors.grey[100],
+                      ),
+                      items: [
+                        const DropdownMenuItem<String>(
+                          value: null,
+                          child: Text('Semua Kelas'),
+                        ),
+                        ..._kelasCache.entries.map((entry) {
+                          return DropdownMenuItem<String>(
+                            value: entry.key,
+                            child: Text(
+                              entry.value['nama_kelas'] ?? 'ID: ${entry.key}',
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          );
+                        }).toList(),
+                      ],
+                      onChanged: (value) {
+                        setState(() {
+                          _filterKelasId = value;
+                        });
+                      },
+                    ),
                   ],
-                  onChanged: (value) {
-                    setState(() {
-                      _filterKelasId = value;
-                    });
-                  },
-                ),
-              ),
-            ],
+                );
+              }
+
+              return Row(
+                children: [
+                  // Siswa filter
+                  Expanded(
+                    child: DropdownButtonFormField<String>(
+                      value: _filterSiswaId,
+                      isExpanded: true,
+                      decoration: InputDecoration(
+                        labelText: 'Filter Siswa',
+                        prefixIcon: const Icon(Icons.person),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        filled: true,
+                        fillColor: isDark ? Colors.grey[850] : Colors.grey[100],
+                      ),
+                      items: [
+                        const DropdownMenuItem<String>(
+                          value: null,
+                          child: Text('Semua Siswa'),
+                        ),
+                        ..._siswaCache.entries.map((entry) {
+                          return DropdownMenuItem<String>(
+                            value: entry.key,
+                            child: Text(
+                              '${entry.key} - ${entry.value['nama'] ?? 'Unknown'}',
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          );
+                        }).toList(),
+                      ],
+                      onChanged: (value) {
+                        setState(() {
+                          _filterSiswaId = value;
+                        });
+                      },
+                    ),
+                  ),
+
+                  const SizedBox(width: 12),
+
+                  // Kelas filter
+                  Expanded(
+                    child: DropdownButtonFormField<String>(
+                      value: _filterKelasId,
+                      isExpanded: true,
+                      decoration: InputDecoration(
+                        labelText: 'Filter Kelas',
+                        prefixIcon: const Icon(Icons.class_),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        filled: true,
+                        fillColor: isDark ? Colors.grey[850] : Colors.grey[100],
+                      ),
+                      items: [
+                        const DropdownMenuItem<String>(
+                          value: null,
+                          child: Text('Semua Kelas'),
+                        ),
+                        ..._kelasCache.entries.map((entry) {
+                          return DropdownMenuItem<String>(
+                            value: entry.key,
+                            child: Text(
+                              entry.value['nama_kelas'] ?? 'ID: ${entry.key}',
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          );
+                        }).toList(),
+                      ],
+                      onChanged: (value) {
+                        setState(() {
+                          _filterKelasId = value;
+                        });
+                      },
+                    ),
+                  ),
+                ],
+              );
+            },
           ),
 
           // Clear filters button
@@ -1039,7 +1206,7 @@ class _ReportsScreenState extends State<ReportsScreen>
             Padding(
               padding: const EdgeInsets.only(top: 12),
               child: TextButton.icon(
-                onPressed: () {
+              onPressed: () {
                   setState(() {
                     _filterSiswaId = null;
                     _filterKelasId = null;

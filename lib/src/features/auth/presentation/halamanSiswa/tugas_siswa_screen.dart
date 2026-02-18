@@ -117,25 +117,91 @@ class _TugasSiswaScreenState extends State<TugasSiswaScreen> {
                     }
 
                     final kelasList = snapshot.data!;
+                    final totalPendingAssignments = kelasList.fold<int>(
+                      0,
+                      (sum, item) => sum + (item['totalTugas'] as int? ?? 0),
+                    );
 
-                    return GridView.builder(
-                      padding: const EdgeInsets.all(16),
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2,
-                            crossAxisSpacing: 12,
-                            mainAxisSpacing: 12,
-                            childAspectRatio: 1.1,
+                    return Column(
+                      children: [
+                        // Summary Header
+                        Container(
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                AppTheme.primaryPurple,
+                                AppTheme.primaryPurple.withOpacity(0.7),
+                              ],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
                           ),
-                      itemCount: kelasList.length,
-                      itemBuilder: (context, index) {
-                        final kelas = kelasList[index];
-                        return _buildKelasCard(
-                          context: context,
-                          kelas: kelas,
-                          isDark: isDark,
-                        );
-                      },
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.2),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: const Icon(
+                                  Icons.assignment,
+                                  color: Colors.white,
+                                  size: 32,
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      'Daftar Tugas',
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      '$totalPendingAssignments Tugas Aktif dari ${kelasList.length} Mata Pelajaran',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color: Colors.white.withOpacity(0.9),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        
+                        // Grid
+                        Expanded(
+                          child: GridView.builder(
+                            padding: const EdgeInsets.all(16),
+                            gridDelegate:
+                                const SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: 2,
+                                  crossAxisSpacing: 12,
+                                  mainAxisSpacing: 12,
+                                  childAspectRatio: 1.1,
+                                ),
+                            itemCount: kelasList.length,
+                            itemBuilder: (context, index) {
+                              final kelas = kelasList[index];
+                              return _buildKelasCard(
+                                context: context,
+                                kelas: kelas,
+                                isDark: isDark,
+                              );
+                            },
+                          ),
+                        ),
+                      ],
                     );
                   },
                 );
